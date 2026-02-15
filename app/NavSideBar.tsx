@@ -30,7 +30,7 @@ type LinkObject = {
   href: string;
   icon: React.ReactElement;
 };
-const NavSideBar = () => {
+const NavSidebar = () => {
   return (
     <Container>
       <NavLinks />
@@ -105,4 +105,4 @@ const NavLinks = () => {
   );
 };
 
-export default NavSideBar;
+export default NavSidebar;
