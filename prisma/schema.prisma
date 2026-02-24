@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -13,67 +7,78 @@ datasource db {
   provider = "postgresql"
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  name        String
+model Franchise {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  logoUrl     String?
+  bannerUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
 
-  variants ProductVariant[]
+  @@index([slug])
+}
+
+model Product {
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  franchiseId     String?
+  supplierCountry SupplierCountry
+  franchise       Franchise?       @relation(fields: [franchiseId], references: [id])
+  variants        ProductVariant[]
 }
 
 model ProductVariant {
-  id        String @id @default(cuid())
-  productId String
-  sku       String @unique
-  price     Int
+  id            String                @id @default(cuid())
+  productId     String
+  sku           String                @unique
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  name          String
+  originalPrice Int
+  salePrice     Int
+  product       Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images        ProductVariantImage[]
+  stocks        Stock[]
+  movements     StockMovement[]
 
-  product Product @relation(fields: [productId], references: [id])
+  @@index([productId])
+}
 
-  stocks    Stock[]
-  movements StockMovement[]
+model ProductVariantImage {
+  id        String         @id @default(cuid())
+  variantId String
+  url       String
+  alt       String?
+  position  Int            @default(0)
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([variantId])
 }
 
 model Warehouse {
-  id   String @id @default(cuid())
-  name String
-
+  id        String          @id @default(cuid())
+  name      String
   stocks    Stock[]
   movements StockMovement[]
 }
 
 model Stock {
-  id          String @id @default(cuid())
+  id          String         @id @default(cuid())
   variantId   String
   warehouseId String
-  quantity    Int    @default(0)
-
-  variant   ProductVariant @relation(fields: [variantId], references: [id])
-  warehouse Warehouse      @relation(fields: [warehouseId], references: [id])
+  quantity    Int            @default(0)
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
 
   @@unique([variantId, warehouseId])
   @@index([variantId])
   @@index([warehouseId])
-}
-
-enum MovementType {
-  IN
-  OUT
-  RESERVE
-  RELEASE
-  ADJUST
-}
-
-enum ReferenceType {
-  ORDER
-  PURCHASE
-  RETURN
-  TRANSFER
-  MANUAL
 }
 
 model StockMovement {
@@ -82,15 +87,14 @@ model StockMovement {
   warehouseId   String
   type          MovementType
   quantity      Int
-  referenceType ReferenceType?
   referenceId   String?
   note          String?
+  createdAt     DateTime       @default(now())
+  referenceType ReferenceType?
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  warehouse     Warehouse      @relation(fields: [warehouseId], references: [id])
 
-  variant   ProductVariant @relation(fields: [variantId], references: [id])
-  warehouse Warehouse      @relation(fields: [warehouseId], references: [id])
-
-  createdAt DateTime @default(now())
-
+  @@index([referenceId, referenceType])
   @@index([variantId])
   @@index([warehouseId])
   @@index([referenceId])
@@ -103,15 +107,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -146,4 +149,31 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
+}
+
+enum SupplierCountry {
+  CHINA
+  JAPAN
+}
+
+enum MovementType {
+  IN
+  OUT
+  RESERVE
+  RELEASE
+  ADJUST
+}
+
+enum ReferenceType {
+  ORDER
+  PURCHASE
+  RETURN
+  TRANSFER
+  MANUAL
 }

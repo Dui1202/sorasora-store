@@ -1,5 +1,72 @@
-import { NextRequest } from "next/server";
+import prisma from "@/app/lib/prisma";
+import { createProductFormSchema } from "@/app/lib/validationSchema";
+import { Prisma } from "@/app/generated/prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const validation = createProductFormSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        issues: z.treeifyError(validation.error),
+      },
+      { status: 400 }
+    );
+  }
+
+  const { name, description, variants } = validation.data;
+
+  try {
+    const newProduct = await prisma.product.create({
+      data: {
+        name,
+        description: description || undefined,
+        variants: {
+          create: variants.map((variant) => ({
+            name: variant.name,
+            sku: variant.sku,
+            price: variant.price,
+            images:
+              variant.images.length > 0
+                ? {
+                    create: variant.images.map((image) => ({
+                      url: image.url,
+                      alt: image.alt,
+                      position: image.position,
+                    })),
+                  }
+                : undefined,
+          })),
+        },
+      },
+      include: {
+        variants: {
+          include: {
+            images: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(newProduct, { status: 201 });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return NextResponse.json({ error: "SKU already exists" }, { status: 409 });
+      }
+    }
+
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
+  }
 }

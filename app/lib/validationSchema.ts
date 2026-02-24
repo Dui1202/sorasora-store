@@ -1,13 +1,33 @@
-import { number, string, z } from "@/node_modules/zod";
+import { z } from "zod";
 
-export const createProductSchema = z.object({
-  name: string()
-    .min(1, "Title is required!")
-    .max(255, "Title is too long! Must be less than 255 characters"),
-  description: string().min(1, "Description is required!").max(65535),
-  price: number().nonnegative("Price can not be negative!"),
-  sku: string()
-    .max(255, "Title is too long! Must be less than 255 characters")
-    .optional(),
-  quantity: number().nonnegative("Quantity can not be negative!").optional(),
+const supplierCountrySchema = z.enum(["CHINA", "JAPAN"]);
+
+const createProductVariantImageSchema = z.object({
+  url: z.string().trim().pipe(z.url("Image URL must be a valid URL")),
+  alt: z.string().trim().optional(),
+  position: z.coerce.number().int().min(0).default(0),
 });
+
+const createProductVariantSchema = z.object({
+  name: z.string().trim().min(1, "Variant name is required"),
+  sku: z.string().trim().min(1, "SKU is required"),
+  originalPrice: z.coerce
+    .number()
+    .int()
+    .min(0, "Original price must be 0 or greater"),
+  salePrice: z.coerce.number().int().min(0, "Sale price must be 0 or greater"),
+  images: z
+    .array(createProductVariantImageSchema)
+    .min(1, "Required at least 1 image"),
+});
+
+export const createProductFormSchema = z.object({
+  name: z.string().trim().min(1, "Product name is required"),
+  description: z.string().trim().optional(),
+  supplierCountry: supplierCountrySchema,
+  franchiseId: z.cuid("Invalid franchise id").optional(),
+  variants: z.array(createProductVariantSchema).default([]),
+});
+
+export type CreateProductFormData = z.infer<typeof createProductFormSchema>;
+

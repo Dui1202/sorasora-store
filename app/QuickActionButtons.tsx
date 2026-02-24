@@ -15,7 +15,7 @@ const QuickActionButtons = () => {
     <div className="flex gap-2">
       {buttons.map((item) => {
         return (
-          <Button className="rounded-full" variant="secondary">
+          <Button className="rounded-full" variant="secondary" key={item.title}>
             {item.icon}
           </Button>
         );
