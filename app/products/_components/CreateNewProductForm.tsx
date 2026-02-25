@@ -1,6 +1,7 @@
 "use client";
 
-import SectionCard from "@/app/components/SectionCard";
+import ImageUploadButton from "@/components/ImageUploadButton";
+import SectionCard from "@/components/SectionCard";
 import { Card } from "@/components/ui/card";
 import {
   Combobox,
@@ -51,6 +52,7 @@ const CreateProductForm = () => {
           <FieldGroup>
             <Field>
               <FieldLabel>Product Images</FieldLabel>
+              <ImageUploadButton />
             </Field>
             <Field>
               <FieldLabel>Product Name</FieldLabel>
