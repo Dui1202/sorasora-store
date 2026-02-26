@@ -1,131 +1,80 @@
 "use client";
 
-import ImageUploadButton from "@/components/ImageUploadButton";
 import SectionCard from "@/components/SectionCard";
-import { Card } from "@/components/ui/card";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FieldLegend, FieldSet } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  CreateProductFormInputData,
+  CreateProductFormOutputData,
+  createProductFormSchema,
+} from "@/lib/validationSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
-import { useForm } from "react-hook-form";
+import axios from "axios";
+import { useMemo } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import BasicInformationFieldGroup from "./BasicInformationFieldGroup";
+import FormButton from "./FormButton";
+import PriceFieldGroup from "./PriceFieldGroup";
+import SpecificationFieldGroup from "./SpecificationFieldGroup";
+import StockFieldGroup from "./StockFieldGroup";
+import VariationsFieldGroup from "./VariationsFieldGroup";
 
-const CreateProductForm = () => {
+const CreateNewProductForm = () => {
+  const draftsId = useMemo(() => crypto.randomUUID(), []);
+  const methods = useForm<
+    CreateProductFormInputData,
+    unknown,
+    CreateProductFormOutputData
+  >({
+    resolver: zodResolver(createProductFormSchema),
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors, isLoading, isSubmitting },
-  } = useForm();
+  } = methods;
 
-  const franchises = ["Genshin Impact", "Arknights"];
+  const submitProduct: SubmitHandler<CreateProductFormOutputData> = async (
+    data,
+  ) => {
+    try {
+      await axios.post("/api/products", data);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
-    <form className="p-5">
-      <Heading>Add Product</Heading>
-      <Separator className="my-2" />
-      <SectionCard>
-        <FieldSet>
-          <FieldLegend>Basic Information</FieldLegend>
-          <FieldGroup>
-            <Field>
-              <FieldLabel>Product Images</FieldLabel>
-              <ImageUploadButton />
-            </Field>
-            <Field>
-              <FieldLabel>Product Name</FieldLabel>
-              <Input placeholder="Product Name..." />
-            </Field>
-            <Field>
-              <FieldLabel>Description</FieldLabel>
-              <Textarea placeholder="Description..." />
-            </Field>
-          </FieldGroup>
-        </FieldSet>
-      </SectionCard>
-      <SectionCard>
-        <FieldSet>
-          <FieldLegend>Specification</FieldLegend>
-          <FieldGroup className="flex flex-row">
-            <Field>
-              <FieldLabel>Supplier Country</FieldLabel>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a country..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Country</SelectLabel>
-                    <SelectItem value={"JAPAN"}>Japan</SelectItem>
-                    <SelectItem value={"CHINA"}>China</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>Franchise</FieldLabel>
-              <Combobox items={franchises}>
-                <ComboboxInput placeholder="Select a franchise" />
-                <ComboboxContent>
-                  <ComboboxEmpty>No franchise found</ComboboxEmpty>
-                  <ComboboxList>
-                    {(item) => <ComboboxItem>{item}</ComboboxItem>}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
-      </SectionCard>
-      <SectionCard>
-        <FieldSet>
-          <FieldLegend>Sales Information</FieldLegend>
-          <FieldGroup className="flex flex-row">
-            <Field>
-              <FieldLabel>Original Price</FieldLabel>
-              <FieldDescription>
-                Orginal price in the supplier country's currency
-              </FieldDescription>
-              <Input placeholder="Orginal price..." />
-            </Field>
-            <Field>
-              <FieldLabel>Sale Price</FieldLabel>
-              <FieldDescription>Price you want to sale for</FieldDescription>
-              <Input placeholder="Sale price..." />
-            </Field>
-          </FieldGroup>
-          <FieldGroup className="grid grid-cols-2">
-            <Field className="col-span-1">
-              <FieldLabel>Stock</FieldLabel>
-              <Input placeholder="Stock..." />
-            </Field>
-          </FieldGroup>
-        </FieldSet>
-      </SectionCard>
-    </form>
+    <FormProvider {...methods}>
+      <form className="p-5" onSubmit={handleSubmit(submitProduct)}>
+        <Heading>Add Product</Heading>
+        <Separator className="my-2" />
+        <SectionCard>
+          <FieldSet>
+            <FieldLegend>Basic Information</FieldLegend>
+            <BasicInformationFieldGroup draftsId={draftsId} />
+          </FieldSet>
+        </SectionCard>
+        <SectionCard>
+          <FieldSet>
+            <FieldLegend>Specification</FieldLegend>
+            <SpecificationFieldGroup />
+          </FieldSet>
+        </SectionCard>
+        <SectionCard>
+          <FieldSet>
+            <FieldLegend>Sales Information</FieldLegend>
+            <VariationsFieldGroup />
+            <PriceFieldGroup />
+            <StockFieldGroup />
+          </FieldSet>
+        </SectionCard>
+        <FormButton draftsId={draftsId} />
+      </form>
+    </FormProvider>
   );
 };
 
-export default CreateProductForm;
+export default CreateNewProductForm;

@@ -11,7 +11,7 @@ import QuickActionButtons from "./QuickActionButtons";
 
 const NavBar = () => {
   return (
-    <div className="w-full flex h-auto py-2 px-4 justify-between gap-3 border-b-2">
+    <div className="w-full flex h-auto py-2 px-4 justify-between gap-3 border-b-2 sticky top-0 z-50 bg-background">
       <SearchBar />
       <QuickActionButtons />
     </div>

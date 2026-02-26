@@ -9,7 +9,11 @@ type ValidateFileType =
   | { isValid: true; fileType: FileTypeResult }
   | { isValid: false };
 
-export async function uploadTempProductVariantImage(file: Buffer) {
+export async function uploadTempProductVariantImage(file: Buffer, draftsId: string) {
+  if (!draftsId.trim()) {
+    throw new AppError("INVALID_DRAFT_ID", "Draft ID is required.", 400);
+  }
+
   if (!validateFileSize(file)) {
     throw new AppError(
       "FILE_TOO_LARGE",
@@ -17,6 +21,7 @@ export async function uploadTempProductVariantImage(file: Buffer) {
       400,
     );
   }
+
   const result = await validateFileType(file);
 
   if (!result.isValid) {
@@ -26,15 +31,14 @@ export async function uploadTempProductVariantImage(file: Buffer) {
       400,
     );
   }
+
   const { mime: contentType, ext } = result.fileType;
+  const filePath = `products/temp/${draftsId}/${crypto.randomUUID()}.${ext}`;
 
-  const filePath = `products/temp/${crypto.randomUUID()}.${ext}`;
-
-  const { error } = await supabase.storage
-    .from("product-images")
-    .upload(filePath, file, {
-      contentType,
-    });
+  const { error } = await supabase.storage.from("product-images").upload(filePath, file, {
+    contentType,
+    upsert: false,
+  });
 
   if (error) {
     throw new AppError("UPLOAD_FAILED", "Failed to upload image.", 500, {
@@ -58,6 +62,7 @@ async function validateFileType(file: Buffer): Promise<ValidateFileType> {
   if (!fileType) {
     return { isValid: false };
   }
+
   if (!allowedImageContentTypes.includes(fileType.mime)) {
     return { isValid: false };
   }
@@ -66,9 +71,5 @@ async function validateFileType(file: Buffer): Promise<ValidateFileType> {
 }
 
 function validateFileSize(file: Buffer): boolean {
-  if (file.length > MAX_FILE_SIZE) {
-    return false;
-  }
-
-  return true;
+  return file.length <= MAX_FILE_SIZE;
 }

@@ -29,5 +29,9 @@ export const createProductFormSchema = z.object({
   variants: z.array(createProductVariantSchema).default([]),
 });
 
-export type CreateProductFormData = z.infer<typeof createProductFormSchema>;
-
+export type CreateProductFormInputData = z.input<
+  typeof createProductFormSchema
+>;
+export type CreateProductFormOutputData = z.output<
+  typeof createProductFormSchema
+>;

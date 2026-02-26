@@ -2,7 +2,15 @@ import { AppError } from "@/core/errors/errors";
 import { uploadTempProductVariantImage } from "@/lib/storage/uploadTempProductVariantImage";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+type RouteContext = {
+  params: Promise<{
+    draftsId: string;
+  }>;
+};
+
+export async function POST(request: NextRequest, context: RouteContext) {
+  const { draftsId } = await context.params;
+
   let formData: FormData;
 
   try {
@@ -14,7 +22,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const image = formData.get("image");
+  const image = formData.get("image") ?? formData.get("file");
+
   if (!(image instanceof File)) {
     return NextResponse.json(
       { code: "IMAGE_REQUIRED", message: "An image file is required." },
@@ -26,7 +35,7 @@ export async function POST(request: NextRequest) {
   const buffer = Buffer.from(bytes);
 
   try {
-    const uploadResult = await uploadTempProductVariantImage(buffer);
+    const uploadResult = await uploadTempProductVariantImage(buffer, draftsId);
     return NextResponse.json(uploadResult, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

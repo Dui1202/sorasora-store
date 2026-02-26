@@ -1,7 +1,8 @@
 export type AppErrorCode =
   | "UNSUPPORTED_FILE_TYPE"
   | "FILE_TOO_LARGE"
-  | "UPLOAD_FAILED";
+  | "UPLOAD_FAILED"
+  | "INVALID_DRAFT_ID";
 
 export class AppError extends Error {
   constructor(
