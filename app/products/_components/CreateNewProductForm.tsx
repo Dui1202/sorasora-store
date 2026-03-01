@@ -19,6 +19,7 @@ import PriceFieldGroup from "./PriceFieldGroup";
 import SpecificationFieldGroup from "./SpecificationFieldGroup";
 import StockFieldGroup from "./StockFieldGroup";
 import VariationsFieldGroup from "./VariationsFieldGroup";
+import { DragDropProvider } from "@dnd-kit/react";
 
 const CreateNewProductForm = () => {
   const draftsId = useMemo(() => crypto.randomUUID(), []);
@@ -66,9 +67,7 @@ const CreateNewProductForm = () => {
         <SectionCard>
           <FieldSet>
             <FieldLegend>Sales Information</FieldLegend>
-            <VariationsFieldGroup />
             <PriceFieldGroup />
-            <StockFieldGroup />
           </FieldSet>
         </SectionCard>
         <FormButton draftsId={draftsId} />

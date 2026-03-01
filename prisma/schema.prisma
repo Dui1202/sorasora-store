@@ -31,19 +31,20 @@ model Product {
   supplierCountry SupplierCountry
   franchise       Franchise?       @relation(fields: [franchiseId], references: [id])
   variants        ProductVariant[]
+  productImages   ProductImage[]
 }
 
 model ProductVariant {
-  id            String                @id @default(cuid())
+  id            String               @id @default(cuid())
   productId     String
-  sku           String                @unique
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  sku           String               @unique
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   name          String
   originalPrice Int
   salePrice     Int
-  product       Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
-  images        ProductVariantImage[]
+  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images        ProductVariantImage?
   stocks        Stock[]
   movements     StockMovement[]
 
@@ -52,13 +53,25 @@ model ProductVariant {
 
 model ProductVariantImage {
   id        String         @id @default(cuid())
-  variantId String
+  variantId String         @unique
   url       String
   alt       String?
   position  Int            @default(0)
   variant   ProductVariant @relation(fields: [variantId], references: [id])
 
   @@index([variantId])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  position  Int     @default(0)
+  isCover   Boolean @default(false)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
 }
 
 model Warehouse {
