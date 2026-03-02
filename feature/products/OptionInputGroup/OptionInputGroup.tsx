@@ -1,46 +1,37 @@
-import useOptionInputList from "@/feature/products/OptionInputGroup/useOptionInputList";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { move } from "@dnd-kit/helpers";
+import useOptionInputList from "@/feature/products/OptionInputGroup/useOptionInputList";
 import { DragDropProvider } from "@dnd-kit/react";
-import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import { useSortable } from "@dnd-kit/react/sortable";
 import { Move, Trash2 } from "lucide-react";
-import { OptionInputObject } from "./types";
+import type { OptionInputObject } from "./types";
+
+const ARIA_LABEL_MOVE = "Move input";
+const ARIA_LABEL_REMOVE = "Remove input";
+
 const OptionInputGroup = () => {
-  const {
-    onOptionsInputChange,
-    optionsInputs,
-    onRemoveButtonClick,
-    setOptionInputs,
-  } = useOptionInputList();
+  const { handleRemove, optionsInputs, handleChange, reorder } =
+    useOptionInputList();
+
   return (
-    <DragDropProvider
-      onDragEnd={(event) => {
-        if (event.canceled) return;
-        const { source } = event.operation;
-
-        if (isSortable(source)) {
-          const { initialIndex, index } = source;
-
-          if (initialIndex !== index) {
-            setOptionInputs((items) => move(items, event));
-          }
-        }
-      }}
-    >
+    <DragDropProvider onDragEnd={reorder}>
       <div className="grid grid-cols-2 gap-2">
         {optionsInputs.map((item, index) => {
+          const disabledActions =
+            index === optionsInputs.length - 1 && item.value.trim() === "";
+
           return (
             <OptionsInput
+              key={item.id}
               item={item}
               index={index}
-              handleChange={onOptionsInputChange}
-              handleRemove={onRemoveButtonClick}
-              key={item.id}
+              handleChange={handleChange}
+              handleRemove={handleRemove}
+              disabledActions={disabledActions}
             />
           );
         })}
@@ -54,6 +45,7 @@ type OptionsInputProps = {
   index: number;
   handleChange: (value: string, id: string) => void;
   handleRemove: (id: string) => void;
+  disabledActions: boolean;
 };
 
 const OptionsInput = ({
@@ -61,6 +53,7 @@ const OptionsInput = ({
   index,
   handleChange,
   handleRemove,
+  disabledActions,
 }: OptionsInputProps) => {
   const { ref, handleRef } = useSortable({
     id: item.id,
@@ -69,20 +62,26 @@ const OptionsInput = ({
   });
 
   return (
-    <div ref={ref}>
+    <div ref={disabledActions ? null : ref}>
       <InputGroup className="col-span-1">
         <InputGroupInput
           placeholder={"Options " + (index + 1)}
           value={item.value}
-          onChange={(e) => {
-            handleChange(e.target.value, item.id);
-          }}
+          onChange={(e) => handleChange(e.target.value, item.id)}
         />
         <InputGroupAddon align="inline-end">
-          <InputGroupButton ref={handleRef}>
+          <InputGroupButton
+            ref={disabledActions ? null : handleRef}
+            aria-label={ARIA_LABEL_MOVE}
+            disabled={disabledActions}
+          >
             <Move />
           </InputGroupButton>
-          <InputGroupButton onClick={() => handleRemove(item.id)}>
+          <InputGroupButton
+            onClick={() => handleRemove(item.id)}
+            aria-label={ARIA_LABEL_REMOVE}
+            disabled={disabledActions}
+          >
             <Trash2 />
           </InputGroupButton>
         </InputGroupAddon>
