@@ -7,16 +7,14 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Move, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useDraggable } from "@dnd-kit/react";
-import OptionsInput from "../../../feature/products/OptionInputGroup/OptionInputGroup";
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import OptionInputGroup from "@/feature/products/CreateNewProductForm/OptionInputGroup/OptionInputGroup";
+import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { calculateBreakEvenPrice } from "./pricing/calculateBreakEvenPrice";
+import { useFormContext, useWatch } from "react-hook-form";
+import { CreateProductFormInputData } from "@/lib/validationSchema";
 
 const PriceFieldGroup = () => {
   const [isVariationEnable, setVariationEnable] = useState(false);
@@ -24,6 +22,19 @@ const PriceFieldGroup = () => {
   const onEnableVariationButtonClick = () => {
     setVariationEnable(true);
   };
+
+  const { control } = useFormContext<CreateProductFormInputData>();
+
+  const supplierCountry = useWatch({
+    control,
+    name: "supplierCountry",
+  });
+
+  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
+  const originalPrice = useWatch({
+    control,
+    name: "baseOriginalPrice",
+  });
   return (
     <>
       <FieldGroup>
@@ -47,7 +58,30 @@ const PriceFieldGroup = () => {
               <FieldDescription>
                 Orginal price in the supplier country's currency
               </FieldDescription>
-              <Input placeholder="Orginal price..." />
+              <Input
+                placeholder="Orginal price..."
+                onChange={(event) => {
+                  setBreakEvenPrice(
+                    calculateBreakEvenPrice(
+                      supplierCountry,
+                      "NONE",
+                      parseInt(event.target.value),
+                    ) ?? 0,
+                  );
+
+                  console.log(
+                    calculateBreakEvenPrice(
+                      supplierCountry,
+                      "NONE",
+                      parseInt(event.target.value),
+                    ),
+                  );
+                }}
+              />
+              <FieldDescription>
+                Break-even Price:
+                {breakEvenPrice}
+              </FieldDescription>
             </Field>
             <Field>
               <FieldLabel>Sale Price</FieldLabel>
@@ -74,7 +108,7 @@ const PriceFieldGroup = () => {
           </Field>
           <Field>
             <FieldLabel>Options</FieldLabel>
-            <OptionsInput />
+            <OptionInputGroup />
           </Field>
         </Card>
       )}

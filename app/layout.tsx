@@ -4,6 +4,7 @@ import "./globals.css";
 import NavSidebar from "./NavSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import NavBar from "./NavBar";
+import QueryClientProvider from "./QueryClientProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +31,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          <NavSidebar />
-          <div className="flex-1 flex flex-col">
-            <NavBar />
-            <main>{children}</main>
-          </div>
-        </SidebarProvider>
+        <QueryClientProvider>
+          <SidebarProvider>
+            <NavSidebar />
+            <div className="flex-1 flex flex-col">
+              <NavBar />
+              <main>{children}</main>
+            </div>
+          </SidebarProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

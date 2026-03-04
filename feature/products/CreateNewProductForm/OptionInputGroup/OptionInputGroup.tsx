@@ -4,7 +4,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import useOptionInputList from "@/feature/products/OptionInputGroup/useOptionInputList";
+import useOptionInputList from "@/feature/products/CreateNewProductForm/OptionInputGroup/useOptionInputList";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { Move, Trash2 } from "lucide-react";

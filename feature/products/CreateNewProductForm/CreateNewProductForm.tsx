@@ -3,30 +3,28 @@
 import SectionCard from "@/components/SectionCard";
 import { FieldLegend, FieldSet } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
+import { PriceFieldGroup } from "@/feature/products/CreateNewProductForm/PriceFieldGroup";
+import { SpecificationFieldGroup } from "@/feature/products/CreateNewProductForm/SpecificationFieldGroup";
 import {
+  CreateProductFormData,
   CreateProductFormInputData,
-  CreateProductFormOutputData,
   createProductFormSchema,
+  toCreateProductCommand,
 } from "@/lib/validationSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
 import { useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import BasicInformationFieldGroup from "./BasicInformationFieldGroup";
-import FormButton from "./FormButton";
-import PriceFieldGroup from "./PriceFieldGroup";
-import SpecificationFieldGroup from "./SpecificationFieldGroup";
-import StockFieldGroup from "./StockFieldGroup";
-import VariationsFieldGroup from "./VariationsFieldGroup";
-import { DragDropProvider } from "@dnd-kit/react";
+import BasicInformationFieldGroup from "../../../app/products/_components/BasicInformationFieldGroup";
+import FormButton from "../../../app/products/_components/FormButton";
 
 const CreateNewProductForm = () => {
   const draftsId = useMemo(() => crypto.randomUUID(), []);
   const methods = useForm<
     CreateProductFormInputData,
     unknown,
-    CreateProductFormOutputData
+    CreateProductFormData
   >({
     resolver: zodResolver(createProductFormSchema),
   });
@@ -37,12 +35,11 @@ const CreateNewProductForm = () => {
     formState: { errors, isLoading, isSubmitting },
   } = methods;
 
-  const submitProduct: SubmitHandler<CreateProductFormOutputData> = async (
-    data,
-  ) => {
+  const submitProduct: SubmitHandler<CreateProductFormData> = async (data) => {
     try {
-      await axios.post("/api/products", data);
-      console.log(data);
+      const payload = toCreateProductCommand(data);
+      await axios.post("/api/products", payload);
+      console.log(payload);
     } catch (error) {
       console.log(error);
     }
@@ -67,6 +64,7 @@ const CreateNewProductForm = () => {
         <SectionCard>
           <FieldSet>
             <FieldLegend>Sales Information</FieldLegend>
+
             <PriceFieldGroup />
           </FieldSet>
         </SectionCard>

@@ -1,4 +1,4 @@
-import CreateNewProductForm from "../_components/CreateNewProductForm";
+import CreateNewProductForm from "../../../feature/products/CreateNewProductForm/CreateNewProductForm";
 
 const CreateNewProductPage = () => {
   return <CreateNewProductForm />;

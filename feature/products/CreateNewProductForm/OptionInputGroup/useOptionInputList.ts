@@ -4,14 +4,32 @@ import { isSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragEndEvent } from "@dnd-kit/react";
 
+/**
+ * Creates an empty OptionInputObject.
+ * @returns An OptionInputObject with a newly generated UUID and an empty string value.
+ */
 const createEmpty = (): OptionInputObject => {
   return { id: crypto.randomUUID(), value: "" };
 };
+
+/**
+ * Normalize an array of OptionInputObjects by removing empty ones and adding a new one if the array is not empty.
+ * @param items The array of OptionInputObjects to normalize.
+ * @returns The normalized array of OptionInputObjects.
+ */
 function normalize(items: OptionInputObject[]): OptionInputObject[] {
   const nonEmpty = items.filter((i) => i.value.trim() !== "");
   return [...nonEmpty, createEmpty()];
 }
 
+/**
+ * Hook that returns an array of OptionInputObjects and functions to handle changes to it.
+ * The hook normalizes the array by removing empty ones and adding a new one if the array is not empty.
+ * The hook also provides a handleChange function to update the value of an OptionInputObject,
+ * a handleRemove function to remove an OptionInputObject, and a reorder function to reorder the array when an item is dragged.
+ * @param initial The initial array of OptionInputObjects.
+ * @returns An object containing the array of OptionInputObjects, the handleChange function, the handleRemove function, and the reorder function.
+ */
 export default function useOptionInputList(
   initial: OptionInputObject[] = [createEmpty()],
 ) {
@@ -66,21 +84,22 @@ export default function useOptionInputList(
         setOptionInputs((items) => normalize(move(items, event)));
       }
     }
-    console.table();
   };
 
-  useEffect(() => {
-    console.table(
-      optionsInputs.map((item, index) => ({
-        index,
-        id: item.id,
-        value: item.value,
-        isEmpty: item.value.trim() === "",
-        isTrailingPlaceholder:
-          index === optionsInputs.length - 1 && item.value.trim() === "",
-      })),
-    );
-  }, [optionsInputs]);
+  //Debug
+  if (process.env.NODE_ENV === "development")
+    useEffect(() => {
+      console.table(
+        optionsInputs.map((item, index) => ({
+          index,
+          id: item.id,
+          value: item.value,
+          isEmpty: item.value.trim() === "",
+          isTrailingPlaceholder:
+            index === optionsInputs.length - 1 && item.value.trim() === "",
+        })),
+      );
+    }, [optionsInputs]);
 
   return {
     handleChange,

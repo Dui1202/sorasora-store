@@ -1,8 +1,9 @@
 import prisma from "@/lib/prisma";
-import { createProductFormSchema } from "@/lib/validationSchema";
+import { createProductCommandSchema } from "@/lib/validationSchema";
 import { Prisma } from "@/app/generated/prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { url } from "inspector";
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const validation = createProductFormSchema.safeParse(body);
+  const validation = createProductCommandSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -25,7 +26,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, description, variants, supplierCountry } = validation.data;
+  const {
+    name,
+    description,
+    variants,
+    supplierCountry,
+    franchiseId,
+    productImages,
+  } = validation.data;
 
   try {
     const newProduct = await prisma.product.create({
@@ -33,31 +41,39 @@ export async function POST(request: NextRequest) {
         name,
         description: description || undefined,
         supplierCountry,
+        franchiseId,
         variants: {
           create: variants.map((variant) => ({
             name: variant.name,
             sku: variant.sku,
             originalPrice: variant.originalPrice,
             salePrice: variant.salePrice,
-            images:
-              variant.images.length > 0
-                ? {
-                    create: variant.images.map((image) => ({
-                      url: image.url,
-                      alt: image.alt,
-                      position: image.position,
-                    })),
-                  }
-                : undefined,
+            position: variant.position,
+            image: variant.image
+              ? {
+                  create: {
+                    url: variant.image.url,
+                    alt: variant.image.alt,
+                  },
+                }
+              : undefined,
+          })),
+        },
+        productImages: {
+          create: productImages.map((productImage) => ({
+            url: productImage.url,
+            alt: productImage.alt,
+            position: productImage.position,
           })),
         },
       },
       include: {
         variants: {
           include: {
-            images: true,
+            image: true,
           },
         },
+        productImages: true,
       },
     });
 
