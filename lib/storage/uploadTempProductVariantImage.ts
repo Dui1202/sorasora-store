@@ -9,7 +9,10 @@ type ValidateFileType =
   | { isValid: true; fileType: FileTypeResult }
   | { isValid: false };
 
-export async function uploadTempProductVariantImage(file: Buffer, draftsId: string) {
+export async function uploadTempProductVariantImage(
+  file: Buffer,
+  draftsId: string,
+) {
   if (!draftsId.trim()) {
     throw new AppError("INVALID_DRAFT_ID", "Draft ID is required.", 400);
   }
@@ -35,10 +38,12 @@ export async function uploadTempProductVariantImage(file: Buffer, draftsId: stri
   const { mime: contentType, ext } = result.fileType;
   const filePath = `products/temp/${draftsId}/${crypto.randomUUID()}.${ext}`;
 
-  const { error } = await supabase.storage.from("product-images").upload(filePath, file, {
-    contentType,
-    upsert: false,
-  });
+  const { error } = await supabase.storage
+    .from("product-images")
+    .upload(filePath, file, {
+      contentType,
+      upsert: false,
+    });
 
   if (error) {
     throw new AppError("UPLOAD_FAILED", "Failed to upload image.", 500, {

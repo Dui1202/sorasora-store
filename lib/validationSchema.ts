@@ -86,3 +86,5 @@ export type CreateProductFormInputData = z.input<
 export type CreateProductCommandData = z.output<
   typeof createProductCommandSchema
 >;
+
+export type ProductImages = z.infer<typeof createProductImageSchema>[];

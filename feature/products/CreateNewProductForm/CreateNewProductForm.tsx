@@ -16,7 +16,7 @@ import { Heading } from "@radix-ui/themes";
 import axios from "axios";
 import { useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import BasicInformationFieldGroup from "../../../app/products/_components/BasicInformationFieldGroup";
+import BasicInformationFieldGroup from "./BasicInformationFieldGroup/BasicInformationFieldGroup";
 import FormButton from "../../../app/products/_components/FormButton";
 
 const CreateNewProductForm = () => {
