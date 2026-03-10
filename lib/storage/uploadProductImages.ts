@@ -9,11 +9,7 @@ type ValidateFileType =
   | { isValid: true; fileType: FileTypeResult }
   | { isValid: false };
 
-export async function uploadTempProductImages(file: Buffer, draftsId: string) {
-  if (!draftsId.trim()) {
-    throw new AppError("INVALID_DRAFT_ID", "Draft ID is required.", 400);
-  }
-
+export async function uploadProductImages(file: Buffer) {
   if (!validateFileSize(file)) {
     throw new AppError(
       "FILE_TOO_LARGE",
@@ -33,7 +29,7 @@ export async function uploadTempProductImages(file: Buffer, draftsId: string) {
   }
 
   const { mime: contentType, ext } = result.fileType;
-  const filePath = `products/temp/${draftsId}/${crypto.randomUUID()}.${ext}`;
+  const filePath = `products/product-images/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage
     .from("product-images")

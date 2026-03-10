@@ -3,6 +3,12 @@ import { z } from "zod";
 
 const supplierCountrySchema = z.enum(SupplierCountry);
 
+const localProductImageSchema = z.object({
+  file: z.instanceof(File),
+  alt: z.string().trim().optional(),
+  position: z.coerce.number().int().min(0).default(0),
+});
+
 const createProductVariantImageSchema = z.object({
   url: z.string().trim().pipe(z.url("Image URL must be a valid URL")),
   alt: z.string().trim().optional(),
@@ -37,7 +43,7 @@ export const createProductFormSchema = z.object({
     .min(0, "Original price must be 0 or greater"),
   baseSalePrice: z.number().int().min(0, "Sale price must be 0 or greater"),
   variants: z.array(createProductVariantSchema).default([]),
-  productImages: z.array(createProductImageSchema).default([]),
+  productImages: z.array(localProductImageSchema).default([]),
 });
 
 // 2) API boundary (backend contract shape)
@@ -55,7 +61,19 @@ export const createProductCommandSchema = z.object({
 // 3) Explicit mapper
 export const toCreateProductCommand = (
   data: CreateProductFormData,
+  uploadedProductImages: ProductImages = [],
 ): CreateProductCommandData => {
+  const productImages = createProductCommandSchema.shape.productImages.parse(
+    uploadedProductImages,
+  );
+  const fallbackVariantImage = productImages[0];
+
+  if (!data.hasVariation && !fallbackVariantImage) {
+    throw new Error(
+      "Uploaded product images are required before creating the product command.",
+    );
+  }
+
   const variants = data.hasVariation
     ? data.variants
     : [
@@ -65,7 +83,7 @@ export const toCreateProductCommand = (
           originalPrice: data.baseOriginalPrice,
           salePrice: data.baseSalePrice,
           position: 0,
-          image: data.productImages[0],
+          image: fallbackVariantImage,
         },
       ];
 
@@ -75,7 +93,7 @@ export const toCreateProductCommand = (
     supplierCountry: data.supplierCountry,
     franchiseId: data.franchiseId,
     variants,
-    productImages: data.productImages,
+    productImages,
   });
 };
 
@@ -87,4 +105,5 @@ export type CreateProductCommandData = z.output<
   typeof createProductCommandSchema
 >;
 
+export type LocalProductImages = z.infer<typeof localProductImageSchema>[];
 export type ProductImages = z.infer<typeof createProductImageSchema>[];

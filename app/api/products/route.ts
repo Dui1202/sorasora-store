@@ -3,7 +3,6 @@ import { createProductCommandSchema } from "@/lib/validationSchema";
 import { Prisma } from "@/app/generated/prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { url } from "inspector";
 
 export async function POST(request: NextRequest) {
   let body: unknown;

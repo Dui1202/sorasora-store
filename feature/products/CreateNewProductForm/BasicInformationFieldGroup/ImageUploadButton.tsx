@@ -8,40 +8,34 @@ import { useCallback, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import UploadedImagesContainer from "./UploadedImagesContainer";
 import type { UploadedImagePreview } from "./type";
-import { useUploadImage } from "./useUploadImage";
+import { usePreviewImage } from "./usePreviewImage";
 
-const ImageUploadButton = ({ draftsId }: { draftsId: string }) => {
+const ImageUploadButton = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const { control, setValue, getValues, register } =
-    useFormContext<CreateProductFormInputData>();
-  const syncProductImagesToForm = useCallback(
-    (images: UploadedImagePreview[]) => {
-      const productImages = images
-        .filter((img) => img.status === "done" && img.url)
-        .map((img) => {
-          return {
-            url: img.url!,
-            alt: img.fileName,
-            position: img.position,
-          };
-        });
-      setValue("productImages", productImages, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-    },
-    [setValue],
-  );
+  const { setValue, register } = useFormContext<CreateProductFormInputData>();
 
-  const { images, upload, reorder, remove } = useUploadImage(
-    draftsId,
-    syncProductImagesToForm,
-  );
+  const { images, addImages, reorder, remove } = usePreviewImage();
+
   useEffect(() => {
     register("productImages");
   }, [register]);
+
+  useEffect(() => {
+    setValue(
+      "productImages",
+      images.map((img) => ({
+        file: img.file,
+        alt: img.fileName,
+        position: img.position,
+      })),
+      {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      },
+    );
+  }, [images, setValue]);
 
   const handleButtonClick = () => {
     inputRef.current?.click();
@@ -60,7 +54,7 @@ const ImageUploadButton = ({ draftsId }: { draftsId: string }) => {
         accept="image/jpeg,image/png,image/webp"
         multiple
         hidden
-        onChange={upload}
+        onChange={addImages}
       />
 
       <DragDropProvider onDragEnd={reorder}>

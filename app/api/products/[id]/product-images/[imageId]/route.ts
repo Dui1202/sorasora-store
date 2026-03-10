@@ -1,13 +1,13 @@
-import { cleanUpTempProductImage } from "@/lib/storage/cleanUpTempProductImage";
+import { removeProductImage } from "@/lib/storage/removeProductImage";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ draftsId: string; imageId: string }> },
+  { params }: { params: Promise<{ id: string; imageId: string }> },
 ) {
-  const { draftsId, imageId } = await params;
+  const { imageId } = await params;
   try {
-    await cleanUpTempProductImage(imageId, draftsId);
+    await removeProductImage(imageId);
   } catch (error) {
     return NextResponse.json(
       {

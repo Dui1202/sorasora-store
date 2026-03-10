@@ -68,7 +68,7 @@ const CreateNewProductForm = () => {
             <PriceFieldGroup />
           </FieldSet>
         </SectionCard>
-        <FormButton draftsId={draftsId} />
+        <FormButton />
       </form>
     </FormProvider>
   );

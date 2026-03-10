@@ -1,16 +1,8 @@
 import { AppError } from "@/core/errors/errors";
-import { uploadTempProductImages } from "@/lib/storage/uploadTempProductImages";
+import { uploadProductImages } from "@/lib/storage/uploadProductImages";
 import { NextRequest, NextResponse } from "next/server";
 
-type RouteContext = {
-  params: Promise<{
-    draftsId: string;
-  }>;
-};
-
-export async function POST(request: NextRequest, context: RouteContext) {
-  const { draftsId } = await context.params;
-
+export async function POST(request: NextRequest) {
   let formData: FormData;
 
   try {
@@ -35,7 +27,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const buffer = Buffer.from(bytes);
 
   try {
-    const uploadResult = await uploadTempProductImages(buffer, draftsId);
+    const uploadResult = await uploadProductImages(buffer);
     return NextResponse.json(uploadResult, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
@@ -52,7 +44,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to upload temp variant image.",
+        message: "Failed to upload product image.",
       },
       { status: 500 },
     );
