@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { UploadedImagePreview, UploadImageResponse } from "./type";
 import axios from "axios";
 import { set } from "zod";
+import { DragEndEvent } from "@dnd-kit/react";
+import { isSortable } from "@dnd-kit/react/sortable";
+import { move } from "@dnd-kit/helpers";
 
 export function useUploadImage(
   draftsId: string,
@@ -79,7 +82,31 @@ export function useUploadImage(
     event.target.value = "";
   };
 
-  const remove = async (id: string) => {};
+  const remove = (id: string) => {
+    setImages((prev) => {
+      const updated = prev.filter((img) => img.id !== id);
+      return updated;
+    });
 
-  return { images, upload, remove };
+    const previewUrl = previewUrlsRef.current.get(id);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrlsRef.current.delete(id);
+    }
+  };
+
+  const reorder: DragEndEvent = (event) => {
+    if (event.canceled) return;
+    const { source } = event.operation;
+
+    if (isSortable(source)) {
+      const { initialIndex, index } = source;
+
+      if (initialIndex !== index) {
+        setImages((items) => move(items, event));
+      }
+    }
+  };
+
+  return { images, upload, remove, reorder };
 }

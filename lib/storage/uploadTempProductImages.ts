@@ -9,10 +9,7 @@ type ValidateFileType =
   | { isValid: true; fileType: FileTypeResult }
   | { isValid: false };
 
-export async function uploadTempProductVariantImage(
-  file: Buffer,
-  draftsId: string,
-) {
+export async function uploadTempProductImages(file: Buffer, draftsId: string) {
   if (!draftsId.trim()) {
     throw new AppError("INVALID_DRAFT_ID", "Draft ID is required.", 400);
   }

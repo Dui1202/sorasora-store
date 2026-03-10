@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/errors";
-import { uploadTempProductVariantImage } from "@/lib/storage/uploadTempProductVariantImage";
+import { uploadTempProductImages } from "@/lib/storage/uploadTempProductImages";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const buffer = Buffer.from(bytes);
 
   try {
-    const uploadResult = await uploadTempProductVariantImage(buffer, draftsId);
+    const uploadResult = await uploadTempProductImages(buffer, draftsId);
     return NextResponse.json(uploadResult, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

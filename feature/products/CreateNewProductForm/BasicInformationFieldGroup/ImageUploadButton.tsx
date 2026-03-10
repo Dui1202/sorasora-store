@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { CreateProductFormInputData } from "@/lib/validationSchema";
+import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useRef } from "react";
+import { useFormContext } from "react-hook-form";
 import UploadedImagesContainer from "./UploadedImagesContainer";
 import type { UploadedImagePreview } from "./type";
 import { useUploadImage } from "./useUploadImage";
-import { set } from "zod";
 
 const ImageUploadButton = ({ draftsId }: { draftsId: string }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -35,7 +35,10 @@ const ImageUploadButton = ({ draftsId }: { draftsId: string }) => {
     [setValue],
   );
 
-  const { images, upload } = useUploadImage(draftsId, syncProductImagesToForm);
+  const { images, upload, reorder, remove } = useUploadImage(
+    draftsId,
+    syncProductImagesToForm,
+  );
   useEffect(() => {
     register("productImages");
   }, [register]);
@@ -60,7 +63,9 @@ const ImageUploadButton = ({ draftsId }: { draftsId: string }) => {
         onChange={upload}
       />
 
-      <UploadedImagesContainer images={images} />
+      <DragDropProvider onDragEnd={reorder}>
+        <UploadedImagesContainer images={images} remove={remove} />
+      </DragDropProvider>
     </div>
   );
 };

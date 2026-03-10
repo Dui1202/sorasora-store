@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/errors";
-import { cleanUpTempProductVariantImage } from "@/lib/storage/cleanUpTempProductVariantImage";
+import { cleanUpTempProductImages } from "@/lib/storage/cleanUpTempProductImages";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
@@ -9,7 +9,7 @@ export async function DELETE(
   const { draftsId } = await params;
 
   try {
-    await cleanUpTempProductVariantImage(draftsId);
+    await cleanUpTempProductImages(draftsId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     if (error instanceof AppError) {

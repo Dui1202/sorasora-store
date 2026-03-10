@@ -1,6 +1,6 @@
 import { supabase } from "../supabase";
 
-export async function cleanUpTempProductVariantImage(draftsId: string) {
+export async function cleanUpTempProductImages(draftsId: string) {
   const folderPath = `products/temp/${draftsId}`;
   const { data: imageFiles, error: listError } = await supabase.storage
     .from("product-images")
