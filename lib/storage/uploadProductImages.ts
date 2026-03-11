@@ -44,13 +44,8 @@ export async function uploadProductImages(file: Buffer) {
     });
   }
 
-  const { data: publicUrlData } = supabase.storage
-    .from("product-images")
-    .getPublicUrl(filePath);
-
   return {
     path: filePath,
-    publicUrl: publicUrlData.publicUrl,
   };
 }
 

@@ -1,13 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CreateProductFormInputData } from "@/lib/validationSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/validationSchema";
 import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import UploadedImagesContainer from "./UploadedImagesContainer";
-import type { UploadedImagePreview } from "./type";
 import { usePreviewImage } from "./usePreviewImage";
 
 const ImageUploadButton = () => {

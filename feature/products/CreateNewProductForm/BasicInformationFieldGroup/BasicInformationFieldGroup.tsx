@@ -3,15 +3,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUploadButton from "./ImageUploadButton";
 import { useFormContext } from "react-hook-form";
-import { CreateProductFormInputData } from "@/lib/validationSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/validationSchema";
 
-const BasicInformationFieldGroup = ({ draftsId }: { draftsId: string }) => {
+const BasicInformationFieldGroup = () => {
   const { register } = useFormContext<CreateProductFormInputData>();
   return (
     <FieldGroup>
       <Field>
         <FieldLabel>Product Images</FieldLabel>
-        <ImageUploadButton draftsId={draftsId} />
+        <ImageUploadButton />
       </Field>
       <Field>
         <FieldLabel>Product Name</FieldLabel>

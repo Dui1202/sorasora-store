@@ -9,16 +9,18 @@ export function usePreviewImage() {
   const previewUrlsRef = useRef(new Map<string, string>());
 
   useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
+
     return () => {
-      for (const previewUrl of previewUrlsRef.current.values()) {
+      for (const previewUrl of previewUrls.values()) {
         URL.revokeObjectURL(previewUrl);
       }
 
-      previewUrlsRef.current.clear();
+      previewUrls.clear();
     };
   }, []);
 
-  const addImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const addImages = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) {
       return;
@@ -36,7 +38,6 @@ export function usePreviewImage() {
             file,
             fileName: file.name,
             previewUrl,
-            status: "done" as const,
             position: prev.length + index,
           };
         },

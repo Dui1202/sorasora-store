@@ -1,6 +1,10 @@
-import prisma from "@/lib/prisma";
-import { createProductCommandSchema } from "@/lib/validationSchema";
 import { Prisma } from "@/app/generated/prisma/client";
+import prisma from "@/lib/prisma";
+import {
+  createProductCommandSchema,
+  ProductImages,
+} from "@/lib/validation-schema/product-schema/validationSchema";
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -48,19 +52,17 @@ export async function POST(request: NextRequest) {
             originalPrice: variant.originalPrice,
             salePrice: variant.salePrice,
             position: variant.position,
-            image: variant.image
-              ? {
-                  create: {
-                    url: variant.image.url,
-                    alt: variant.image.alt,
-                  },
-                }
-              : undefined,
+            image: {
+              create: {
+                path: variant.image.path,
+                alt: variant.image.alt,
+              },
+            },
           })),
         },
         productImages: {
           create: productImages.map((productImage) => ({
-            url: productImage.url,
+            path: productImage.path,
             alt: productImage.alt,
             position: productImage.position,
           })),
@@ -78,6 +80,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
+    cleanUpProductImages(productImages);
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         return NextResponse.json(
@@ -93,3 +97,17 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+const cleanUpProductImages = async (productImages: ProductImages) => {
+  if (productImages.length === 0) {
+    return;
+  }
+
+  try {
+    await axios.post("/api/uploads/product-images/cleanup", {
+      paths: productImages.map((image) => image.path),
+    });
+  } catch (error) {
+    console.log("Failed to clean up product images:", error);
+  }
+};

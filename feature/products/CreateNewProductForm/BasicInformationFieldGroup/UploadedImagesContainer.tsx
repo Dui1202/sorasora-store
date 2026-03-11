@@ -2,13 +2,11 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { CircleCheck, CircleX, Move, Trash2 } from "lucide-react";
+import { Move, Trash2 } from "lucide-react";
 import { UploadedImagePreview } from "./type";
 
 const UploadedImagesContainer = ({
@@ -74,11 +72,6 @@ const ImageCard = ({
           </Button>
         </CardAction>
         <CardTitle>{img.fileName}</CardTitle>
-        <CardDescription className="flex align-bottom">
-          {img.status === "uploading" && <Spinner scale="1.5" />}
-          {img.status === "done" && <CircleCheck />}
-          {img.status === "error" && (img.errorMessage ?? <CircleX />)}
-        </CardDescription>
       </CardHeader>
     </Card>
   );

@@ -8,19 +8,19 @@ import { SpecificationFieldGroup } from "@/feature/products/CreateNewProductForm
 import {
   CreateProductFormData,
   CreateProductFormInputData,
+  ProductImages,
+  UploadProductImageResponse,
   createProductFormSchema,
   toCreateProductCommand,
-} from "@/lib/validationSchema";
+} from "@/lib/validation-schema/product-schema/validationSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
-import { useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import BasicInformationFieldGroup from "./BasicInformationFieldGroup/BasicInformationFieldGroup";
 import FormButton from "../../../app/products/_components/FormButton";
+import BasicInformationFieldGroup from "./BasicInformationFieldGroup/BasicInformationFieldGroup";
 
 const CreateNewProductForm = () => {
-  const draftsId = useMemo(() => crypto.randomUUID(), []);
   const methods = useForm<
     CreateProductFormInputData,
     unknown,
@@ -29,19 +29,35 @@ const CreateNewProductForm = () => {
     resolver: zodResolver(createProductFormSchema),
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isLoading, isSubmitting },
-  } = methods;
+  const { handleSubmit } = methods;
 
   const submitProduct: SubmitHandler<CreateProductFormData> = async (data) => {
+    const uploadedProductImages: ProductImages = [];
+
     try {
-      const payload = toCreateProductCommand(data);
+      for (const image of data.productImages) {
+        const formData = new FormData();
+        formData.append("file", image.file);
+
+        const { data: uploadResult } =
+          await axios.post<UploadProductImageResponse>(
+            "/api/uploads/product-images",
+            formData,
+          );
+
+        uploadedProductImages.push({
+          path: uploadResult.path,
+          alt: image.alt,
+          position: image.position,
+        });
+      }
+
+      const payload = toCreateProductCommand(data, uploadedProductImages);
       await axios.post("/api/products", payload);
       console.log(payload);
     } catch (error) {
-      console.log(error);
+      await cleanUpProductImages(uploadedProductImages);
+      throw error;
     }
   };
   return (
@@ -52,7 +68,7 @@ const CreateNewProductForm = () => {
         <SectionCard>
           <FieldSet>
             <FieldLegend>Basic Information</FieldLegend>
-            <BasicInformationFieldGroup draftsId={draftsId} />
+            <BasicInformationFieldGroup />
           </FieldSet>
         </SectionCard>
         <SectionCard>

@@ -1,11 +1,5 @@
-import { supabase } from "../supabase";
+import { removeProductImages } from "./removeProductImages";
 
-export async function removeProductImage(imageId: string) {
-  const filePath = `products/product-images/${imageId}`;
-  const { error: deleteError } = await supabase.storage
-    .from("product-images")
-    .remove([filePath]);
-  if (deleteError) {
-    throw deleteError;
-  }
+export async function removeProductImage(path: string) {
+  await removeProductImages([path]);
 }

@@ -3,23 +3,27 @@ import { z } from "zod";
 
 const supplierCountrySchema = z.enum(SupplierCountry);
 
+// For image preview before upload, we use a local schema that includes the File object.
 const localProductImageSchema = z.object({
   file: z.instanceof(File),
   alt: z.string().trim().optional(),
   position: z.coerce.number().int().min(0).default(0),
 });
 
+//Product Variant Image validation schema
 const createProductVariantImageSchema = z.object({
-  url: z.string().trim().pipe(z.url("Image URL must be a valid URL")),
+  path: z.string().trim().min(1, "Image path is required"),
   alt: z.string().trim().optional(),
 });
 
+//Product Image validation schema
 const createProductImageSchema = z.object({
-  url: z.string().trim().pipe(z.url("Image URL must be a valid URL")),
+  path: z.string().trim().min(1, "Image path is required"),
   alt: z.string().trim().optional(),
   position: z.coerce.number().int().min(0).default(0),
 });
 
+//Product Variant validation schema
 const createProductVariantSchema = z.object({
   name: z.string().trim().min(1, "Variant name is required"),
   sku: z.string().trim().min(1, "SKU is required"),
@@ -29,6 +33,7 @@ const createProductVariantSchema = z.object({
   image: createProductVariantImageSchema,
 });
 
+//Product Form validation schema
 // 1) Form boundary (UI raw shape)
 export const createProductFormSchema = z.object({
   name: z.string().trim().min(1, "Product name is required"),
@@ -96,6 +101,15 @@ export const toCreateProductCommand = (
     productImages,
   });
 };
+
+// Response validation schema for uploaded product image
+export const uploadedProductImageSchema = z.object({
+  path: z.string().min(1),
+});
+
+export type UploadProductImageResponse = z.infer<
+  typeof uploadedProductImageSchema
+>;
 
 export type CreateProductFormData = z.output<typeof createProductFormSchema>;
 export type CreateProductFormInputData = z.input<
