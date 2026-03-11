@@ -25,7 +25,7 @@ const OptionInputGroup = () => {
             index === optionsInputs.length - 1 && item.value.trim() === "";
 
           return (
-            <OptionsInput
+            <OptionInputRow
               key={item.id}
               item={item}
               index={index}
@@ -48,7 +48,7 @@ type OptionsInputProps = {
   disabledActions: boolean;
 };
 
-const OptionsInput = ({
+const OptionInputRow = ({
   item,
   index,
   handleChange,
@@ -59,10 +59,11 @@ const OptionsInput = ({
     id: item.id,
     index,
     group: "options-list",
+    disabled: disabledActions,
   });
 
   return (
-    <div ref={disabledActions ? null : ref}>
+    <div ref={ref}>
       <InputGroup className="col-span-1">
         <InputGroupInput
           placeholder={"Options " + (index + 1)}
@@ -71,7 +72,7 @@ const OptionsInput = ({
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton
-            ref={disabledActions ? null : handleRef}
+            ref={handleRef}
             aria-label={ARIA_LABEL_MOVE}
             disabled={disabledActions}
           >

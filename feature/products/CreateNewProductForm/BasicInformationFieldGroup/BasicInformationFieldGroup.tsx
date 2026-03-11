@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUploadButton from "./ImageUploadButton";
 import { useFormContext } from "react-hook-form";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/validationSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
 
 const BasicInformationFieldGroup = () => {
   const { register } = useFormContext<CreateProductFormInputData>();

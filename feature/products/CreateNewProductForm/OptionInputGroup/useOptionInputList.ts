@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { OptionInputObject } from "./types";
 import { isSortable } from "@dnd-kit/react/sortable";
-import { move } from "@dnd-kit/helpers";
 import { DragEndEvent } from "@dnd-kit/react";
 
 /**
@@ -81,25 +80,49 @@ export default function useOptionInputList(
       const { initialIndex, index } = source;
 
       if (initialIndex !== index) {
-        setOptionInputs((items) => normalize(move(items, event)));
+        setOptionInputs((items) => {
+          if (items.length <= 1) {
+            return items;
+          }
+
+          const trailingPlaceholder = items[items.length - 1];
+          const sortableItems = items.slice(0, -1);
+
+          if (
+            initialIndex < 0 ||
+            index < 0 ||
+            initialIndex >= sortableItems.length ||
+            index >= sortableItems.length
+          ) {
+            return items;
+          }
+
+          const reorderedItems = [...sortableItems];
+          const [removed] = reorderedItems.splice(initialIndex, 1);
+          reorderedItems.splice(index, 0, removed);
+
+          return [...reorderedItems, trailingPlaceholder];
+        });
       }
     }
   };
 
   //Debug
-  if (process.env.NODE_ENV === "development")
-    useEffect(() => {
-      console.table(
-        optionsInputs.map((item, index) => ({
-          index,
-          id: item.id,
-          value: item.value,
-          isEmpty: item.value.trim() === "",
-          isTrailingPlaceholder:
-            index === optionsInputs.length - 1 && item.value.trim() === "",
-        })),
-      );
-    }, [optionsInputs]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+
+    console.table(
+      optionsInputs.map((item, index) => ({
+        index,
+        id: item.id,
+        value: item.value,
+        isEmpty: item.value.trim() === "",
+        isTrailingPlaceholder:
+          index === optionsInputs.length - 1 && item.value.trim() === "",
+      })),
+    );
+  }, [optionsInputs]);
 
   return {
     handleChange,

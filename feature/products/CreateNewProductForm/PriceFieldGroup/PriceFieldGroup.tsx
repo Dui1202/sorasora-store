@@ -14,7 +14,7 @@ import OptionInputGroup from "@/feature/products/CreateNewProductForm/OptionInpu
 import { SupplierCountry } from "@/app/generated/prisma/enums";
 import { calculateBreakEvenPrice } from "./pricing/calculateBreakEvenPrice";
 import { useFormContext, useWatch } from "react-hook-form";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/validationSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
 
 const PriceFieldGroup = () => {
   const [isVariationEnable, setVariationEnable] = useState(false);

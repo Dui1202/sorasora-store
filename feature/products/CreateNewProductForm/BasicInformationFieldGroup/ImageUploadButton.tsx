@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/validationSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
 import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
 import { useEffect, useRef } from "react";

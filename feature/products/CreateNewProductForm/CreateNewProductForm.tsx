@@ -8,11 +8,8 @@ import { SpecificationFieldGroup } from "@/feature/products/CreateNewProductForm
 import {
   CreateProductFormData,
   CreateProductFormInputData,
-  ProductImages,
-  UploadProductImageResponse,
   createProductFormSchema,
-  toCreateProductCommand,
-} from "@/lib/validation-schema/product-schema/validationSchema";
+} from "@/lib/validation-schema/product-schema/productSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
@@ -32,31 +29,26 @@ const CreateNewProductForm = () => {
   const { handleSubmit } = methods;
 
   const submitProduct: SubmitHandler<CreateProductFormData> = async (data) => {
-    const uploadedProductImages: ProductImages = [];
-
     try {
+      const multipartFormData = new FormData();
+      multipartFormData.append(
+        "payload",
+        JSON.stringify({
+          ...data,
+          productImages: data.productImages.map((image) => ({
+            alt: image.alt,
+            position: image.position,
+          })),
+        }),
+      );
+
       for (const image of data.productImages) {
-        const formData = new FormData();
-        formData.append("file", image.file);
-
-        const { data: uploadResult } =
-          await axios.post<UploadProductImageResponse>(
-            "/api/uploads/product-images",
-            formData,
-          );
-
-        uploadedProductImages.push({
-          path: uploadResult.path,
-          alt: image.alt,
-          position: image.position,
-        });
+        multipartFormData.append("images", image.file);
       }
 
-      const payload = toCreateProductCommand(data, uploadedProductImages);
-      await axios.post("/api/products", payload);
-      console.log(payload);
+      await axios.post("/api/products", multipartFormData);
     } catch (error) {
-      await cleanUpProductImages(uploadedProductImages);
+      console.error("Failed to create product", error);
       throw error;
     }
   };
