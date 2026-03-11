@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
@@ -7,21 +6,17 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import OptionInputGroup from "@/feature/products/CreateNewProductForm/OptionInputGroup/OptionInputGroup";
-import { SupplierCountry } from "@/app/generated/prisma/enums";
-import { calculateBreakEvenPrice } from "./pricing/calculateBreakEvenPrice";
 import { useFormContext, useWatch } from "react-hook-form";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import VariationFieldGroup from "./VariationFieldGroup/VariationFieldGroup";
+import { calculateBreakEvenPrice } from "./pricing/calculateBreakEvenPrice";
+import { useVariation } from "./VariationFieldGroup/useVariation";
 
 const PriceFieldGroup = () => {
-  const [isVariationEnable, setVariationEnable] = useState(false);
-
-  const onEnableVariationButtonClick = () => {
-    setVariationEnable(true);
-  };
+  const variationState = useVariation();
+  const { addVariation, isVariationEnable } = variationState;
 
   const { control } = useFormContext<CreateProductFormInputData>();
 
@@ -42,7 +37,7 @@ const PriceFieldGroup = () => {
           <FieldLabel>Variations</FieldLabel>
           {!isVariationEnable && (
             <div>
-              <Button onClick={onEnableVariationButtonClick}>
+              <Button onClick={addVariation}>
                 <Plus />
                 Enable Variation
               </Button>
@@ -99,18 +94,7 @@ const PriceFieldGroup = () => {
       )}
 
       {isVariationEnable && (
-        <Card className="grid-cols-2 p-5">
-          <Field>
-            <FieldLabel>Variation 1</FieldLabel>
-            <InputGroup>
-              <InputGroupInput placeholder="" />
-            </InputGroup>
-          </Field>
-          <Field>
-            <FieldLabel>Options</FieldLabel>
-            <OptionInputGroup />
-          </Field>
-        </Card>
+        <VariationFieldGroup variationState={variationState} />
       )}
     </>
   );

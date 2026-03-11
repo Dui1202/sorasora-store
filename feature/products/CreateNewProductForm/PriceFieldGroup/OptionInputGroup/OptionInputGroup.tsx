@@ -4,18 +4,31 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import useOptionInputList from "@/feature/products/CreateNewProductForm/OptionInputGroup/useOptionInputList";
+import useOptionInputList from "@/feature/products/CreateNewProductForm/PriceFieldGroup/OptionInputGroup/useOptionInputList";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { Move, Trash2 } from "lucide-react";
 import type { OptionInputObject } from "./types";
+import { useEffect } from "react";
 
 const ARIA_LABEL_MOVE = "Move input";
 const ARIA_LABEL_REMOVE = "Remove input";
 
-const OptionInputGroup = () => {
+type OptionInputGroupProps = {
+  initialOptionsList?: OptionInputObject[];
+  onListChange?: (next: OptionInputObject[]) => void;
+};
+
+const OptionInputGroup = ({
+  initialOptionsList,
+  onListChange,
+}: OptionInputGroupProps) => {
   const { handleRemove, optionsInputs, handleChange, reorder } =
-    useOptionInputList();
+    useOptionInputList(initialOptionsList);
+
+  useEffect(() => {
+    onListChange?.(optionsInputs.filter((x) => x.value.trim() !== ""));
+  }, [optionsInputs, onListChange]);
 
   return (
     <DragDropProvider onDragEnd={reorder}>
