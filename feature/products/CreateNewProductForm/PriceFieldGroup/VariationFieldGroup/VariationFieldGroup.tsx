@@ -19,6 +19,7 @@ const VariationFieldGroup = ({
     variations,
     isVariationLimitExceed,
     updateVariationOptions,
+    updateVariationName,
   },
 }: VariationFieldGroupProps) => {
   return (
@@ -32,6 +33,7 @@ const VariationFieldGroup = ({
             removeVariation(index);
           }}
           updateVariationOptions={updateVariationOptions}
+          updateVariationName={updateVariationName}
         />
       ))}
 
@@ -50,6 +52,7 @@ type VariationFieldProps = {
   variation: Variation;
   onCloseButtonClicked: () => void;
   updateVariationOptions: (id: string, next: Variation["optionsList"]) => void;
+  updateVariationName: (id: string, next: string) => void;
 };
 
 const VariationField = ({
@@ -57,6 +60,7 @@ const VariationField = ({
   index,
   onCloseButtonClicked,
   updateVariationOptions,
+  updateVariationName,
 }: VariationFieldProps) => {
   const handleOptionsListChange = useCallback(
     (next: Variation["optionsList"]) => {
@@ -80,7 +84,12 @@ const VariationField = ({
       <Field>
         <FieldLabel className="text-xl">Variation {index + 1}</FieldLabel>
         <InputGroup>
-          <InputGroupInput placeholder="" />
+          <InputGroupInput
+            placeholder=""
+            onChange={(value) => {
+              updateVariationName(variation.id, value.target.value);
+            }}
+          />
         </InputGroup>
       </Field>
       <Field>

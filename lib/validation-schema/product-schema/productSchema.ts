@@ -27,8 +27,8 @@ const createProductImageSchema = z.object({
 const createProductVariantSchema = z.object({
   name: z.string().trim().min(1, "Variant name is required"),
   sku: z.string().trim().min(1, "SKU is required"),
-  originalPrice: z.number().int().min(0, "Original price must be 0 or greater"),
-  salePrice: z.number().int().min(0, "Sale price must be 0 or greater"),
+  costPrice: z.number().int().min(0, "Original price must be 0 or greater"),
+  sellingPrice: z.number().int().min(0, "Sale price must be 0 or greater"),
   position: z.coerce.number().int().min(0).default(0),
   image: createProductVariantImageSchema,
 });
@@ -42,11 +42,11 @@ export const createProductFormSchema = z.object({
   franchiseId: z.cuid("Invalid franchise id").optional(),
   hasVariation: z.boolean(),
   baseSku: z.string().trim().min(1, "SKU is required"),
-  baseOriginalPrice: z
+  baseCostPrice: z
     .number()
     .int()
     .min(0, "Original price must be 0 or greater"),
-  baseSalePrice: z.number().int().min(0, "Sale price must be 0 or greater"),
+  baseSellingPrice: z.number().int().min(0, "Sale price must be 0 or greater"),
   variants: z.array(createProductVariantSchema).default([]),
   productImages: z.array(localProductImageSchema).default([]),
 });
@@ -85,8 +85,8 @@ export const toCreateProductCommand = (
         {
           name: data.name,
           sku: data.baseSku,
-          originalPrice: data.baseOriginalPrice,
-          salePrice: data.baseSalePrice,
+          costPrice: data.baseCostPrice,
+          sellingPrice: data.baseSellingPrice,
           position: 0,
           image: fallbackVariantImage,
         },

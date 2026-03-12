@@ -26,10 +26,6 @@ const PriceFieldGroup = () => {
   });
 
   const [breakEvenPrice, setBreakEvenPrice] = useState(0);
-  const originalPrice = useWatch({
-    control,
-    name: "baseOriginalPrice",
-  });
   return (
     <>
       <FieldGroup>
@@ -51,7 +47,7 @@ const PriceFieldGroup = () => {
             <Field>
               <FieldLabel>Original Price</FieldLabel>
               <FieldDescription>
-                Orginal price in the supplier country's currency
+                Orginal price in the supplier country&apos;s currency
               </FieldDescription>
               <Input
                 placeholder="Orginal price..."

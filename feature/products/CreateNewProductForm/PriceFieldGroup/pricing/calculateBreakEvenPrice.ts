@@ -9,17 +9,17 @@ import {
 export const calculateBreakEvenPrice = (
   supplierCountry: SupplierCountry,
   platformCode: PlatformCode,
-  orginalPrice: number,
+  costPrice: number,
 ) => {
   if (!supplierCountry) {
     return;
   }
 
-  if (!orginalPrice) {
+  if (!costPrice) {
     return;
   }
   const landedPrice =
-    orginalPrice *
+    costPrice *
     COUNTRY_CONFIG[supplierCountry].exchangeRateToVND *
     (1 + COUNTRY_CONFIG[supplierCountry].handlingPercent);
 
@@ -37,3 +37,4 @@ export const calculateBreakEvenPrice = (
 
   return breakEvenPrice;
 };
+

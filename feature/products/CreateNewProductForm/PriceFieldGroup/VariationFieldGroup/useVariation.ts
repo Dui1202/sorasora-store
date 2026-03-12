@@ -7,6 +7,7 @@ const MAX_VARIATIONS = 2;
 const createEmptyVariation = (): Variation => {
   return {
     id: crypto.randomUUID(),
+    name: "",
     optionsList: [],
   };
 };
@@ -86,6 +87,35 @@ export function useVariation() {
     [],
   );
 
+  const updateVariationName = useCallback(
+    (variationId: string, name: string) => {
+      setVariations((prev) => {
+        const variationIndex = prev.findIndex((variation) => {
+          return variation.id === variationId;
+        });
+
+        if (variationIndex < 0) {
+          return prev;
+        }
+
+        const currentVariation = prev[variationIndex];
+
+        if (currentVariation.name === name) {
+          return prev;
+        }
+
+        const updated = [...prev];
+        updated[variationIndex] = {
+          ...currentVariation,
+          name,
+        };
+
+        return updated;
+      });
+    },
+    [],
+  );
+
   return {
     variations,
     addVariation,
@@ -93,5 +123,6 @@ export function useVariation() {
     isVariationEnable,
     isVariationLimitExceed,
     updateVariationOptions,
+    updateVariationName,
   };
 }

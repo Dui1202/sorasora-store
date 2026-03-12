@@ -204,8 +204,8 @@ async function createProduct(command: CreateProductCommandData) {
         create: variants.map((variant) => ({
           name: variant.name,
           sku: variant.sku,
-          originalPrice: variant.originalPrice,
-          salePrice: variant.salePrice,
+          costPrice: variant.costPrice,
+          sellingPrice: variant.sellingPrice,
           position: variant.position,
           image: {
             create: {
@@ -233,3 +233,4 @@ async function createProduct(command: CreateProductCommandData) {
     },
   });
 }
+
