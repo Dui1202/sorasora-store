@@ -38,7 +38,7 @@ const VariationFieldGroup = ({
       ))}
 
       {!isVariationLimitExceed && (
-        <Button variant="secondary" onClick={addVariation}>
+        <Button variant="secondary" onClick={addVariation} type="button">
           <Plus />
           Add Variation
         </Button>

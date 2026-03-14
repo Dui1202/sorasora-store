@@ -23,6 +23,11 @@ const createProductImageSchema = z.object({
   position: z.coerce.number().int().min(0).default(0),
 });
 
+const localProductVariantImageSchema = z.object({
+  file: z.instanceof(File),
+  alt: z.string().trim().optional(),
+});
+
 //Product Variant validation schema
 const createProductVariantSchema = z.object({
   name: z.string().trim().min(1, "Variant name is required"),
@@ -33,6 +38,14 @@ const createProductVariantSchema = z.object({
   image: createProductVariantImageSchema,
 });
 
+const createProductVariantFormSchema = createProductVariantSchema
+  .omit({
+    image: true,
+  })
+  .extend({
+    image: localProductVariantImageSchema.optional(),
+});
+
 //Product Form validation schema
 // 1) Form boundary (UI raw shape)
 export const createProductFormSchema = z.object({
@@ -41,14 +54,65 @@ export const createProductFormSchema = z.object({
   supplierCountry: supplierCountrySchema,
   franchiseId: z.cuid("Invalid franchise id").optional(),
   hasVariation: z.boolean(),
-  baseSku: z.string().trim().min(1, "SKU is required"),
+  baseSku: z.string().trim().optional(),
   baseCostPrice: z
     .number()
     .int()
-    .min(0, "Original price must be 0 or greater"),
-  baseSellingPrice: z.number().int().min(0, "Sale price must be 0 or greater"),
-  variants: z.array(createProductVariantSchema).default([]),
+    .min(0, "Original price must be 0 or greater")
+    .optional(),
+  baseSellingPrice: z
+    .number()
+    .int()
+    .min(0, "Sale price must be 0 or greater")
+    .optional(),
+  variants: z.array(createProductVariantFormSchema).default([]),
   productImages: z.array(localProductImageSchema).default([]),
+}).superRefine((data, ctx) => {
+  if (data.hasVariation) {
+    if (data.variants.length < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add at least 1 variant when variations are enabled.",
+        path: ["variants"],
+      });
+    }
+
+    data.variants.forEach((variant, index) => {
+      if (!variant.image) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Variant image is required.",
+          path: ["variants", index, "image"],
+        });
+      }
+    });
+
+    return;
+  }
+
+  if (!data.baseSku) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "SKU is required",
+      path: ["baseSku"],
+    });
+  }
+
+  if (data.baseCostPrice === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Original price must be 0 or greater",
+      path: ["baseCostPrice"],
+    });
+  }
+
+  if (data.baseSellingPrice === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Sale price must be 0 or greater",
+      path: ["baseSellingPrice"],
+    });
+  }
 });
 
 // 2) API boundary (backend contract shape)
@@ -67,30 +131,62 @@ export const createProductCommandSchema = z.object({
 export const toCreateProductCommand = (
   data: CreateProductFormData,
   uploadedProductImages: ProductImages = [],
+  uploadedVariantImages: ProductVariantImages = [],
 ): CreateProductCommandData => {
   const productImages = createProductCommandSchema.shape.productImages.parse(
     uploadedProductImages,
   );
   const fallbackVariantImage = productImages[0];
 
-  if (!data.hasVariation && !fallbackVariantImage) {
+  if (!fallbackVariantImage) {
     throw new Error(
       "Uploaded product images are required before creating the product command.",
     );
   }
 
   const variants = data.hasVariation
-    ? data.variants
-    : [
-        {
-          name: data.name,
-          sku: data.baseSku,
-          costPrice: data.baseCostPrice,
-          sellingPrice: data.baseSellingPrice,
-          position: 0,
-          image: fallbackVariantImage,
-        },
-      ];
+    ? (() => {
+        if (uploadedVariantImages.length !== data.variants.length) {
+          throw new Error("Variant images are required for every variant.");
+        }
+
+        return data.variants.map((variant, index) => {
+          const uploadedVariantImage = uploadedVariantImages[index];
+
+          if (!uploadedVariantImage) {
+            throw new Error("Variant image is required for every variant.");
+          }
+
+          return {
+            name: variant.name,
+            sku: variant.sku,
+            costPrice: variant.costPrice,
+            sellingPrice: variant.sellingPrice,
+            position: variant.position ?? index,
+            image: uploadedVariantImage,
+          };
+        });
+      })()
+    : (() => {
+        if (
+          !data.baseSku ||
+          data.baseCostPrice === undefined ||
+          data.baseSellingPrice === undefined
+        ) {
+          throw new Error("Base variant fields are required when variation is disabled.");
+        }
+
+        return [
+          {
+            name: data.name,
+            sku: data.baseSku,
+            costPrice: data.baseCostPrice,
+            sellingPrice: data.baseSellingPrice,
+            position: 0,
+            image: fallbackVariantImage,
+          },
+        ];
+      })();
 
   return createProductCommandSchema.parse({
     name: data.name,
@@ -121,3 +217,4 @@ export type CreateProductCommandData = z.output<
 
 export type LocalProductImages = z.infer<typeof localProductImageSchema>[];
 export type ProductImages = z.infer<typeof createProductImageSchema>[];
+export type ProductVariantImages = z.infer<typeof createProductVariantImageSchema>[];

@@ -6,15 +6,29 @@ import { uploadProductImages } from "@/lib/storage/uploadProductImages";
 import {
   CreateProductCommandData,
   ProductImages,
+  ProductVariantImages,
   createProductFormSchema,
   toCreateProductCommand,
 } from "@/lib/validation-schema/product-schema/productSchema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-const multipartPayloadSchema = createProductFormSchema
-  .omit({ productImages: true })
+const multipartPayloadVariantSchema = createProductFormSchema.shape.variants
+  .unwrap()
+  .element
+  .omit({ image: true })
   .extend({
+    image: z
+      .object({
+        alt: z.string().trim().optional(),
+      })
+      .optional(),
+  });
+
+const multipartPayloadSchema = createProductFormSchema
+  .omit({ productImages: true, variants: true })
+  .extend({
+    variants: z.array(multipartPayloadVariantSchema).default([]),
     productImages: z
       .array(
         z.object({
@@ -85,6 +99,9 @@ async function handleMultipartCreate(request: NextRequest) {
   const imageFiles = formData
     .getAll("images")
     .filter((value): value is File => value instanceof File);
+  const variantImageFiles = formData
+    .getAll("variantImages")
+    .filter((value): value is File => value instanceof File);
 
   if (imageFiles.length !== payloadValidation.data.productImages.length) {
     return NextResponse.json(
@@ -93,8 +110,28 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
+  if (
+    payloadValidation.data.hasVariation &&
+    variantImageFiles.length !== payloadValidation.data.variants.length
+  ) {
+    return NextResponse.json(
+      { error: "Variant image files count does not match variants metadata." },
+      { status: 400 },
+    );
+  }
+
   const formDataCandidate = {
     ...payloadValidation.data,
+    variants: payloadValidation.data.variants.map((variant, index) => ({
+      ...variant,
+      image:
+        payloadValidation.data.hasVariation && variantImageFiles[index]
+          ? {
+              file: variantImageFiles[index],
+              alt: variant.image?.alt,
+            }
+          : undefined,
+    })),
     productImages: payloadValidation.data.productImages.map((image, index) => ({
       file: imageFiles[index],
       alt: image.alt,
@@ -115,6 +152,7 @@ async function handleMultipartCreate(request: NextRequest) {
   }
 
   const uploadedProductImages: ProductImages = [];
+  const uploadedVariantImages: ProductVariantImages = [];
 
   try {
     for (const image of formValidation.data.productImages) {
@@ -128,9 +166,26 @@ async function handleMultipartCreate(request: NextRequest) {
       });
     }
 
+    if (formValidation.data.hasVariation) {
+      for (const variant of formValidation.data.variants) {
+        if (!variant.image) {
+          throw new Error("Variant image is required for every variant.");
+        }
+
+        const bytes = await variant.image.file.arrayBuffer();
+        const uploadResult = await uploadProductImages(Buffer.from(bytes));
+
+        uploadedVariantImages.push({
+          path: uploadResult.path,
+          alt: variant.image.alt,
+        });
+      }
+    }
+
     const command = toCreateProductCommand(
       formValidation.data,
       uploadedProductImages,
+      uploadedVariantImages,
     );
     const newProduct = await createProduct(command);
 
@@ -138,7 +193,10 @@ async function handleMultipartCreate(request: NextRequest) {
   } catch (error) {
     if (uploadedProductImages.length > 0) {
       try {
-        await removeProductImages(uploadedProductImages.map((img) => img.path));
+        await removeProductImages([
+          ...uploadedProductImages.map((img) => img.path),
+          ...uploadedVariantImages.map((img) => img.path),
+        ]);
       } catch (cleanupError) {
         console.error(
           "Failed to clean up uploaded images after create failure",

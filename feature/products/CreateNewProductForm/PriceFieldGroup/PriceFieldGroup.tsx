@@ -8,24 +8,56 @@ import {
 import { Input } from "@/components/ui/input";
 import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import VariationFieldGroup from "./VariationFieldGroup/VariationFieldGroup";
 import { calculateBreakEvenPrice } from "./pricing/calculateBreakEvenPrice";
 import { useVariation } from "./VariationFieldGroup/useVariation";
+import VariationPriceTableField from "./VariationPriceTableField/VariationPriceTableField";
 
 const PriceFieldGroup = () => {
   const variationState = useVariation();
-  const { addVariation, isVariationEnable } = variationState;
+  const { addVariation, isVariationEnable, variations } = variationState;
 
-  const { control } = useFormContext<CreateProductFormInputData>();
+  const { control, setValue, register } =
+    useFormContext<CreateProductFormInputData>();
 
   const supplierCountry = useWatch({
     control,
     name: "supplierCountry",
   });
 
+  const baseCostPriceField = register("baseCostPrice", {
+    valueAsNumber: true,
+  });
+
+  const baseSellingPriceField = register("baseSellingPrice", {
+    valueAsNumber: true,
+  });
+
+  useEffect(() => {
+    setValue("hasVariation", isVariationEnable, {
+      shouldDirty: true,
+    });
+
+    if (!isVariationEnable) {
+      setValue("variants", [], {
+        shouldDirty: true,
+      });
+    }
+  }, [isVariationEnable, setValue]);
+
+  const handleVariantsChange = useCallback(
+    (variants: CreateProductFormInputData["variants"]) => {
+      setValue("variants", variants, {
+        shouldDirty: true,
+      });
+    },
+    [setValue],
+  );
+
   const [breakEvenPrice, setBreakEvenPrice] = useState(0);
+
   return (
     <>
       <FieldGroup>
@@ -33,7 +65,7 @@ const PriceFieldGroup = () => {
           <FieldLabel>Variations</FieldLabel>
           {!isVariationEnable && (
             <div>
-              <Button onClick={addVariation}>
+              <Button onClick={addVariation} type="button">
                 <Plus />
                 Enable Variation
               </Button>
@@ -50,22 +82,19 @@ const PriceFieldGroup = () => {
                 Orginal price in the supplier country&apos;s currency
               </FieldDescription>
               <Input
+                type="number"
+                min={0}
                 placeholder="Orginal price..."
+                {...baseCostPriceField}
                 onChange={(event) => {
+                  baseCostPriceField.onChange(event);
+
                   setBreakEvenPrice(
                     calculateBreakEvenPrice(
                       supplierCountry,
                       "NONE",
-                      parseInt(event.target.value),
+                      parseInt(event.target.value || "0", 10),
                     ) ?? 0,
-                  );
-
-                  console.log(
-                    calculateBreakEvenPrice(
-                      supplierCountry,
-                      "NONE",
-                      parseInt(event.target.value),
-                    ),
                   );
                 }}
               />
@@ -77,7 +106,17 @@ const PriceFieldGroup = () => {
             <Field>
               <FieldLabel>Sale Price</FieldLabel>
               <FieldDescription>Price you want to sale for</FieldDescription>
-              <Input placeholder="Sale price..." />
+              <Input
+                type="number"
+                min={0}
+                placeholder="Sale price..."
+                {...baseSellingPriceField}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>SKU</FieldLabel>
+              <FieldDescription>SKU for single-variant products</FieldDescription>
+              <Input placeholder="SKU..." {...register("baseSku")} />
             </Field>
           </FieldGroup>
           <FieldGroup className="grid grid-cols-2">
@@ -90,7 +129,13 @@ const PriceFieldGroup = () => {
       )}
 
       {isVariationEnable && (
-        <VariationFieldGroup variationState={variationState} />
+        <div className="flex flex-col gap-4">
+          <VariationFieldGroup variationState={variationState} />
+          <VariationPriceTableField
+            variations={variations}
+            onVariantsChange={handleVariantsChange}
+          />
+        </div>
       )}
     </>
   );
