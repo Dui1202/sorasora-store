@@ -256,6 +256,7 @@ async function createProduct(command: CreateProductCommandData) {
     supplierCountry,
     franchiseId,
     productImages,
+    isPublished,
   } = command;
 
   return prisma.product.create({
@@ -264,6 +265,7 @@ async function createProduct(command: CreateProductCommandData) {
       description: description || undefined,
       supplierCountry,
       franchiseId,
+      isPublished: isPublished,
       variants: {
         create: variants.map((variant) => ({
           name: variant.name,
@@ -279,6 +281,7 @@ async function createProduct(command: CreateProductCommandData) {
           },
         })),
       },
+
       productImages: {
         create: productImages.map((productImage) => ({
           path: productImage.path,
