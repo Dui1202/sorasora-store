@@ -8,35 +8,11 @@ import {
   ProductImages,
   ProductVariantImages,
   createProductFormSchema,
+  multipartPayloadSchema,
   toCreateProductCommand,
-} from "@/lib/validation-schema/product-schema/productSchema";
+} from "@/lib/validation-schema/product-schema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-const multipartPayloadVariantSchema = createProductFormSchema.shape.variants
-  .unwrap()
-  .element.omit({ image: true })
-  .extend({
-    image: z
-      .object({
-        alt: z.string().trim().optional(),
-      })
-      .optional(),
-  });
-
-const multipartPayloadSchema = createProductFormSchema
-  .omit({ productImages: true, variants: true })
-  .extend({
-    variants: z.array(multipartPayloadVariantSchema).default([]),
-    productImages: z
-      .array(
-        z.object({
-          alt: z.string().trim().optional(),
-          position: z.coerce.number().int().min(0).default(0),
-        }),
-      )
-      .min(1, "Upload at least 1 product image!"),
-  });
 
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";

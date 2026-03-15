@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
 import { Controller, useFormContext } from "react-hook-form";
 import type { FranchiseDto } from "../../dto/franchises.dto";
 import { useFranchises } from "./useFranchises";

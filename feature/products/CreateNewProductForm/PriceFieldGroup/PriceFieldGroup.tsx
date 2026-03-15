@@ -6,7 +6,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/product.base";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -115,7 +115,9 @@ const PriceFieldGroup = () => {
             </Field>
             <Field>
               <FieldLabel>SKU</FieldLabel>
-              <FieldDescription>SKU for single-variant products</FieldDescription>
+              <FieldDescription>
+                SKU for single-variant products
+              </FieldDescription>
               <Input placeholder="SKU..." {...register("baseSku")} />
             </Field>
           </FieldGroup>

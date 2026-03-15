@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/product.base";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";

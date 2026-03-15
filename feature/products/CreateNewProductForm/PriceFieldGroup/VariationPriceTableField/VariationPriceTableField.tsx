@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/product.base";
 import {
   Table,
   TableBody,

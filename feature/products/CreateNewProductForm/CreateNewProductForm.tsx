@@ -5,17 +5,18 @@ import { FieldLegend, FieldSet } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { PriceFieldGroup } from "@/feature/products/CreateNewProductForm/PriceFieldGroup";
 import { SpecificationFieldGroup } from "@/feature/products/CreateNewProductForm/SpecificationFieldGroup";
-import {
-  CreateProductFormData,
-  CreateProductFormInputData,
-  createProductFormSchema,
-} from "@/lib/validation-schema/product-schema/productSchema";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import FormButton from "../../../app/products/_components/FormButton";
 import BasicInformationFieldGroup from "./BasicInformationFieldGroup/BasicInformationFieldGroup";
+import {
+  CreateProductFormData,
+  CreateProductFormInputData,
+  createProductFormSchema,
+} from "@/lib/validation-schema/product-schema";
 
 const CreateNewProductForm = () => {
   const methods = useForm<

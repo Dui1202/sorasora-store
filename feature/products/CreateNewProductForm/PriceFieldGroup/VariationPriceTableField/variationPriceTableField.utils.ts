@@ -1,6 +1,9 @@
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/productSchema";
+import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema/product.base";
 import { Variation } from "../VariationFieldGroup/type";
-import { VariantDraftRow, VariantOptionSelection } from "./useVariantCombinations";
+import {
+  VariantDraftRow,
+  VariantOptionSelection,
+} from "./useVariantCombinations";
 
 export type NumericDraftField = "costPrice" | "sellingPrice" | "stock";
 
