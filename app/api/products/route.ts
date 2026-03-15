@@ -15,8 +15,7 @@ import { z } from "zod";
 
 const multipartPayloadVariantSchema = createProductFormSchema.shape.variants
   .unwrap()
-  .element
-  .omit({ image: true })
+  .element.omit({ image: true })
   .extend({
     image: z
       .object({
@@ -55,6 +54,7 @@ export async function POST(request: NextRequest) {
 async function handleMultipartCreate(request: NextRequest) {
   let formData: FormData;
 
+  //  Default error
   try {
     formData = await request.formData();
   } catch {
@@ -64,6 +64,7 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
+  // Handle payload parsing and validation
   const payloadField = formData.get("payload");
 
   if (typeof payloadField !== "string") {
@@ -75,6 +76,7 @@ async function handleMultipartCreate(request: NextRequest) {
 
   let parsedPayload: unknown;
 
+  // Validate the payload structure before processing files
   try {
     parsedPayload = JSON.parse(payloadField);
   } catch {
@@ -84,6 +86,7 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
+  // Validate the payload content against the schema (excluding files)
   const payloadValidation = multipartPayloadSchema.safeParse(parsedPayload);
 
   if (!payloadValidation.success) {
@@ -96,6 +99,7 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
+  // Get image files and validate their count against the payload metadata
   const imageFiles = formData
     .getAll("images")
     .filter((value): value is File => value instanceof File);
@@ -139,6 +143,7 @@ async function handleMultipartCreate(request: NextRequest) {
     })),
   };
 
+  // Final validation before processing the creation command
   const formValidation = createProductFormSchema.safeParse(formDataCandidate);
 
   if (!formValidation.success) {
@@ -151,6 +156,7 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
+  // Process the creation command with validated data and uploaded files
   const uploadedProductImages: ProductImages = [];
   const uploadedVariantImages: ProductVariantImages = [];
 
@@ -291,4 +297,3 @@ async function createProduct(command: CreateProductCommandData) {
     },
   });
 }
-

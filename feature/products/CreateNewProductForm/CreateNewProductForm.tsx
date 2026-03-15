@@ -28,6 +28,8 @@ const CreateNewProductForm = () => {
 
   const { handleSubmit } = methods;
 
+  const { isSubmitting } = methods.formState;
+
   const submitProduct: SubmitHandler<CreateProductFormData> = async (data) => {
     try {
       const multipartFormData = new FormData();
@@ -90,7 +92,7 @@ const CreateNewProductForm = () => {
             <PriceFieldGroup />
           </FieldSet>
         </SectionCard>
-        <FormButton />
+        <FormButton isSubmitting={isSubmitting} />
       </form>
     </FormProvider>
   );

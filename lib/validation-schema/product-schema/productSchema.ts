@@ -1,5 +1,6 @@
 import { SupplierCountry } from "@/app/generated/prisma/enums";
 import { z } from "zod";
+import { is } from "zod/v4/locales";
 
 const supplierCountrySchema = z.enum(SupplierCountry);
 
@@ -44,76 +45,79 @@ const createProductVariantFormSchema = createProductVariantSchema
   })
   .extend({
     image: localProductVariantImageSchema.optional(),
-});
+  });
 
 //Product Form validation schema
 // 1) Form boundary (UI raw shape)
-export const createProductFormSchema = z.object({
-  name: z.string().trim().min(1, "Product name is required"),
-  description: z.string().trim().optional(),
-  supplierCountry: supplierCountrySchema,
-  franchiseId: z.cuid("Invalid franchise id").optional(),
-  hasVariation: z.boolean(),
-  baseSku: z.string().trim().optional(),
-  baseCostPrice: z
-    .number()
-    .int()
-    .min(0, "Original price must be 0 or greater")
-    .optional(),
-  baseSellingPrice: z
-    .number()
-    .int()
-    .min(0, "Sale price must be 0 or greater")
-    .optional(),
-  variants: z.array(createProductVariantFormSchema).default([]),
-  productImages: z.array(localProductImageSchema).default([]),
-}).superRefine((data, ctx) => {
-  if (data.hasVariation) {
-    if (data.variants.length < 1) {
+export const createProductFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Product name is required"),
+    description: z.string().trim().optional(),
+    supplierCountry: supplierCountrySchema,
+    franchiseId: z.cuid("Invalid franchise id").optional(),
+    hasVariation: z.boolean(),
+    isPublished: z.boolean().default(false),
+    baseSku: z.string().trim().optional(),
+    baseCostPrice: z
+      .number()
+      .int()
+      .min(0, "Original price must be 0 or greater")
+      .optional(),
+    baseSellingPrice: z
+      .number()
+      .int()
+      .min(0, "Sale price must be 0 or greater")
+      .optional(),
+    variants: z.array(createProductVariantFormSchema).default([]),
+    productImages: z.array(localProductImageSchema).default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.hasVariation) {
+      if (data.variants.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Add at least 1 variant when variations are enabled.",
+          path: ["variants"],
+        });
+      }
+
+      data.variants.forEach((variant, index) => {
+        if (!variant.image) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Variant image is required.",
+            path: ["variants", index, "image"],
+          });
+        }
+      });
+
+      return;
+    }
+
+    if (!data.baseSku) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Add at least 1 variant when variations are enabled.",
-        path: ["variants"],
+        code: "custom",
+        message: "SKU is required",
+        path: ["baseSku"],
       });
     }
 
-    data.variants.forEach((variant, index) => {
-      if (!variant.image) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Variant image is required.",
-          path: ["variants", index, "image"],
-        });
-      }
-    });
+    if (data.baseCostPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Original price must be 0 or greater",
+        path: ["baseCostPrice"],
+      });
+    }
 
-    return;
-  }
-
-  if (!data.baseSku) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "SKU is required",
-      path: ["baseSku"],
-    });
-  }
-
-  if (data.baseCostPrice === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Original price must be 0 or greater",
-      path: ["baseCostPrice"],
-    });
-  }
-
-  if (data.baseSellingPrice === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Sale price must be 0 or greater",
-      path: ["baseSellingPrice"],
-    });
-  }
-});
+    if (data.baseSellingPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Sale price must be 0 or greater",
+        path: ["baseSellingPrice"],
+      });
+    }
+  });
 
 // 2) API boundary (backend contract shape)
 export const createProductCommandSchema = z.object({
@@ -125,6 +129,7 @@ export const createProductCommandSchema = z.object({
   productImages: z
     .array(createProductImageSchema)
     .min(1, "Upload at least 1 product image!"),
+  isPublished: z.boolean().default(false),
 });
 
 // 3) Explicit mapper
@@ -173,7 +178,9 @@ export const toCreateProductCommand = (
           data.baseCostPrice === undefined ||
           data.baseSellingPrice === undefined
         ) {
-          throw new Error("Base variant fields are required when variation is disabled.");
+          throw new Error(
+            "Base variant fields are required when variation is disabled.",
+          );
         }
 
         return [
@@ -195,6 +202,7 @@ export const toCreateProductCommand = (
     franchiseId: data.franchiseId,
     variants,
     productImages,
+    isPublished: data.isPublished,
   });
 };
 
@@ -217,4 +225,6 @@ export type CreateProductCommandData = z.output<
 
 export type LocalProductImages = z.infer<typeof localProductImageSchema>[];
 export type ProductImages = z.infer<typeof createProductImageSchema>[];
-export type ProductVariantImages = z.infer<typeof createProductVariantImageSchema>[];
+export type ProductVariantImages = z.infer<
+  typeof createProductVariantImageSchema
+>[];
