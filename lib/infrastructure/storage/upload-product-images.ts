@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/errors";
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 import { fileTypeFromBuffer, FileTypeResult } from "file-type";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

@@ -5,6 +5,7 @@ import NavSidebar from "./nav-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import NavBar from "./nav-bar";
 import QueryClientProvider from "./query-client-provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
             <div className="flex-1 flex flex-col">
               <NavBar />
               <main>{children}</main>
+              <Toaster />
             </div>
           </SidebarProvider>
         </QueryClientProvider>

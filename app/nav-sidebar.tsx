@@ -14,11 +14,14 @@ import {
 import { Box, Container } from "@radix-ui/themes";
 import {
   CircleQuestionMark,
+  HeartPlus,
   LayoutDashboard,
   ScrollText,
   Settings,
   ShoppingBag,
+  Truck,
   UsersRound,
+  Warehouse,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,6 +48,9 @@ const NavLinks = () => {
     { title: "Products", href: "/products", icon: <ShoppingBag /> },
     { title: "Orders", href: "/orders", icon: <ScrollText /> },
     { title: "Customers", href: "/customers", icon: <UsersRound /> },
+    { title: "Shipping", href: "/shipping", icon: <Truck /> },
+    { title: "Warehouses", href: "/warehouses", icon: <Warehouse /> },
+    { title: "Franchises", href: "/franchises", icon: <HeartPlus /> },
   ];
   const supportLinks: LinkObject[] = [
     { title: "Settings", href: "/settings", icon: <Settings /> },

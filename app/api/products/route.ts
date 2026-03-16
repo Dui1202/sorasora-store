@@ -1,8 +1,10 @@
 import { Prisma } from "@/app/generated/prisma/client";
 import { AppError } from "@/core/errors/errors";
 import prisma from "@/lib/infrastructure/database/prisma";
-import { removeProductImages } from "@/lib/storage/remove-product-images";
-import { uploadProductImages } from "@/lib/storage/upload-product-images";
+import {
+  removeProductImages,
+  uploadProductImages,
+} from "@/lib/infrastructure/storage";
 import {
   CreateProductCommandData,
   ProductImages,
@@ -25,6 +27,28 @@ export async function POST(request: NextRequest) {
     { error: "Unsupported content type. Use multipart/form-data." },
     { status: 415 },
   );
+}
+
+export async function GET() {
+  const products = await prisma.product.findMany({
+    include: {
+      productImages: true,
+      variants: {
+        include: {
+          image: true,
+        },
+      },
+    },
+  });
+
+  if (!products) {
+    return NextResponse.json(
+      { error: "Failed to fetch products" },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(products);
 }
 
 async function handleMultipartCreate(request: NextRequest) {

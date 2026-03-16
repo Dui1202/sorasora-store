@@ -11,7 +11,11 @@ export {
   productBaseSchema,
   supplierCountrySchema,
 } from "./product-base";
-export type { ProductImages, ProductVariantImages } from "./product-base";
+export type {
+  ProductImages,
+  ProductVariantImages,
+  ProductWithRelations,
+} from "./product-base";
 export { toCreateProductCommand } from "./product-command";
 export type { CreateProductCommandData } from "./product-command";
 export {

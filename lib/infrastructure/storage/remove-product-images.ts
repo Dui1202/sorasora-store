@@ -1,4 +1,4 @@
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 
 export async function removeProductImages(paths: string[]) {
   if (paths.length === 0) {

@@ -1,4 +1,5 @@
-import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { Prisma, SupplierCountry } from "@/app/generated/prisma/client";
+
 import { z } from "zod";
 
 export const supplierCountrySchema = z.enum(SupplierCountry);
@@ -43,3 +44,13 @@ export type ProductImages = z.infer<typeof productImageBaseSchema>[];
 export type ProductVariantImages = z.infer<
   typeof productVariantImageBaseSchema
 >[];
+export type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: {
+    productImages: true;
+    variants: {
+      include: {
+        image: true;
+      };
+    };
+  };
+}>;
