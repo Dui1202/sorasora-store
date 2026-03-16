@@ -1,8 +1,8 @@
 import { Prisma } from "@/app/generated/prisma/client";
 import { AppError } from "@/core/errors/errors";
-import prisma from "@/lib/prisma";
-import { removeProductImages } from "@/lib/storage/removeProductImages";
-import { uploadProductImages } from "@/lib/storage/uploadProductImages";
+import prisma from "@/lib/infrastructure/database/prisma";
+import { removeProductImages } from "@/lib/storage/remove-product-images";
+import { uploadProductImages } from "@/lib/storage/upload-product-images";
 import {
   CreateProductCommandData,
   ProductImages,

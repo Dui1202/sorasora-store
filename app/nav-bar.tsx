@@ -1,0 +1,21 @@
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { Container } from "@radix-ui/themes";
+import React from "react";
+import SearchBar from "./search-bar";
+import QuickActionButtons from "./quick-action-buttons";
+
+const NavBar = () => {
+  return (
+    <div className="w-full flex h-auto py-2 px-4 justify-between gap-3 border-b-2 sticky top-0 z-50 bg-background">
+      <SearchBar />
+      <QuickActionButtons />
+    </div>
+  );
+};
+
+export default NavBar;

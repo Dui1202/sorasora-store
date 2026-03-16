@@ -165,12 +165,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-model playing_with_neon {
-  id    Int    @id @default(autoincrement())
-  name  String
-  value Float? @db.Real
-}
-
 enum SupplierCountry {
   CHINA
   JAPAN

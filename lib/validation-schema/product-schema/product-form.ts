@@ -1,0 +1,105 @@
+import z from "zod";
+import { productBaseSchema, productVariantBaseSchema } from "./product-base";
+import { create } from "domain";
+
+// For image preview before upload, we use a local schema that includes the File object.
+export const localProductImageSchema = z.object({
+  file: z.instanceof(File),
+  alt: z.string().trim().optional(),
+  position: z.coerce.number().int().min(0).default(0),
+});
+
+export const localProductVariantImageSchema = z.object({
+  file: z.instanceof(File),
+  alt: z.string().trim().optional(),
+});
+
+// Product variant form validation schema
+const createProductVariantFormSchema = productVariantBaseSchema
+  .omit({
+    image: true,
+  })
+  .extend({
+    image: localProductVariantImageSchema.optional(),
+  });
+
+// Main product form validation schema
+export const createProductFormBaseSchema = productBaseSchema
+  .omit({
+    productImages: true,
+    variants: true,
+  })
+  .extend({
+    hasVariation: z.boolean(),
+    baseSku: z.string().trim().optional(),
+    baseCostPrice: z
+      .number()
+      .int()
+      .min(0, "Original price must be 0 or greater")
+      .optional(),
+    baseSellingPrice: z
+      .number()
+      .int()
+      .min(0, "Sale price must be 0 or greater")
+      .optional(),
+    variants: z.array(createProductVariantFormSchema).default([]),
+    productImages: z.array(localProductImageSchema).default([]),
+  });
+
+export const createProductFormSchema = createProductFormBaseSchema.superRefine(
+  (data, ctx) => {
+    if (data.hasVariation) {
+      if (data.variants.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Add at least 1 variant when variations are enabled.",
+          path: ["variants"],
+        });
+      }
+
+      data.variants.forEach((variant, index) => {
+        if (!variant.image) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Variant image is required.",
+            path: ["variants", index, "image"],
+          });
+        }
+      });
+
+      return;
+    }
+
+    if (!data.baseSku) {
+      ctx.addIssue({
+        code: "custom",
+        message: "SKU is required",
+        path: ["baseSku"],
+      });
+    }
+
+    if (data.baseCostPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Original price must be 0 or greater",
+        path: ["baseCostPrice"],
+      });
+    }
+
+    if (data.baseSellingPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Sale price must be 0 or greater",
+        path: ["baseSellingPrice"],
+      });
+    }
+  },
+);
+
+export type CreateProductFormData = z.output<
+  typeof createProductFormBaseSchema
+>;
+export type CreateProductFormInputData = z.input<
+  typeof createProductFormBaseSchema
+>;
+export type LocalProductImages = z.infer<typeof localProductImageSchema>[];
