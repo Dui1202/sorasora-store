@@ -4,7 +4,7 @@ import prisma from "@/lib/infrastructure/database/prisma";
 import {
   removeProductImages,
   uploadProductImages,
-} from "@/lib/infrastructure/storage";
+} from "@/lib/infrastructure/storage/server";
 import {
   CreateProductCommandData,
   ProductImages,

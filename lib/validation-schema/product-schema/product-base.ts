@@ -1,4 +1,4 @@
-import { Prisma, SupplierCountry } from "@/app/generated/prisma/client";
+import { Prisma, SupplierCountry } from "@/app/generated/prisma/browser";
 
 import { z } from "zod";
 
@@ -46,11 +46,11 @@ export type ProductVariantImages = z.infer<
 >[];
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
-    productImages: true;
     variants: {
       include: {
         image: true;
       };
     };
+    productImages: true;
   };
 }>;
