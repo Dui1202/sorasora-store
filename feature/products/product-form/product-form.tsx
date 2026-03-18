@@ -3,8 +3,8 @@
 import SectionCard from "@/components/section-card";
 import { FieldLegend, FieldSet } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
-import { PriceFieldGroup } from "@/feature/products/create-new-product-form/price-field-group";
-import { SpecificationFieldGroup } from "@/feature/products/create-new-product-form/specification-field-group";
+import { PriceFieldGroup } from "@/feature/products/product-form/price-field-group";
+import { SpecificationFieldGroup } from "@/feature/products/product-form/specification-field-group";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
@@ -16,16 +16,46 @@ import {
   CreateProductFormData,
   CreateProductFormInputData,
   createProductFormSchema,
+  UpdateProductFormData,
+  UpdateProductFormInputData,
+  updateProductFormSchema,
 } from "@/lib/validation-schema/product-schema";
+import { unknown } from "zod";
 
-const CreateNewProductForm = () => {
-  const methods = useForm<
-    CreateProductFormInputData,
-    unknown,
-    CreateProductFormData
-  >({
-    resolver: zodResolver(createProductFormSchema),
-  });
+type CreateProductFormProps = {
+  mode: "create";
+  onSubmit: SubmitHandler<CreateProductFormData>;
+  initialValues?: never;
+};
+
+type UpdateProductFormProps = {
+  mode: "update";
+  onSubmit: SubmitHandler<UpdateProductFormData>;
+  initialValues: UpdateProductFormData;
+};
+
+type ProductFormProps = CreateProductFormProps | UpdateProductFormProps;
+
+const ProductForm = ({ mode, onSubmit, initialValues }: ProductFormProps) => {
+  let methods;
+
+  if (mode === "create") {
+    methods = useForm<
+      CreateProductFormInputData,
+      unknown,
+      CreateProductFormData
+    >({
+      resolver: zodResolver(createProductFormSchema),
+    });
+  } else {
+    methods = useForm<
+      UpdateProductFormInputData,
+      unknown,
+      UpdateProductFormData
+    >({
+      resolver: zodResolver(updateProductFormSchema),
+    });
+  }
 
   const { handleSubmit } = methods;
 
@@ -71,7 +101,7 @@ const CreateNewProductForm = () => {
   };
   return (
     <FormProvider {...methods}>
-      <form className="p-5" onSubmit={handleSubmit(submitProduct)}>
+      <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
         <Heading>Add Product</Heading>
         <Separator className="my-2" />
         <SectionCard>
@@ -99,4 +129,4 @@ const CreateNewProductForm = () => {
   );
 };
 
-export default CreateNewProductForm;
+export default ProductForm;

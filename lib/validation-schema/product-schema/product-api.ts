@@ -1,5 +1,5 @@
 import z from "zod";
-import { createProductFormBaseSchema } from "./product-form";
+import { createProductFormBaseSchema } from "./create-product-form";
 
 // Response validation schema for uploaded product image
 export const uploadedProductImageSchema = z.object({

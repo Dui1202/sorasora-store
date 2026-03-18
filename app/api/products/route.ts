@@ -5,29 +5,15 @@ import {
   removeProductImages,
   uploadProductImages,
 } from "@/lib/infrastructure/storage/server";
+import { validateProductFormData } from "@/lib/products";
 import {
   CreateProductCommandData,
   ProductImages,
   ProductVariantImages,
-  createProductFormSchema,
-  multipartPayloadSchema,
   toCreateProductCommand,
 } from "@/lib/validation-schema/product-schema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-export async function POST(request: NextRequest) {
-  const contentType = request.headers.get("content-type") ?? "";
-
-  if (contentType.includes("multipart/form-data")) {
-    return handleMultipartCreate(request);
-  }
-
-  return NextResponse.json(
-    { error: "Unsupported content type. Use multipart/form-data." },
-    { status: 415 },
-  );
-}
 
 export async function GET() {
   const products = await prisma.product.findMany({
@@ -50,6 +36,18 @@ export async function GET() {
 
   return NextResponse.json(products);
 }
+export async function POST(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    return handleMultipartCreate(request);
+  }
+
+  return NextResponse.json(
+    { error: "Unsupported content type. Use multipart/form-data." },
+    { status: 415 },
+  );
+}
 
 async function handleMultipartCreate(request: NextRequest) {
   let formData: FormData;
@@ -64,98 +62,11 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
-  // Handle payload parsing and validation
-  const payloadField = formData.get("payload");
-
-  if (typeof payloadField !== "string") {
-    return NextResponse.json(
-      { error: "Missing payload field" },
-      { status: 400 },
-    );
-  }
-
-  let parsedPayload: unknown;
-
-  // Validate the payload structure before processing files
-  try {
-    parsedPayload = JSON.parse(payloadField);
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid payload JSON" },
-      { status: 400 },
-    );
-  }
-
-  // Validate the payload content against the schema (excluding files)
-  const payloadValidation = multipartPayloadSchema.safeParse(parsedPayload);
-
-  if (!payloadValidation.success) {
-    return NextResponse.json(
-      {
-        error: "Validation failed",
-        issues: z.treeifyError(payloadValidation.error),
-      },
-      { status: 400 },
-    );
-  }
-
-  // Get image files and validate their count against the payload metadata
-  const imageFiles = formData
-    .getAll("images")
-    .filter((value): value is File => value instanceof File);
-  const variantImageFiles = formData
-    .getAll("variantImages")
-    .filter((value): value is File => value instanceof File);
-
-  if (imageFiles.length !== payloadValidation.data.productImages.length) {
-    return NextResponse.json(
-      { error: "Image files count does not match product image metadata." },
-      { status: 400 },
-    );
-  }
-
-  if (
-    payloadValidation.data.hasVariation &&
-    variantImageFiles.length !== payloadValidation.data.variants.length
-  ) {
-    return NextResponse.json(
-      { error: "Variant image files count does not match variants metadata." },
-      { status: 400 },
-    );
-  }
-
-  const formDataCandidate = {
-    ...payloadValidation.data,
-    variants: payloadValidation.data.variants.map((variant, index) => ({
-      ...variant,
-      image:
-        payloadValidation.data.hasVariation && variantImageFiles[index]
-          ? {
-              file: variantImageFiles[index],
-              alt: variant.image?.alt,
-            }
-          : undefined,
-    })),
-    productImages: payloadValidation.data.productImages.map((image, index) => ({
-      file: imageFiles[index],
-      alt: image.alt,
-      position: image.position,
-    })),
-  };
-
-  // Final validation before processing the creation command
-  const formValidation = createProductFormSchema.safeParse(formDataCandidate);
+  const formValidation = validateProductFormData(formData);
 
   if (!formValidation.success) {
-    return NextResponse.json(
-      {
-        error: "Validation failed",
-        issues: z.treeifyError(formValidation.error),
-      },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: formValidation.error }, { status: 400 });
   }
-
   // Process the creation command with validated data and uploaded files
   const uploadedProductImages: ProductImages = [];
   const uploadedVariantImages: ProductVariantImages = [];

@@ -1,7 +1,7 @@
-import CreateNewProductForm from "../../../feature/products/create-new-product-form/create-new-product-form";
+import ProductForm from "../../../feature/products/product-form/product-form";
 
 const CreateNewProductPage = () => {
-  return <CreateNewProductForm />;
+  return <ProductForm />;
 };
 
 export default CreateNewProductPage;

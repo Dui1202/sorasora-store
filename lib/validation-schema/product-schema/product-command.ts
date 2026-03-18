@@ -4,7 +4,7 @@ import {
   ProductImages,
   ProductVariantImages,
 } from "./product-base";
-import { CreateProductFormData } from "./product-form";
+import { CreateProductFormData } from "./create-product-form";
 
 // Explicit mapper
 export const toCreateProductCommand = (

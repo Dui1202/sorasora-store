@@ -23,9 +23,14 @@ export {
   localProductImageSchema,
   localProductVariantImageSchema,
   createProductFormSchema,
-} from "./product-form";
+} from "./create-product-form";
 export type {
   CreateProductFormData,
   CreateProductFormInputData,
   LocalProductImages,
-} from "./product-form";
+} from "./create-product-form";
+export { updateProductFormSchema } from "./update-product-form";
+export type {
+  UpdateProductFormData,
+  UpdateProductFormInputData,
+} from "./update-product-form";

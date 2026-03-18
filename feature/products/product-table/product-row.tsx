@@ -29,14 +29,10 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
   return (
     <>
       <TableRow key={product.id} className={`relative `}>
-        <TableCell
-          className={`align-middle ${hasVariants && "pb-10 align-top "}`}
-        >
+        <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           {index + 1}
         </TableCell>
-        <TableCell
-          className={`align-middle ${hasVariants && "pb-10 align-top "}`}
-        >
+        <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           <div className="flex gap-4">
             <img src={coverProductImagePublicUrl} width="100" height="100" />
             <div>
@@ -52,17 +48,13 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
             </div>
           )}
         </TableCell>
-        <TableCell
-          className={`align-middle ${hasVariants && "pb-10 align-top "}`}
-        >
+        <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           {product.variants[0].costPrice}
         </TableCell>
-        <TableCell
-          className={`align-middle ${hasVariants && "pb-10 align-top "}`}
-        >
+        <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           {product.variants[0].sellingPrice}
         </TableCell>
-        <TableCell>
+        <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           <ProductActionButtons id={product.id} />
         </TableCell>
       </TableRow>
@@ -86,8 +78,10 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{variant.costPrice}</TableCell>
-              <TableCell>{variant.sellingPrice}</TableCell>
+              <TableCell className="align-top">{variant.costPrice}</TableCell>
+              <TableCell className="align-top">
+                {variant.sellingPrice}
+              </TableCell>
             </TableRow>
           );
         })}

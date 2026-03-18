@@ -13,7 +13,7 @@ const ProductActionButtons = ({ id }: Props) => {
     await axios.delete(`/api/products/${id}`);
   };
   return (
-    <div className="gap-2 flex">
+    <div className="gap-2 flex flex-col">
       <Button variant="secondary">Edit</Button>
       <Button variant="secondary">Delist</Button>
       <Button variant="destructive">Delete</Button>

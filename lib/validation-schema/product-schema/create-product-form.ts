@@ -23,7 +23,7 @@ const createProductVariantFormSchema = productVariantBaseSchema
     image: localProductVariantImageSchema.optional(),
   });
 
-// Main product form validation schema
+// Main create product form validation schema
 export const createProductFormBaseSchema = productBaseSchema
   .omit({
     productImages: true,
@@ -46,6 +46,7 @@ export const createProductFormBaseSchema = productBaseSchema
     productImages: z.array(localProductImageSchema).default([]),
   });
 
+// Add extra validation for the createProductFormBaseSchema
 export const createProductFormSchema = createProductFormBaseSchema.superRefine(
   (data, ctx) => {
     if (data.hasVariation) {
