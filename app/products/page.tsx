@@ -19,7 +19,11 @@ const ProductsPage = () => {
   if (isLoadingProducts) {
     return <SkeletonTable />;
   }
-  return <ProductTable products={products ?? []} />;
+  return (
+    <div className="p-5">
+      <ProductTable products={products ?? []} />
+    </div>
+  );
 };
 
 export default ProductsPage;
