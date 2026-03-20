@@ -41,6 +41,7 @@ export const productBaseSchema = z.object({
 });
 
 export type ProductImages = z.infer<typeof productImageBaseSchema>[];
+export type ProductImage = z.infer<typeof productImageBaseSchema>;
 export type ProductVariantImages = z.infer<
   typeof productVariantImageBaseSchema
 >[];

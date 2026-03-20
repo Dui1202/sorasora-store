@@ -84,11 +84,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (!formValidation.success) {
     return NextResponse.json({ error: formValidation.error }, { status: 400 });
   }
-
-  const incomingProductImages = formValidation.data.productImages;
-  const existingProductImageIds = product.productImages.map(
-    (image) => image.id,
-  );
 }
 
 export async function GET(_request: NextRequest, { params }: Params) {

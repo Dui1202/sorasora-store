@@ -17,11 +17,19 @@ type ProductWithRelations = Prisma.ProductGetPayload<{
 
 export const useProducts = () =>
   useQuery<ProductWithRelations[]>({
-    queryKey: ["users"],
+    queryKey: ["products"],
     queryFn: () =>
       axios
         .get<ProductWithRelations[]>("/api/products")
         .then((res) => res.data),
+    staleTime: 5 * 1000,
+    retry: 3,
+  });
+
+export const useProduct = (id: string) =>
+  useQuery<ProductWithRelations>({
+    queryKey: ["product", id],
+    queryFn: () => axios.get(`/api/products/${id}`).then((res) => res.data),
     staleTime: 5 * 1000,
     retry: 3,
   });

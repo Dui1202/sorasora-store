@@ -3,8 +3,10 @@ import {
   productBaseSchema,
   ProductImages,
   ProductVariantImages,
+  ProductWithRelations,
 } from "./product-base";
 import { CreateProductFormData } from "./create-product-form";
+import { UpdateProductFormInputData } from "./update-product-form";
 
 // Explicit mapper
 export const toCreateProductCommand = (
@@ -78,6 +80,58 @@ export const toCreateProductCommand = (
     productImages,
     isPublished: data.isPublished,
   });
+};
+
+const EMPTY: UpdateProductFormInputData = {
+  name: "",
+  description: undefined,
+  supplierCountry: "JAPAN", // pick your safe default
+  franchiseId: undefined,
+  isPublished: false,
+  hasVariation: false,
+  baseSku: undefined,
+  baseCostPrice: undefined,
+  baseSellingPrice: undefined,
+  variants: [],
+  productImages: [],
+};
+
+export const toUpdateProductCommandInput = (
+  product: ProductWithRelations,
+): UpdateProductFormInputData => {
+  const variants = [...product.variants].sort(
+    (a, b) => a.position - b.position,
+  );
+  const hasVariation = variants.length > 1;
+  const baseVariant = variants[0];
+
+  return {
+    name: product.name,
+    description: product.description ?? undefined,
+    supplierCountry: product.supplierCountry,
+    franchiseId: product.franchiseId ?? undefined,
+    hasVariation,
+    baseSku: hasVariation ? undefined : baseVariant.sku,
+    baseCostPrice: hasVariation ? undefined : baseVariant.costPrice,
+    baseSellingPrice: hasVariation ? undefined : baseVariant.sellingPrice,
+    variants: variants.map((variant) => ({
+      name: variant.name,
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      sellingPrice: variant.sellingPrice,
+      position: variant.position,
+      image: variant.image
+        ? { path: variant.image.path, alt: variant.image.alt ?? undefined }
+        : undefined,
+    })),
+    productImages: [...product.productImages]
+      .sort((a, b) => a.position - b.position)
+      .map((img) => ({
+        path: img.path,
+        alt: img.alt ?? "",
+        position: img.position,
+      })),
+  };
 };
 
 export type CreateProductCommandData = z.output<typeof productBaseSchema>;

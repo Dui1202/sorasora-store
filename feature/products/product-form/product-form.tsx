@@ -8,7 +8,6 @@ import { SpecificationFieldGroup } from "@/feature/products/product-form/specifi
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
-import axios from "axios";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import FormButton from "../../../app/products/_components/form-button";
 import BasicInformationFieldGroup from "./basic-information-field-group/basic-information-field-group";
@@ -20,112 +19,100 @@ import {
   UpdateProductFormInputData,
   updateProductFormSchema,
 } from "@/lib/validation-schema/product-schema";
-import { unknown } from "zod";
 
 type CreateProductFormProps = {
   mode: "create";
   onSubmit: SubmitHandler<CreateProductFormData>;
-  initialValues?: never;
+  product?: never;
 };
 
 type UpdateProductFormProps = {
   mode: "update";
   onSubmit: SubmitHandler<UpdateProductFormData>;
-  initialValues: UpdateProductFormData;
+  product: UpdateProductFormInputData;
 };
 
 type ProductFormProps = CreateProductFormProps | UpdateProductFormProps;
 
-const ProductForm = ({ mode, onSubmit, initialValues }: ProductFormProps) => {
-  let methods;
-
+const ProductForm = ({ mode, onSubmit, product }: ProductFormProps) => {
   if (mode === "create") {
-    methods = useForm<
-      CreateProductFormInputData,
-      unknown,
-      CreateProductFormData
-    >({
-      resolver: zodResolver(createProductFormSchema),
-    });
-  } else {
-    methods = useForm<
-      UpdateProductFormInputData,
-      unknown,
-      UpdateProductFormData
-    >({
-      resolver: zodResolver(updateProductFormSchema),
-    });
+    return <CreateModeForm onSubmit={onSubmit} mode="create" />;
   }
 
-  const { handleSubmit } = methods;
+  return <UpdateModeForm onSubmit={onSubmit} product={product} mode="update" />;
+};
 
+const CreateModeForm = ({ onSubmit }: CreateProductFormProps) => {
+  const methods = useForm<
+    CreateProductFormInputData,
+    unknown,
+    CreateProductFormData
+  >({
+    resolver: zodResolver(createProductFormSchema),
+  });
+
+  const { handleSubmit } = methods;
   const { isSubmitting } = methods.formState;
 
-  const submitProduct: SubmitHandler<CreateProductFormData> = async (data) => {
-    try {
-      const multipartFormData = new FormData();
-      multipartFormData.append(
-        "payload",
-        JSON.stringify({
-          ...data,
-          variants: data.variants.map((variant) => ({
-            ...variant,
-            image: variant.image
-              ? {
-                  alt: variant.image.alt,
-                }
-              : undefined,
-          })),
-          productImages: data.productImages.map((image) => ({
-            alt: image.alt,
-            position: image.position,
-          })),
-        }),
-      );
-
-      for (const image of data.productImages) {
-        multipartFormData.append("images", image.file);
-      }
-
-      for (const variant of data.variants) {
-        if (variant.image?.file) {
-          multipartFormData.append("variantImages", variant.image.file);
-        }
-      }
-
-      await axios.post("/api/products", multipartFormData);
-    } catch (error) {
-      console.error("Failed to create product", error);
-      throw error;
-    }
-  };
   return (
     <FormProvider {...methods}>
       <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
         <Heading>Add Product</Heading>
         <Separator className="my-2" />
-        <SectionCard>
-          <FieldSet>
-            <FieldLegend>Basic Information</FieldLegend>
-            <BasicInformationFieldGroup />
-          </FieldSet>
-        </SectionCard>
-        <SectionCard>
-          <FieldSet>
-            <FieldLegend>Specification</FieldLegend>
-            <SpecificationFieldGroup />
-          </FieldSet>
-        </SectionCard>
-        <SectionCard>
-          <FieldSet>
-            <FieldLegend>Sales Information</FieldLegend>
-
-            <PriceFieldGroup />
-          </FieldSet>
-        </SectionCard>
+        <ProductFormFields />
         <FormButton isSubmitting={isSubmitting} />
       </form>
     </FormProvider>
+  );
+};
+
+const UpdateModeForm = ({ onSubmit, product }: UpdateProductFormProps) => {
+  const methods = useForm<
+    UpdateProductFormInputData,
+    unknown,
+    UpdateProductFormData
+  >({
+    resolver: zodResolver(updateProductFormSchema),
+    defaultValues: product,
+  });
+
+  const { handleSubmit } = methods;
+  const { isSubmitting } = methods.formState;
+
+  return (
+    <FormProvider {...methods}>
+      <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
+        <Heading>Edit Product</Heading>
+        <Separator className="my-2" />
+        <ProductFormFields />
+        <FormButton isSubmitting={isSubmitting} />
+      </form>
+    </FormProvider>
+  );
+};
+
+const ProductFormFields = () => {
+  return (
+    <>
+      <SectionCard>
+        <FieldSet>
+          <FieldLegend>Basic Information</FieldLegend>
+          <BasicInformationFieldGroup />
+        </FieldSet>
+      </SectionCard>
+      <SectionCard>
+        <FieldSet>
+          <FieldLegend>Specification</FieldLegend>
+          <SpecificationFieldGroup />
+        </FieldSet>
+      </SectionCard>
+      <SectionCard>
+        <FieldSet>
+          <FieldLegend>Sales Information</FieldLegend>
+          <PriceFieldGroup />
+        </FieldSet>
+      </SectionCard>
+    </>
   );
 };
 

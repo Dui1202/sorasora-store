@@ -1,40 +1,94 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
+import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
+import {
+  CreateProductFormInputData,
+  UpdateProductFormInputData,
+  UpdateProductImage,
+} from "@/lib/validation-schema/product-schema";
 import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFormContext } from "react-hook-form";
+import { UploadedImagePreview } from "./type";
 import UploadedImagesContainer from "./uploaded-images-container";
 import { usePreviewImage } from "./use-preview-image";
 
+// type ProductFormInputData =
+//   | CreateProductFormInputData
+//   | UpdateProductFormInputData;
+
 const ImageUploadButton = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const isInitializedRef = useRef(false);
+  const { watch, setValue, register } =
+    useFormContext<UpdateProductFormInputData>();
 
-  const { setValue, register } = useFormContext<CreateProductFormInputData>();
+  const initialProductImages = watch("productImages") as UpdateProductImage[];
 
-  const { images, addImages, reorder, remove } = usePreviewImage();
+  function isExistingImage(
+    img: UpdateProductImage,
+  ): img is { path: string; position: number; alt?: string } {
+    return "path" in img;
+  }
+  const initialImages: UploadedImagePreview[] = useMemo<UploadedImagePreview[]>(
+    () =>
+      initialProductImages
+        .filter(isExistingImage)
+        .map<UploadedImagePreview>((img) => {
+          return {
+            id: img.path,
+            type: "uploaded",
+            displayUrl: getProductImagePublicUrl(img.path),
+            fileName: img.alt || "",
+            path: img.path,
+            alt: img.alt,
+            position: img.position,
+          };
+        })
+        .sort((a, b) => a.position - b.position),
+    [initialProductImages],
+  );
+
+  const { previewImages, addImages, reorder, remove } =
+    usePreviewImage(initialImages);
 
   useEffect(() => {
     register("productImages");
   }, [register]);
 
+  // sync images
   useEffect(() => {
+    if (previewImages.length < 1 && !isInitializedRef.current) {
+      return;
+    }
+
+    const isFirstSync = !isInitializedRef.current;
+    isInitializedRef.current = true;
+
     setValue(
       "productImages",
-      images.map((img) => ({
-        file: img.file,
-        alt: img.fileName,
-        position: img.position,
-      })),
+      previewImages.map((img) =>
+        img.type === "file"
+          ? {
+              file: img.file,
+              alt: img.alt ?? img.fileName,
+              position: img.position,
+            }
+          : {
+              path: img.path,
+              alt: img.alt ?? img.fileName,
+              position: img.position,
+            },
+      ),
       {
-        shouldDirty: true,
+        shouldDirty: !isFirstSync,
         shouldTouch: true,
         shouldValidate: true,
       },
     );
-  }, [images, setValue]);
+  }, [previewImages, setValue]);
 
   const handleButtonClick = () => {
     inputRef.current?.click();
@@ -57,7 +111,7 @@ const ImageUploadButton = () => {
       />
 
       <DragDropProvider onDragEnd={reorder}>
-        <UploadedImagesContainer images={images} remove={remove} />
+        <UploadedImagesContainer images={previewImages} remove={remove} />
       </DragDropProvider>
     </div>
   );

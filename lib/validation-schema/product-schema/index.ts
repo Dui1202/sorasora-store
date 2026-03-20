@@ -27,10 +27,12 @@ export {
 export type {
   CreateProductFormData,
   CreateProductFormInputData,
-  LocalProductImages,
+  LocalProductImage,
 } from "./create-product-form";
 export { updateProductFormSchema } from "./update-product-form";
 export type {
   UpdateProductFormData,
   UpdateProductFormInputData,
+  UpdateProductImage,
+  UpdateProductVariantImage,
 } from "./update-product-form";

@@ -1,19 +1,14 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { Move, Trash2 } from "lucide-react";
-import { UploadedImagePreview } from "./type";
+import { ImagePreview } from "./type";
 
 const UploadedImagesContainer = ({
   images,
   remove,
 }: {
-  images: UploadedImagePreview[];
+  images: ImagePreview[];
   remove: (id: string) => void;
 }) => {
   return (
@@ -34,7 +29,7 @@ const ImageCard = ({
   index,
   remove,
 }: {
-  img: UploadedImagePreview;
+  img: ImagePreview;
   index: number;
   remove: (id: string) => void;
 }) => {
@@ -51,8 +46,8 @@ const ImageCard = ({
       ref={ref}
     >
       <img
-        src={img.previewUrl}
-        alt={img.fileName}
+        src={img.displayUrl}
+        alt={img.alt ?? img.fileName}
         className="relative z-20 aspect-square object-cover w-full rounded-t-lg"
       />
       <CardHeader>

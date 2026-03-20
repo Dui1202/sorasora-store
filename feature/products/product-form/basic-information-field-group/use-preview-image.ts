@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { UploadedImagePreview } from "./type";
+import type { FileImagePreview, ImagePreview } from "./type";
 import { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 
-export function usePreviewImage() {
-  const [images, setImages] = useState<UploadedImagePreview[]>([]);
+export function usePreviewImage(initialImages: ImagePreview[] = []) {
+  const [previewImages, setPreviewImages] =
+    useState<ImagePreview[]>(initialImages);
   const previewUrlsRef = useRef(new Map<string, string>());
 
   useEffect(() => {
@@ -26,32 +27,33 @@ export function usePreviewImage() {
       return;
     }
 
-    setImages((prev) => {
-      const createdPreviews: UploadedImagePreview[] = files.map(
-        (file, index) => {
-          const id = crypto.randomUUID();
-          const previewUrl = URL.createObjectURL(file);
-          previewUrlsRef.current.set(id, previewUrl);
+    setPreviewImages((prev) => {
+      const currentImages = prev ?? initialImages;
+      const createdPreviews: FileImagePreview[] = files.map((file, index) => {
+        const id = crypto.randomUUID();
+        const previewUrl = URL.createObjectURL(file);
+        previewUrlsRef.current.set(id, previewUrl);
 
-          return {
-            id,
-            file,
-            fileName: file.name,
-            previewUrl,
-            position: prev.length + index,
-          };
-        },
-      );
+        return {
+          id,
+          type: "file",
+          displayUrl: previewUrl,
+          fileName: file.name,
+          file,
+          position: currentImages.length + index,
+        };
+      });
 
-      return [...prev, ...createdPreviews];
+      return [...currentImages, ...createdPreviews];
     });
 
     event.target.value = "";
   };
 
   const remove = (id: string) => {
-    setImages((prev) => {
-      return prev
+    setPreviewImages((prev) => {
+      const currentImages = prev ?? initialImages;
+      return currentImages
         .filter((img) => img.id !== id)
         .map((img, index) => ({
           ...img,
@@ -74,15 +76,16 @@ export function usePreviewImage() {
       const { initialIndex, index } = source;
 
       if (initialIndex !== index) {
-        setImages((items) =>
-          move(items, event).map((item, itemIndex) => ({
+        setPreviewImages((prev) => {
+          const currentImages = prev ?? initialImages;
+          return move(currentImages, event).map((item, itemIndex) => ({
             ...item,
             position: itemIndex,
-          })),
-        );
+          }));
+        });
       }
     }
   };
 
-  return { images, addImages, remove, reorder };
+  return { previewImages, addImages, remove, reorder };
 }

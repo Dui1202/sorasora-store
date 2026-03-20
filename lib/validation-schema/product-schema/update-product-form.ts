@@ -1,5 +1,6 @@
 import z from "zod";
 import {
+  createProductFormBaseSchema,
   localProductImageSchema,
   localProductVariantImageSchema,
 } from "./create-product-form";
@@ -33,7 +34,7 @@ const updateProductVariantSchema = productVariantBaseSchema
   });
 
 // Main update product form validation schema
-const updateProductFormBaseSchema = productBaseSchema
+const updateProductFormBaseSchema = createProductFormBaseSchema
   .omit({
     productImages: true,
     variants: true,
@@ -52,4 +53,9 @@ export type UpdateProductFormInputData = z.input<
 
 export type UpdateProductFormData = z.output<
   typeof updateProductFormBaseSchema
+>;
+
+export type UpdateProductImage = z.infer<typeof updateProductImageSchema>;
+export type UpdateProductVariantImage = z.infer<
+  typeof updateProductVariantImageSchema
 >;

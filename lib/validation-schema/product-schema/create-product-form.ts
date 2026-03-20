@@ -103,4 +103,4 @@ export type CreateProductFormData = z.output<
 export type CreateProductFormInputData = z.input<
   typeof createProductFormBaseSchema
 >;
-export type LocalProductImages = z.infer<typeof localProductImageSchema>[];
+export type LocalProductImage = z.infer<typeof localProductImageSchema>;
