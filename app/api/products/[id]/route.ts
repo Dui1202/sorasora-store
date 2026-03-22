@@ -2,6 +2,7 @@ import { Prisma } from "@/app/generated/prisma/browser";
 import prisma from "@/lib/infrastructure/database/prisma";
 import { removeProductImages } from "@/lib/infrastructure/storage/server";
 import { validateProductFormData } from "@/lib/products";
+import { validateUpdateProductFormData } from "@/lib/products/product-validation";
 import { NextRequest, NextResponse } from "next/server";
 import { unknown } from "zod";
 
@@ -79,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  const formValidation = validateProductFormData(formData);
+  const formValidation = validateUpdateProductFormData(formData);
 
   if (!formValidation.success) {
     return NextResponse.json({ error: formValidation.error }, { status: 400 });

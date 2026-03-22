@@ -1,24 +1,20 @@
 import z from "zod";
-import {
-  CreateProductFormData,
-  createProductFormSchema,
-  multipartPayloadSchema,
-} from "../validation-schema/product-schema";
+import { updateProductFormSchema } from "../../validation-schema/product-schema";
+import { multipartPayloadUpdateProductSchema } from "../../validation-schema/product-schema/product-api";
 
-type ProductFormValidationResult =
+type UpdateProductFormValidationResult =
   | {
       success: true;
-      data: z.infer<typeof createProductFormSchema>;
+      data: z.infer<typeof updateProductFormSchema>;
     }
   | {
       success: false;
       error: string;
     };
 
-export const validateProductFormData = (
+export const validateUpdateProductFormData = (
   formData: FormData,
-): ProductFormValidationResult => {
-  // Handle payload parsing and validation
+): UpdateProductFormValidationResult => {
   const payloadField = formData.get("payload");
 
   if (typeof payloadField !== "string") {
@@ -41,7 +37,8 @@ export const validateProductFormData = (
   }
 
   // Validate the payload content against the schema (excluding files)
-  const payloadValidation = multipartPayloadSchema.safeParse(parsedPayload);
+  const payloadValidation =
+    multipartPayloadUpdateProductSchema.safeParse(parsedPayload);
 
   if (!payloadValidation.success) {
     return {
@@ -58,16 +55,24 @@ export const validateProductFormData = (
     .getAll("variantImages")
     .filter((value): value is File => value instanceof File);
 
-  if (imageFiles.length !== payloadValidation.data.productImages.length) {
+  const newImagesFromPayloads = payloadValidation.data.productImages.map(
+    (image) => !("path" in image),
+  );
+
+  if (imageFiles.length !== newImagesFromPayloads.length) {
     return {
       success: false,
       error: "Image files count does not match product metadata.",
     };
   }
 
+  const newVariantImagesFormPayloads = payloadValidation.data.variants.map(
+    (variant) => !("path" in variant.image),
+  );
+
   if (
     payloadValidation.data.hasVariation &&
-    variantImageFiles.length !== payloadValidation.data.variants.length
+    variantImageFiles.length !== newVariantImagesFormPayloads.length
   ) {
     return {
       success: false,
@@ -94,13 +99,12 @@ export const validateProductFormData = (
     })),
   };
 
-  // Final validation before processing the creation command
-  const formValidation = createProductFormSchema.safeParse(formDataCandidate);
+  const formValidation = updateProductFormSchema.safeParse(formDataCandidate);
 
   if (!formValidation.success) {
     return {
       success: false,
-      error: "Invalid form data",
+      error: formValidation.error.message,
     };
   }
 

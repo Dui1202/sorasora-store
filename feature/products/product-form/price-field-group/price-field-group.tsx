@@ -6,21 +6,85 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
 import { Plus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import VariationFieldGroup from "./variation-field-group/variation-field-group";
 import { calculateBreakEvenPrice } from "./pricing/calculate-break-even-price";
-import { useVariation } from "./variation-field-group/use-variation";
+import {
+  createEmptyVariation,
+  useVariation,
+} from "./variation-field-group/use-variation";
 import VariationPriceTableField from "./variation-price-table-field/variation-price-table-field";
+import {
+  parseExistingVariantsForEditor,
+} from "./variation-price-table-field/variation-price-table-field-utils";
+import { VariantDraftSeed } from "./variation-price-table-field/use-variant-draft-rows";
+import {
+  PriceFormInputData,
+  PriceFormMode,
+  PriceFormVariantInput,
+} from "./types";
 
-const PriceFieldGroup = () => {
-  const variationState = useVariation();
+type PriceFieldGroupProps = {
+  mode: PriceFormMode;
+};
+
+type InitialVariationEditorState = {
+  initialVariations: ReturnType<typeof useVariation>["variations"];
+  initialDraftSeeds: VariantDraftSeed[];
+  parseError: string | null;
+};
+
+const DEFAULT_EDITOR_STATE: InitialVariationEditorState = {
+  initialVariations: [],
+  initialDraftSeeds: [],
+  parseError: null,
+};
+
+const toInitialVariationState = (
+  mode: PriceFormMode,
+  hasVariation: boolean,
+  variants: PriceFormVariantInput[],
+): InitialVariationEditorState => {
+  if (mode !== "update" || !hasVariation) {
+    return DEFAULT_EDITOR_STATE;
+  }
+
+  const parsed = parseExistingVariantsForEditor(variants);
+
+  if (!parsed.success) {
+    return {
+      initialVariations: [createEmptyVariation()],
+      initialDraftSeeds: [],
+      parseError: parsed.error,
+    };
+  }
+
+  return {
+    initialVariations: parsed.data.variations,
+    initialDraftSeeds: parsed.data.seeds,
+    parseError: null,
+  };
+};
+
+const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
+  const { control, setValue, register, getValues, setError, clearErrors, formState } =
+    useFormContext<PriceFormInputData>();
+  const { errors } = formState;
+
+  const initialVariationState = useMemo<InitialVariationEditorState>(() => {
+    const hasVariation = getValues("hasVariation");
+    const variants = getValues("variants") ?? [];
+    return toInitialVariationState(mode, hasVariation, variants);
+  }, [getValues, mode]);
+
+  const variationState = useVariation(initialVariationState.initialVariations);
   const { addVariation, isVariationEnable, variations } = variationState;
-
-  const { control, setValue, register } =
-    useFormContext<CreateProductFormInputData>();
+  const [initialDraftSeeds, setInitialDraftSeeds] = useState<VariantDraftSeed[]>(
+    initialVariationState.initialDraftSeeds,
+  );
+  const previousIsVariationEnableRef = useRef(isVariationEnable);
 
   const supplierCountry = useWatch({
     control,
@@ -36,38 +100,107 @@ const PriceFieldGroup = () => {
   });
 
   useEffect(() => {
-    setValue("hasVariation", isVariationEnable, {
-      shouldDirty: true,
-    });
-
-    if (!isVariationEnable) {
-      setValue("variants", [], {
-        shouldDirty: true,
-      });
+    if (!initialVariationState.parseError) {
+      return;
     }
+
+    setError("variants", {
+      type: "manual",
+      message: initialVariationState.parseError,
+    });
+  }, [initialVariationState.parseError, setError]);
+
+  useEffect(() => {
+    const wasVariationEnabled = previousIsVariationEnableRef.current;
+    previousIsVariationEnableRef.current = isVariationEnable;
+
+    if (wasVariationEnabled === isVariationEnable) {
+      return;
+    }
+
+    if (isVariationEnable) {
+      setValue("hasVariation", true, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue("baseSku", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue("baseCostPrice", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue("baseSellingPrice", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    setValue("hasVariation", false, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("variants", [], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("baseSku", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("baseCostPrice", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("baseSellingPrice", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   }, [isVariationEnable, setValue]);
 
   const handleVariantsChange = useCallback(
-    (variants: CreateProductFormInputData["variants"]) => {
+    (variants: PriceFormVariantInput[]) => {
       setValue("variants", variants, {
         shouldDirty: true,
+        shouldValidate: true,
       });
+
+      if (variants.length > 0) {
+        clearErrors("variants");
+      }
     },
-    [setValue],
+    [clearErrors, setValue],
   );
 
+  const handleEnableVariation = useCallback(() => {
+    setInitialDraftSeeds([]);
+    clearErrors("variants");
+    addVariation();
+  }, [addVariation, clearErrors]);
+
   const [breakEvenPrice, setBreakEvenPrice] = useState(0);
+  const variantsErrorMessage =
+    typeof errors.variants?.message === "string"
+      ? errors.variants.message
+      : undefined;
 
   return (
     <>
       <FieldGroup>
         <Field>
           <FieldLabel>Variations</FieldLabel>
+          {variantsErrorMessage && (
+            <FieldDescription className="text-destructive">
+              {variantsErrorMessage}
+            </FieldDescription>
+          )}
           {!isVariationEnable && (
             <div>
-              <Button onClick={addVariation} type="button">
+              <Button onClick={handleEnableVariation} type="button">
                 <Plus />
-                Enable Variation
+                Add Variation
               </Button>
             </div>
           )}
@@ -134,7 +267,9 @@ const PriceFieldGroup = () => {
         <div className="flex flex-col gap-4">
           <VariationFieldGroup variationState={variationState} />
           <VariationPriceTableField
+            mode={mode}
             variations={variations}
+            initialDraftSeeds={initialDraftSeeds}
             onVariantsChange={handleVariantsChange}
           />
         </div>

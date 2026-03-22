@@ -30,7 +30,7 @@ export const createProductFormBaseSchema = productBaseSchema
     variants: true,
   })
   .extend({
-    hasVariation: z.boolean(),
+    hasVariation: z.boolean().default(false),
     baseSku: z.string().trim().optional(),
     baseCostPrice: z
       .number()

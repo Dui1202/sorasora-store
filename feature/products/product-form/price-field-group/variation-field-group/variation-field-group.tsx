@@ -86,6 +86,7 @@ const VariationField = ({
         <InputGroup>
           <InputGroupInput
             placeholder=""
+            value={variation.name}
             onChange={(value) => {
               updateVariationName(variation.id, value.target.value);
             }}

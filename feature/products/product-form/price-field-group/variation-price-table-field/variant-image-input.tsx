@@ -1,5 +1,6 @@
 import { ImagePlus } from "lucide-react";
 import Image from "next/image";
+import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
 import { VariantDraftRow } from "./use-variant-combinations";
 import {
   getImageGroupKey,
@@ -17,6 +18,12 @@ const VariantImageInput = ({
 }: VariantImageInputProps) => {
   const groupKey = getImageGroupKey(row);
   const inputId = toImageInputId(groupKey);
+  const previewSrc = row.imagePreviewUrl
+    ? row.imagePreviewUrl
+    : row.imagePath
+      ? getProductImagePublicUrl(row.imagePath)
+      : null;
+  const hasImage = Boolean(row.imageFile || row.imagePath);
 
   return (
     <div className="space-y-2">
@@ -41,9 +48,9 @@ const VariantImageInput = ({
         htmlFor={inputId}
         className="relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed"
       >
-        {row.imagePreviewUrl ? (
+        {previewSrc ? (
           <Image
-            src={row.imagePreviewUrl}
+            src={previewSrc}
             alt={row.imageAlt || "Variant image preview"}
             fill
             sizes="80px"
@@ -55,7 +62,7 @@ const VariantImageInput = ({
         )}
       </label>
 
-      {!row.imageFile && (
+      {!hasImage && (
         <p className="text-xs text-destructive">Variant image is required</p>
       )}
     </div>

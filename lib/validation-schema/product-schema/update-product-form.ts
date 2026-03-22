@@ -5,7 +5,6 @@ import {
   localProductVariantImageSchema,
 } from "./create-product-form";
 import {
-  productBaseSchema,
   productImageBaseSchema,
   productVariantBaseSchema,
   productVariantImageBaseSchema,
@@ -34,18 +33,66 @@ const updateProductVariantSchema = productVariantBaseSchema
   });
 
 // Main update product form validation schema
-const updateProductFormBaseSchema = createProductFormBaseSchema
+export const updateProductFormBaseSchema = createProductFormBaseSchema
   .omit({
     productImages: true,
     variants: true,
   })
   .extend({
     productImages: z.array(updateProductImageSchema).min(1),
-    variants: z.array(updateProductVariantSchema).min(1),
+    variants: z.array(updateProductVariantSchema).default([]),
   });
 
 // For zod resolver schema
-export const updateProductFormSchema = updateProductFormBaseSchema;
+export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
+  (data, ctx) => {
+    if (data.hasVariation) {
+      if (data.variants.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Add at least 1 variant when variations are enabled.",
+          path: ["variants"],
+        });
+      }
+
+      data.variants.forEach((variant, index) => {
+        if (!variant.image) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Variant image is required.",
+            path: ["variants", index, "image"],
+          });
+        }
+      });
+
+      return;
+    }
+
+    if (!data.baseSku) {
+      ctx.addIssue({
+        code: "custom",
+        message: "SKU is required",
+        path: ["baseSku"],
+      });
+    }
+
+    if (data.baseCostPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Original price must be 0 or greater",
+        path: ["baseCostPrice"],
+      });
+    }
+
+    if (data.baseSellingPrice === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Sale price must be 0 or greater",
+        path: ["baseSellingPrice"],
+      });
+    }
+  },
+);
 
 export type UpdateProductFormInputData = z.input<
   typeof updateProductFormBaseSchema

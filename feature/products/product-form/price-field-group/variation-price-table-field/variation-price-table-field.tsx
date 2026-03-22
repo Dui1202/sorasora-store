@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from "react";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
 import {
   Table,
   TableBody,
@@ -12,20 +11,31 @@ import {
   createVariantTableRows,
   useVariantCombinations,
 } from "./use-variant-combinations";
-import { useVariantDraftRows } from "./use-variant-draft-rows";
+import {
+  useVariantDraftRows,
+  VariantDraftSeed,
+} from "./use-variant-draft-rows";
 import {
   getVariationLabel,
   mapDraftRowsToFormVariants,
 } from "./variation-price-table-field-utils";
 import VariantPriceTableRow from "./variant-price-table-row";
+import {
+  PriceFormMode,
+  PriceFormVariantInput,
+} from "../types";
 
 type VariationPriceTableFieldProps = {
+  mode: PriceFormMode;
   variations: Variation[];
-  onVariantsChange?: (variants: CreateProductFormInputData["variants"]) => void;
+  initialDraftSeeds?: VariantDraftSeed[];
+  onVariantsChange?: (variants: PriceFormVariantInput[]) => void;
 };
 
 const VariationPriceTableField = ({
+  mode,
   variations,
+  initialDraftSeeds,
   onVariantsChange,
 }: VariationPriceTableFieldProps) => {
   const renderableVariations = useMemo(() => {
@@ -34,11 +44,11 @@ const VariationPriceTableField = ({
 
   const { combinations } = useVariantCombinations(renderableVariations);
   const { draftRows, updateNumericField, updateSku, updateVariantImage } =
-    useVariantDraftRows(combinations);
+    useVariantDraftRows(combinations, initialDraftSeeds);
 
   useEffect(() => {
     onVariantsChange?.(mapDraftRowsToFormVariants(draftRows));
-  }, [draftRows, onVariantsChange]);
+  }, [draftRows, mode, onVariantsChange]);
 
   const tableRows = useMemo(() => {
     return createVariantTableRows(draftRows, renderableVariations.length);

@@ -5,7 +5,7 @@ import {
   removeProductImages,
   uploadProductImages,
 } from "@/lib/infrastructure/storage/server";
-import { validateProductFormData } from "@/lib/products";
+import { validateCreateProductFormData } from "@/lib/products/product-validation";
 import {
   CreateProductCommandData,
   ProductImages,
@@ -62,7 +62,7 @@ async function handleMultipartCreate(request: NextRequest) {
     );
   }
 
-  const formValidation = validateProductFormData(formData);
+  const formValidation = validateCreateProductFormData(formData);
 
   if (!formValidation.success) {
     return NextResponse.json({ error: formValidation.error }, { status: 400 });
@@ -168,6 +168,7 @@ async function createProduct(command: CreateProductCommandData) {
     franchiseId,
     productImages,
     isPublished,
+    hasVariation,
   } = command;
 
   return prisma.product.create({
@@ -177,6 +178,7 @@ async function createProduct(command: CreateProductCommandData) {
       supplierCountry,
       franchiseId,
       isPublished: isPublished,
+      hasVariation,
       variants: {
         create: variants.map((variant) => ({
           name: variant.name,

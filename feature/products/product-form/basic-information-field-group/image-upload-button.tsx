@@ -15,21 +15,23 @@ import { UploadedImagePreview } from "./type";
 import UploadedImagesContainer from "./uploaded-images-container";
 import { usePreviewImage } from "./use-preview-image";
 
-// type ProductFormInputData =
-//   | CreateProductFormInputData
-//   | UpdateProductFormInputData;
+type ProductFormInputData =
+  | CreateProductFormInputData
+  | UpdateProductFormInputData;
+const EMPTY_PRODUCT_IMAGES: UpdateProductImage[] = [];
 
 const ImageUploadButton = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isInitializedRef = useRef(false);
-  const { watch, setValue, register } =
-    useFormContext<UpdateProductFormInputData>();
+  const { watch, setValue, register } = useFormContext<ProductFormInputData>();
 
-  const initialProductImages = watch("productImages") as UpdateProductImage[];
+  const initialProductImages =
+    (watch("productImages") as UpdateProductImage[] | undefined) ??
+    EMPTY_PRODUCT_IMAGES;
 
   function isExistingImage(
     img: UpdateProductImage,
-  ): img is { path: string; position: number; alt?: string } {
+  ): img is Extract<UpdateProductImage, { path: string }> {
     return "path" in img;
   }
   const initialImages: UploadedImagePreview[] = useMemo<UploadedImagePreview[]>(

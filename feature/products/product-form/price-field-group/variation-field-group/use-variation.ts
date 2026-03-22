@@ -4,7 +4,7 @@ import type { OptionInputObject } from "../option-input-group";
 
 const MAX_VARIATIONS = 2;
 
-const createEmptyVariation = (): Variation => {
+export const createEmptyVariation = (): Variation => {
   return {
     id: crypto.randomUUID(),
     name: "",
@@ -31,8 +31,8 @@ const isOptionListEqual = (
   return true;
 };
 
-export function useVariation() {
-  const [variations, setVariations] = useState<Variation[]>([]);
+export function useVariation(initialVariations: Variation[] = []) {
+  const [variations, setVariations] = useState<Variation[]>(initialVariations);
   const isVariationEnable = variations.length > 0;
   const isVariationLimitExceed = variations.length >= MAX_VARIATIONS;
 
@@ -116,6 +116,10 @@ export function useVariation() {
     [],
   );
 
+  const replaceVariations = useCallback((next: Variation[]) => {
+    setVariations(next.slice(0, MAX_VARIATIONS));
+  }, []);
+
   return {
     variations,
     addVariation,
@@ -124,5 +128,6 @@ export function useVariation() {
     isVariationLimitExceed,
     updateVariationOptions,
     updateVariationName,
+    replaceVariations,
   };
 }

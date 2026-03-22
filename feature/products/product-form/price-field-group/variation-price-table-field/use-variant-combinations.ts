@@ -14,6 +14,7 @@ export type VariantOptionSelection = {
 
 export type VariantCombination = {
   combinationKey: string;
+  signature: string;
   selectedOptions: VariantOptionSelection[];
 };
 
@@ -23,6 +24,7 @@ export type VariantDraftRow = VariantCombination & {
   sku: string;
   stock: number;
   imageFile?: File;
+  imagePath?: string;
   imageAlt?: string;
   imagePreviewUrl?: string;
 };
@@ -38,12 +40,38 @@ function normalizeVariationOptions(optionsList: OptionInputObject[]) {
   });
 }
 
-function createCombinationKey(selectedOptions: VariantOptionSelection[]) {
+export type VariantSignaturePart = {
+  variationName: string;
+  optionValue: string;
+};
+
+export function normalizeSignatureValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function createVariantSignature(selectedOptions: VariantSignaturePart[]) {
   return selectedOptions
     .map((selection) => {
-      return `${selection.variationId}:${selection.optionId}`;
+      return `${normalizeSignatureValue(selection.variationName)}:${normalizeSignatureValue(selection.optionValue)}`;
     })
     .join("|");
+}
+
+function createCombination(
+  selectedOptions: VariantOptionSelection[],
+): VariantCombination {
+  const signature = createVariantSignature(
+    selectedOptions.map((selection) => ({
+      variationName: selection.variationName,
+      optionValue: selection.optionValue,
+    })),
+  );
+
+  return {
+    combinationKey: signature,
+    signature,
+    selectedOptions,
+  };
 }
 
 function createSelection(
@@ -79,6 +107,7 @@ function createDefaultDraftRow(
     sku: "",
     stock: 0,
     imageFile: undefined,
+    imagePath: undefined,
     imageAlt: undefined,
     imagePreviewUrl: undefined,
   };
@@ -105,10 +134,7 @@ export function createVariantCombinations(
     return firstVariation.optionsList.map((option) => {
       const selectedOptions = [createSelection(firstVariation, option, 0)];
 
-      return {
-        combinationKey: createCombinationKey(selectedOptions),
-        selectedOptions,
-      };
+      return createCombination(selectedOptions);
     });
   }
 
@@ -121,10 +147,7 @@ export function createVariantCombinations(
         createSelection(secondVariation, secondOption, 1),
       ];
 
-      combinations.push({
-        combinationKey: createCombinationKey(selectedOptions),
-        selectedOptions,
-      });
+      combinations.push(createCombination(selectedOptions));
     }
   }
 
@@ -135,12 +158,12 @@ export function mergeDraftValues(
   previousRows: VariantDraftRow[],
   nextCombinations: VariantCombination[],
 ): VariantDraftRow[] {
-  const previousRowsByKey = new Map(
-    previousRows.map((row) => [row.combinationKey, row]),
+  const previousRowsBySignature = new Map(
+    previousRows.map((row) => [row.signature, row]),
   );
 
   return nextCombinations.map((combination) => {
-    const matchedRow = previousRowsByKey.get(combination.combinationKey);
+    const matchedRow = previousRowsBySignature.get(combination.signature);
 
     if (!matchedRow) {
       return createDefaultDraftRow(combination);
@@ -148,6 +171,8 @@ export function mergeDraftValues(
 
     return {
       ...matchedRow,
+      combinationKey: combination.combinationKey,
+      signature: combination.signature,
       selectedOptions: combination.selectedOptions,
     };
   });

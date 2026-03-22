@@ -34,6 +34,7 @@ export const productBaseSchema = z.object({
   supplierCountry: supplierCountrySchema,
   franchiseId: z.cuid("Invalid franchise Id").optional(),
   isPublished: z.boolean().default(false),
+  hasVariation: z.boolean().default(false),
   variants: z.array(productVariantBaseSchema).min(1),
   productImages: z
     .array(productImageBaseSchema)

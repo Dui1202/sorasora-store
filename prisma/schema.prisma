@@ -33,6 +33,7 @@ model Product {
   variants        ProductVariant[]
   productImages   ProductImage[]
   isPublished     Boolean          @default(false)
+  hasVariation    Boolean          @default(false)
 }
 
 model ProductVariant {

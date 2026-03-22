@@ -59,7 +59,7 @@ const CreateModeForm = ({ onSubmit }: CreateProductFormProps) => {
       <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
         <Heading>Add Product</Heading>
         <Separator className="my-2" />
-        <ProductFormFields />
+        <ProductFormFields mode="create" />
         <FormButton isSubmitting={isSubmitting} />
       </form>
     </FormProvider>
@@ -84,14 +84,14 @@ const UpdateModeForm = ({ onSubmit, product }: UpdateProductFormProps) => {
       <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
         <Heading>Edit Product</Heading>
         <Separator className="my-2" />
-        <ProductFormFields />
+        <ProductFormFields mode="update" />
         <FormButton isSubmitting={isSubmitting} />
       </form>
     </FormProvider>
   );
 };
 
-const ProductFormFields = () => {
+const ProductFormFields = ({ mode }: { mode: "create" | "update" }) => {
   return (
     <>
       <SectionCard>
@@ -109,7 +109,7 @@ const ProductFormFields = () => {
       <SectionCard>
         <FieldSet>
           <FieldLegend>Sales Information</FieldLegend>
-          <PriceFieldGroup />
+          <PriceFieldGroup mode={mode} />
         </FieldSet>
       </SectionCard>
     </>

@@ -79,21 +79,8 @@ export const toCreateProductCommand = (
     variants,
     productImages,
     isPublished: data.isPublished,
+    hasVariation: data.hasVariation,
   });
-};
-
-const EMPTY: UpdateProductFormInputData = {
-  name: "",
-  description: undefined,
-  supplierCountry: "JAPAN", // pick your safe default
-  franchiseId: undefined,
-  isPublished: false,
-  hasVariation: false,
-  baseSku: undefined,
-  baseCostPrice: undefined,
-  baseSellingPrice: undefined,
-  variants: [],
-  productImages: [],
 };
 
 export const toUpdateProductCommandInput = (
@@ -102,7 +89,7 @@ export const toUpdateProductCommandInput = (
   const variants = [...product.variants].sort(
     (a, b) => a.position - b.position,
   );
-  const hasVariation = variants.length > 1;
+  const hasVariation = product.hasVariation;
   const baseVariant = variants[0];
 
   return {

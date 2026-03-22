@@ -10,13 +10,61 @@ import {
   parseNonNegativeInt,
 } from "./variation-price-table-field-utils";
 
-export function useVariantDraftRows(combinations: VariantCombination[]) {
+export type VariantDraftSeed = {
+  signature: string;
+  costPrice: number;
+  sellingPrice: number;
+  sku: string;
+  stock?: number;
+  imageFile?: File;
+  imagePath?: string;
+  imageAlt?: string;
+  imagePreviewUrl?: string;
+};
+
+export function useVariantDraftRows(
+  combinations: VariantCombination[],
+  initialDraftSeeds: VariantDraftSeed[] = [],
+) {
   const [draftRowsState, setDraftRowsState] = useState<VariantDraftRow[]>([]);
   const previewUrlsRef = useRef(new Set<string>());
 
+  const seededDraftRows = useMemo(() => {
+    if (initialDraftSeeds.length === 0 || combinations.length === 0) {
+      return [] as VariantDraftRow[];
+    }
+
+    const seedMapBySignature = new Map(
+      initialDraftSeeds.map((seed) => [seed.signature, seed]),
+    );
+    const defaultRows = mergeDraftValues([], combinations);
+
+    return defaultRows.map((row) => {
+      const seed = seedMapBySignature.get(row.signature);
+
+      if (!seed) {
+        return row;
+      }
+
+      return {
+        ...row,
+        costPrice: seed.costPrice,
+        sellingPrice: seed.sellingPrice,
+        sku: seed.sku,
+        stock: seed.stock ?? 0,
+        imageFile: seed.imageFile,
+        imagePath: seed.imagePath,
+        imageAlt: seed.imageAlt,
+        imagePreviewUrl: seed.imagePreviewUrl,
+      };
+    });
+  }, [combinations, initialDraftSeeds]);
+
   const draftRows = useMemo(() => {
-    return mergeDraftValues(draftRowsState, combinations);
-  }, [draftRowsState, combinations]);
+    const sourceRows =
+      draftRowsState.length > 0 ? draftRowsState : seededDraftRows;
+    return mergeDraftValues(sourceRows, combinations);
+  }, [combinations, draftRowsState, seededDraftRows]);
 
   useEffect(() => {
     const nextPreviewUrls = new Set<string>();
@@ -97,6 +145,7 @@ export function useVariantDraftRows(combinations: VariantCombination[]) {
           return {
             ...row,
             imageFile: file,
+            imagePath: undefined,
             imageAlt: file.name,
             imagePreviewUrl: previewUrl,
           };
