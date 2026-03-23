@@ -1,6 +1,19 @@
 import prisma from "@/lib/infrastructure/database/prisma";
 import { CreateProductCommandData } from "@/lib/validation-schema/product-schema";
 
+export async function findProducts() {
+  return prisma.product.findMany({
+    include: {
+      productImages: true,
+      variants: {
+        include: {
+          image: true,
+        },
+      },
+    },
+  });
+}
+
 export async function createProduct(command: CreateProductCommandData) {
   const {
     name,

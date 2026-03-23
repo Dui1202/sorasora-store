@@ -1,28 +1,14 @@
 import { toErrorResponse } from "@/core/errors/http";
-import prisma from "@/lib/infrastructure/database/prisma";
-import { createProductService } from "@/lib/products";
+import { createProductService, listProductsService } from "@/lib/products";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  const products = await prisma.product.findMany({
-    include: {
-      productImages: true,
-      variants: {
-        include: {
-          image: true,
-        },
-      },
-    },
-  });
-
-  if (!products) {
-    return NextResponse.json(
-      { error: "Failed to fetch products" },
-      { status: 500 },
-    );
+  try {
+    const products = await listProductsService();
+    return NextResponse.json(products);
+  } catch (error) {
+    return toErrorResponse(error);
   }
-
-  return NextResponse.json(products);
 }
 
 export async function POST(request: NextRequest) {
