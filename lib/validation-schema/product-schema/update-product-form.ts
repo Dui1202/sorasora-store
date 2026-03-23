@@ -10,16 +10,18 @@ import {
   productVariantImageBaseSchema,
 } from "./product-base";
 
-// Update product variant validation schema
-const updateProductVariantSchema = productVariantBaseSchema
+export const updateProductVariantBaseSchema = productVariantBaseSchema
   .omit({
     image: true,
   })
   .extend({
     existImage: productVariantImageBaseSchema.optional(),
     newImage: localProductVariantImageSchema.optional(),
-  })
-  .superRefine((data, ctx) => {
+  });
+
+// Update product variant validation schema
+const updateProductVariantSchema = updateProductVariantBaseSchema.superRefine(
+  (data, ctx) => {
     if (
       (!data.existImage && !data.newImage) ||
       (data.existImage && data.newImage)
@@ -36,7 +38,8 @@ const updateProductVariantSchema = productVariantBaseSchema
         path: ["newImage"],
       });
     }
-  });
+  },
+);
 
 // Main update product form validation schema
 export const updateProductFormBaseSchema = createProductFormBaseSchema

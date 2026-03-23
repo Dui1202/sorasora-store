@@ -1,155 +1,113 @@
-# Overview
+# AGENTS.md
 
-Sora Sora Store is an ecommerce system with two main parts:
+## Purpose
+
+This file defines the engineering rules, architectural boundaries, and implementation conventions for **Sora Sora Store**.
+
+It exists to keep the codebase:
+
+- maintainable
+- type-safe
+- consistent
+- easy to evolve
+
+This project is currently a **feature-first modular monolith** built around a product-heavy ecommerce workflow.
+
+---
+
+## Project Context
+
+Sora Sora Store has two main areas:
 
 1. **Store Management (Admin System)**
-   - Used internally to manage products, variants, pricing, and inventory
-   - Handles product creation, updates, and image uploads
-   - Focuses on data integrity, type safety, and maintainability
+   - Internal system for managing products, variants, pricing, inventory, and images
+   - Prioritizes correctness, maintainability, and operational clarity
 
 2. **Web Store (Customer-Facing)**
-   - Public storefront where customers browse and purchase products
-   - Focuses on performance, user experience, and accurate product display
+   - Public storefront for browsing and purchasing
+   - Prioritizes performance, UX, and accurate data presentation
+
+### Current Development Focus
+
+Most active development is in the **Store Management** system, especially:
+
+- product form workflows
+- product and variant data mapping
+- image upload and synchronization
+- validation consistency between frontend and backend
+
+### Core Domain
+
+The current core domain is **product management**, including:
+
+- products and variants
+- pricing and availability
+- product images (existing references and new uploads)
 
 ---
 
-## Core Domain
+# Rule Hierarchy
 
-The core domain of the system is **product management**, including:
+Not all guidance has the same weight.
 
-- Products and variants
-- Pricing and availability
-- Product images (existing URLs + new uploads)
+## 1. Principles
 
----
+Principles are hard constraints. Do not violate them unless the architecture is being intentionally changed.
 
-## Development Focus
+## 2. Rules
 
-Most development is currently focused on the **Store Management system**, especially:
+Rules are the default way to build in this codebase. Break them only with a clear reason.
 
-- Product form handling
-- Type-safe data mapping between backend and frontend
-- Image upload and processing
+## 3. Conventions
 
-# Tech Stack
-
-## Core Technologies
-
-- **Next.js (App Router)**
-  - Used for both Store Management and Web Store
-  - Prefer server components and server actions where appropriate
-  - Avoid unnecessary client-side state
-
-- **TypeScript (Strict Mode)**
-  - All code must be fully type-safe
-  - Do not use `any`
-  - Prefer explicit types for complex logic
+Conventions are preferred patterns for consistency. They may be adapted when needed.
 
 ---
 
-## Forms & Validation
+# Principles
 
-- **React Hook Form**
-  - Used for all forms
-  - Do not manage form state manually
+## 1. Strong Boundaries Between Layers
 
-- **Zod**
-  - Used for validation on both frontend and backend
-  - Zod schemas are the single source of truth
-  - Always use `zodResolver`
+Business logic, transport logic, persistence logic, and UI logic must remain clearly separated.
 
----
+## 2. Explicit Data Contracts
 
-## Data Fetching
+Data crossing a boundary must use explicit types and explicit mapping.
 
-- **Axios**
-  - Used for all HTTP requests
-  - Do not use native `fetch` in client components
-  - Centralize API calls in a dedicated layer
+## 3. Server-First Design
 
-- **TanStack Query**
-  - Used for client-side data fetching and caching
-  - Prefer over manual `useEffect` fetching
-  - Use mutations for writes and handle cache updates properly
+Do work on the server by default. Only move logic to the client when interactivity requires it.
 
-- Prefer **server components** for data fetching when possible
+## 4. Type Safety Is Non-Negotiable
 
-- Use TanStack Query only when client-side interactivity is required
+Use strict TypeScript. Do not use `any`.
+
+## 5. Reuse Before Abstraction
+
+Reuse existing patterns first. Add new abstractions only when repetition or complexity justifies them.
+
+## 6. Consistency Beats Cleverness
+
+Prefer boring, explicit, predictable code over compact or overly clever code.
 
 ---
-
-## Database & Backend
-
-- **Prisma ORM**
-  - Used for all database access
-  - Must go through a service layer
-  - Never access Prisma directly in UI or route handlers
-
-- **PostgreSQL**
-  - Primary database
-  - Data integrity is critical
-
-- **Supabase**
-  - Used for external services (e.g. storage)
-  - Keep usage isolated and explicit
-
----
-
-## UI System
-
-- **shadcn/ui + Radix UI**
-  - Primary component system
-  - Prefer composing existing components instead of building new ones
-
-- **Tailwind CSS**
-  - Used for styling
-  - Use utility-first approach
-
-- **class-variance-authority (CVA)**
-  - Used for component variants
-
-- **clsx + tailwind-merge**
-  - Used for class composition
-  - Avoid manual string concatenation
-
----
-
-## Interaction & UX
-
-- **dnd-kit**
-  - Used for drag-and-drop (e.g. images, variants)
-  - Follow existing patterns
-
-- **motion**
-  - Used for animations
-  - Keep animations subtle and performant
-
----
-
-## Key Principles
-
-- Prefer server-side logic over client-side when possible
-- Do not mix multiple data fetching strategies unnecessarily
-- Reuse existing utilities and patterns before introducing new ones
-- Maintain consistency across the codebase
 
 # Architecture
 
-Sora Sora Store follows a **feature-first modular monolith** with strict layer boundaries and server-first execution.
-
----
-
 ## Architectural Style
 
-- Use **Next.js App Router** as the application shell.
-- Organize by **feature/domain** (`product`, `variant`, `warehouse`), not by technical type alone.
-- Each feature encapsulates:
-  - types
-  - validation schemas
-  - business logic
-  - mapping functions
+Sora Sora Store uses a **feature-first modular monolith**.
 
-- Keep business logic in reusable modules; UI and routes stay thin.
+Organize code primarily by **feature/domain**, not by technical type alone.
+
+Examples:
+
+- `product`
+- `variant`
+- `inventory`
+- `warehouse`
+
+Each feature should keep related logic close together where practical.
 
 ---
 
@@ -157,422 +115,581 @@ Sora Sora Store follows a **feature-first modular monolith** with strict layer b
 
 ### Presentation Layer
 
-(`app/*`, `features/*`, `components/*`)
+**Examples:** `app/*`, `features/*`, `components/*`
 
-- UI rendering, form wiring, interaction handling
-- Must not contain business logic
+Responsible for:
+
+- rendering UI
+- wiring forms
+- handling user interaction
+- displaying server or client data
+
+Must not contain:
+
+- persistence logic
+- domain rules
+- complex transformation logic
 
 ---
 
 ### API Layer
 
-(`app/api/*`)
+**Examples:** `app/api/*`, route handlers, server action boundaries
 
-- HTTP boundary only
-- Handles:
-  - request parsing
-  - authentication / authorization
-  - calling application services
-  - response mapping
+Responsible for:
+
+- HTTP concerns
+- request parsing
+- authentication and authorization
+- validation entry points
+- calling application services
+- mapping service results to responses
+
+Must not contain:
+
+- core business rules
+- direct UI concerns
+- ad hoc persistence orchestration beyond thin transport handling
 
 ---
 
 ### Application Layer
 
-(`lib/services/*` or feature-local services)
+**Examples:** `lib/services/*` or feature-local services
 
-- Orchestrates use cases
-- Coordinates:
-  - database
-  - storage
-  - external services
+Responsible for:
+
+- use-case orchestration
+- transaction boundaries
+- coordination between database, storage, and external systems
+- calling domain logic
+- applying workflow rules
+
+This is where most non-trivial business behavior should live.
 
 ---
 
 ### Domain Layer
 
-(`lib/domain/*` or feature-local domain)
+**Examples:** `lib/domain/*` or feature-local domain modules
 
-- Contains:
-  - domain rules
-  - invariants
-  - pure logic (no side effects)
+Responsible for:
 
-- Keep domain logic simple and pragmatic (avoid over-engineering)
+- pure business rules
+- invariants
+- value-level validation that is not transport-specific
+- deterministic logic without side effects
+
+Do **not** introduce heavy DDD patterns unless the domain complexity actually requires them.
+
+For this codebase, domain logic should remain pragmatic and lightweight.
 
 ---
 
 ### Infrastructure Layer
 
-(`lib/infrastructure/*`)
+**Examples:** `lib/infrastructure/*`
 
-- External integrations:
-  - Prisma
-  - Supabase
-  - storage providers
+Responsible for:
 
-- Use adapter pattern
+- Prisma access
+- storage integrations
+- Supabase integration
+- external APIs
+- adapters and gateways
+
+Infrastructure should expose clear interfaces or functions that the application layer consumes.
 
 ---
 
 ### Contract Layer
 
-(`lib/validation-schema/*`)
+**Examples:** `lib/validation-schema/*`, DTO modules, schema modules
 
-- Zod schemas as single source of truth
-- Defines:
-  - input validation
-  - DTOs
-  - form types
+Responsible for:
 
----
+- boundary validation
+- transport-level schemas
+- DTO definitions
+- form input/output contracts
 
-## Required Data Flow
-
-1. UI collects input with React Hook Form
-2. Zod validates input via `zodResolver`
-3. API receives validated payload
-4. API calls application service
-5. Service executes use case with explicit mapping
-6. API returns typed response
+Zod is the validation source of truth for boundary data, not the home of all business logic.
 
 ---
 
-## Mapping Rules (CRITICAL)
+# Feature Boundaries
 
-- All transformations must use **explicit mapping functions**
+These rules matter more than folder names.
+
+## Allowed Dependency Direction
+
+Preferred dependency flow:
+
+`Presentation -> API boundary -> Application -> Domain / Infrastructure`
+
+## Boundary Rules
+
+### Features Must Not Become Tightly Coupled
+
+- Do not casually import internal implementation details from another feature.
+- Cross-feature access should go through explicit public modules or shared abstractions.
+
+### Shared Code Belongs in Shared Locations
+
+Move logic to shared modules only when it is truly shared.
+
+Good candidates:
+
+- generic UI primitives
+- shared validation utilities
+- shared infrastructure clients
+- common error utilities
+
+Do not create a shared module just to avoid one duplicate function.
+
+### Services Should Not Freely Call Other Services
+
+Avoid service-to-service chains across unrelated domains.
+
+If cross-feature coordination is needed:
+
+- use a higher-level orchestrator
+- or extract the shared behavior into a clear module
+
+---
+
+# Data and Type Modeling
+
+## Separate Types by Boundary
+
+Do not reuse one type everywhere.
+
+Use separate types for:
+
+- database models
+- API DTOs
+- form input/output
+- domain-level structures when needed
+
+## Rules
+
+- Do not pass Prisma models directly into UI.
+- Do not use form types as persistence input types.
+- Do not leak infrastructure-specific shapes across layers.
+- Keep types explicit and purpose-specific.
+
+---
+
+# Mapping Rules
+
+All non-trivial transformations across boundaries must use **explicit mapping functions**.
+
+## Required Mappings
 
 Examples:
 
-- `Product → UpdateProductFormInputData`
-- `FormData → UpdateProductInput`
+- `Product -> UpdateProductFormInputData`
+- `UpdateProductFormData -> UpdateProductInput`
+- `Prisma result -> API response DTO`
 
-#### Rules
+## Mapping Rules
 
-- Never pass database models directly to UI
-- Never reuse backend types in forms
-- Do not transform data inline inside components
-- Keep mappings inside feature modules
+- Keep mappings out of UI components.
+- Keep mappings out of route handlers unless trivial.
+- Prefer pure mapping functions.
+- Do not mutate original objects.
+- Name mappings explicitly.
 
----
+### Good Names
 
-## Server vs Client Responsibilities
+- `mapProductToUpdateForm`
+- `mapUpdateFormToProductInput`
+- `mapProductRecordToDto`
 
-### Server (Preferred)
+### Bad Names
 
-- Data fetching
-- Database operations
-- Business logic
-
-### Client
-
-- UI interaction
-- Form state
-- Minimal logic only
+- `transformData`
+- `normalizeThing`
+- `prepareStuff`
 
 ---
 
-## Non-Negotiable Rules
+# Server vs. Client Responsibilities
 
-- No `any`; strict TypeScript everywhere
-- No Prisma access from UI or route handlers
-- No direct storage calls from UI
-- Use Axios for client HTTP
-- Use TanStack Query for client caching
-- Prefer server components for read-heavy pages
-- Keep side effects idempotent
-- Standardize error handling with typed errors + single mapper
-- Reuse existing schemas, mappers, and UI primitives
+## Prefer Server-Side For
+
+- data fetching
+- persistence operations
+- business logic
+- authorization checks
+- expensive computation
+
+## Use Client-Side Only For
+
+- interactive UI state
+- form state
+- drag-and-drop
+- optimistic UX where justified
+- client-only behavior that cannot run on the server
+
+Client components should stay thin.
+
+---
+
+# Tech Guidance
+
+These are current defaults, not eternal laws.
+
+## Framework
+
+- Use **Next.js App Router** as the application shell.
+- Prefer server components for read-heavy pages.
+
+## Language
+
+- Use **TypeScript strict mode**.
+- Do not use `any`.
+- Prefer `unknown` when a value is truly unknown.
+
+## Forms
+
+- Use **React Hook Form** for forms.
+- Use **Zod** for boundary validation.
+- Use `zodResolver` when integrating Zod with React Hook Form.
+
+## Data Fetching
+
+- Prefer server-side data fetching where possible.
+- For client-side async state and caching, use the project’s standard query/caching layer.
+- Avoid ad hoc `useEffect` fetching when a structured data-fetching pattern exists.
+
+## Persistence and Backend
+
+- Use **Prisma** for database access.
+- Prisma access should live in infrastructure or service layers, not UI.
+- Use **PostgreSQL** as the primary database.
+
+## External Services
+
+- Keep **Supabase** or other external integrations isolated behind explicit modules.
+
+## UI
+
+- Prefer **pre-built components from shadcn/ui** as the default starting point.
+- Only build custom components when:
+  - a requirement cannot be satisfied by shadcn/ui
+  - composition of existing components becomes overly complex or unclear
+- Follow shadcn patterns and structure when extending components.
+- Prefer composition over creating isolated one-off components.
+- Keep styling consistent with Tailwind and existing design tokens.
+- Avoid introducing new UI libraries unless there is a strong justification.
+
+---
+
+# Documentation Links
+
+## Core
+
+- Next.js: https://nextjs.org/docs
+- TypeScript: https://www.typescriptlang.org/docs/
+
+## Forms & Validation
+
+- React Hook Form: https://react-hook-form.com/docs
+- Zod: https://zod.dev/
+
+## Data Fetching
+
+- TanStack Query: https://tanstack.com/query/latest/docs/framework/react/overview
+- Axios: https://axios-http.com/docs/intro
+
+## Backend & Database
+
+- Prisma: https://www.prisma.io/docs/orm
+- PostgreSQL: https://www.postgresql.org/docs/current/index.html
+
+## External Services
+
+- Supabase: https://supabase.com/docs
+
+## UI & Styling
+
+- shadcn/ui: https://ui.shadcn.com/docs
+- Radix UI: https://www.radix-ui.com/primitives/docs/overview/introduction
+- Tailwind CSS: https://tailwindcss.com/docs
+- class-variance-authority (CVA): https://cva.style/docs
+- clsx: https://github.com/lukeed/clsx
+- tailwind-merge: https://github.com/dcastil/tailwind-merge
+
+---
 
 # Coding Rules
 
 ## TypeScript
 
-- Use **strict TypeScript** at all times
-- Never use `any`
-- Prefer `unknown` over `any` when necessary
-- Always define explicit types for:
-  - function inputs
-  - function outputs
-
-- Avoid implicit `any` or overly inferred complex types
-
----
-
-## Types & Data Modeling
-
-- Do not reuse database (Prisma) types in the UI
-
-- Do not reuse form types as backend input types
-
-- Use **separate types per layer**:
-  - Database types
-  - API/DTO types
-  - Form input types
-
-- Types should be:
-  - explicit
-  - minimal
-  - purpose-specific
-
----
+- Always declare clear function input and output types when the logic is non-trivial.
+- Avoid overly clever inferred types when explicit types improve readability.
+- Prefer narrow types over broad, permissive ones.
 
 ## Functions
 
-- Keep functions **small and focused**
-- Each function should do **one thing only**
-- Prefer **pure functions** (no side effects) when possible
-- Avoid deeply nested logic
+- Keep functions focused.
+- Prefer pure functions when possible.
+- Avoid deep nesting.
+- Extract branching logic when it improves clarity.
+
+## React
+
+- Keep components small and composable.
+- Do not embed business logic in components.
+- Do not perform complex transformations inline in JSX.
+- Split components when readability drops.
+
+## Naming
+
+- Use descriptive names.
+- Booleans should read like booleans: `is`, `has`, `should`, `can`.
+- Functions should use verbs.
+- Types should use PascalCase.
+
+## Imports
+
+- Use consistent import paths.
+- Avoid deep relative import chains when the codebase already has path aliases.
 
 ---
 
-## Naming Conventions
+# Form Pattern
 
-- Use **descriptive and explicit names**
+All non-trivial forms should follow this flow:
 
-Examples:
-
-- `mapProductToFormData` ✅
-
-- `transformProduct` ❌
-
-- Boolean variables:
-  - prefix with `is`, `has`, `should`
-
-- Functions:
-  - use verbs (`createProduct`, `updateVariant`)
-
-- Types:
-  - use PascalCase
-
----
-
-## Mapping & Transformation
-
-- All transformations must use **explicit mapping functions**
-
-- Never transform data inline inside components
-
-- Mapping functions must:
-  - be reusable
-  - be type-safe
-  - live in domain or mapper modules
-
----
-
-## React Components
-
-- Keep components **small and composable**
-
-- Do not embed business logic inside components
-
-- Avoid excessive props → use hooks or context
-
-- Prefer:
-  - server components for data-heavy pages
-  - client components only when necessary
-
----
-
-## Form Handling
-
-- Always use React Hook Form
-
-- Always use Zod resolver
-
-- Do not manage form state manually
-
-- Do not:
-  - mix uncontrolled and controlled inputs incorrectly
-  - duplicate validation logic outside Zod
-
----
-
-## Error Handling
-
-- Use **typed error objects**
-- Do not throw raw strings
-- Centralize error handling logic
-
----
-
-## Code Reuse
-
-- Reuse existing:
-  - components
-  - hooks
-  - utilities
-  - schemas
-
-- Do not introduce new abstractions unless necessary
-
----
-
-## Imports & Structure
-
-- Use consistent import paths
-- Avoid deeply nested relative imports when possible
-- Group related logic together by feature
-
----
-
-## Anti-Patterns (STRICT)
-
-- ❌ Using `any`
-- ❌ Inline complex transformations in UI
-- ❌ Mixing business logic into components
-- ❌ Duplicating schemas or types
-- ❌ Writing large monolithic functions
-- ❌ Creating unnecessary abstractions
-
-# Patterns & Conventions
-
-## Form Pattern
-
-All forms must follow this structure:
-
-1. Fetch initial data (server or query)
-2. Map backend data → form input type
+1. Fetch initial data
+2. Map backend data into a form input type
 3. Initialize React Hook Form
-4. Validate using Zod (`zodResolver`)
-5. On submit:
-   - Map form data → backend input type
-   - Call API or server action
+4. Validate using Zod through `zodResolver`
+5. On submit, map form data into an application input type
+6. Call the API route or server action
 
-#### Rules
+## Form Rules
 
-- Never pass backend data directly into forms
-- Always use mapping functions
-- Form types must be separate from backend types
-
----
-
-## Mapping Pattern
-
-All data transformations must use **explicit mapping functions**
-
-### Naming
-
-- `map<Entity>To<FormType>`
-- `map<FormType>To<EntityInput>`
-
-### Examples
-
-- `mapProductToUpdateForm`
-- `mapUpdateFormToProductInput`
-
-### Rules
-
-- Mapping must be:
-  - pure
-  - type-safe
-  - reusable
-
-- Do NOT:
-  - transform data inline in components
-  - mutate original objects
+- Never feed raw database models directly into forms.
+- Keep form types separate from backend input types.
+- Do not duplicate validation logic in random components.
+- Keep file handling and payload mapping explicit.
 
 ---
 
-## API / Service Pattern
+# API and Service Pattern
 
-### Flow
+## Standard Flow
 
-```text
-UI → API Route / Server Action → Service → Database
-```
+`UI -> API Route / Server Action -> Service -> Infrastructure`
 
-### Rules
+## API Rules
 
-- API routes:
-  - handle HTTP concerns only
-  - must not contain business logic
+- Handle transport concerns only.
+- Parse input.
+- Authenticate and authorize.
+- Validate boundary input.
+- Call the correct service.
+- Map results to response shapes.
 
-- Services:
-  - contain all business logic
-  - coordinate database and external calls
+## Service Rules
 
----
-
-## Data Fetching Pattern
-
-### Server-first approach
-
-- Prefer data fetching in server components
-- Use client fetching only when interactivity is required
-
-### Client-side fetching
-
-- Use TanStack Query
-- Do not use `useEffect` for fetching
+- Own use-case orchestration.
+- Coordinate database and storage work.
+- Enforce workflow rules.
+- Keep side effects explicit.
 
 ---
 
-## Component Pattern
+# Error Handling
 
-- Components must be:
-  - small
-  - reusable
-  - focused
+Use a consistent typed error model.
 
-- Split components when:
-  - logic becomes complex
-  - UI becomes hard to read
+## Requirements
+
+- Do not throw raw strings.
+- Prefer typed errors with stable machine-readable codes.
+- Map internal errors to consistent API responses.
+- Avoid leaking infrastructure details to the client.
+
+## Minimum Structure
+
+A typed application error should usually include:
+
+- `code`
+- `message`
+- optional `details`
+- optional `cause`
+
+## Error Categories
+
+Use consistent categories such as:
+
+- validation error
+- authentication error
+- authorization error
+- not found error
+- conflict error
+- external service error
+- unexpected internal error
+
+All API error responses should be shaped consistently.
 
 ---
 
-## File Organization Pattern
+# Side Effects and Idempotency
 
-Within each feature:
+Where practical:
 
-- group related files together
-- keep logic close to usage
+- design writes to be idempotent
+- make retries safe
+- avoid partially completed workflows without compensation or clear cleanup
+
+This matters especially for:
+
+- image upload flows
+- product updates with multiple related records
+- external service coordination
+
+---
+
+# Performance and Scalability Guidance
+
+Do not optimize blindly, but do not ignore obvious scale risks.
+
+## Watch For
+
+- N+1 queries
+- overfetching large relational graphs
+- unnecessary client-side fetching
+- repeated mapping work in render paths
+- oversized payloads for forms or product listings
+
+## Prefer
+
+- pagination for large collections
+- explicit `select` / `include` usage in Prisma
+- server-side aggregation when appropriate
+- stable caching patterns where useful
+
+---
+
+# File Organization
+
+Organize primarily by feature.
 
 Example:
 
 ```text
 features/product/
-  ├── components/
-  ├── hooks/
-  ├── mappers/
-  ├── schemas/
+  components/
+  hooks/
+  mappers/
+  schemas/
+  services/
+  domain/
 ```
 
----
-
-## Error Handling Pattern
-
-- Use typed error objects
-- Map errors to consistent API responses
-- Do not throw raw strings
+This is a guideline, not a forced checklist. Only create folders that the feature actually needs.
 
 ---
 
-## Styling Pattern
+# Testing Guidance
 
-- Use Tailwind for styling
-- Use `clsx` + `tailwind-merge` for class composition
-- Use `cva` for component variants
+Test the logic where failure is costly.
+
+## Prioritize Tests For
+
+- mapping functions
+- domain rules
+- service workflows
+- validation rules
+- error mapping
+
+## Lower Priority
+
+- trivial presentational wrappers
+- obvious pass-through code
+
+Prefer a small number of useful tests over wide, shallow coverage.
 
 ---
 
-## Reuse First Principle
+# Enforcement
 
-Before writing new code:
+A rule that cannot be enforced will decay.
 
-1. Check existing:
-   - components
-   - hooks
-   - schemas
-   - mappers
+Use practical enforcement where possible:
 
-2. Extend existing patterns if possible
+- TypeScript strict mode
+- ESLint rules
+- import boundary rules
+- code review checklists
+- shared patterns and templates
+
+## Minimum Enforcement Goals
+
+- no `any`
+- no Prisma in UI modules
+- no complex inline transformations in components
+- no cross-feature imports into private internals
 
 ---
 
-## Anti-Patterns (STRICT)
+# When to Introduce New Abstractions
 
-- ❌ Inline data transformation inside components
-- ❌ Mixing multiple fetching strategies
-- ❌ Business logic inside API routes
-- ❌ Creating one-off patterns that break consistency
+Create a new abstraction only when at least one of these is true:
+
+- the same logic is repeated meaningfully
+- a boundary needs to be protected
+- a concept is stable enough to deserve a name
+- testing becomes easier and clearer with extraction
+
+Do not abstract for aesthetics alone.
+
+---
+
+# Anti-Patterns
+
+Avoid these unless there is a very strong reason:
+
+- using `any`
+- passing database models directly into UI
+- inline complex data transformation inside components
+- business logic inside route handlers
+- direct storage access from UI
+- one-off patterns that break established flow
+- over-engineered domain models for simple CRUD cases
+- creating shared modules prematurely
+
+---
+
+# Practical Defaults for This Codebase
+
+When unsure, default to this:
+
+- keep reads server-side
+- keep client components minimal
+- validate boundary input with Zod
+- map explicitly across boundaries
+- keep services responsible for workflows
+- keep domain logic pure and small
+- keep infrastructure isolated
+- reuse existing patterns first
+
+---
+
+# Decision Rule
+
+When making an implementation choice, prioritize in this order:
+
+1. correctness
+2. clarity
+3. consistency with the existing architecture
+4. maintainability
+5. performance optimization
+6. implementation speed
+
+Do not sacrifice architectural correctness for minor short-term convenience.

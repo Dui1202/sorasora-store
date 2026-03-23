@@ -1,8 +1,4 @@
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { Bell, CirclePlus } from "lucide-react";
 import React from "react";
 

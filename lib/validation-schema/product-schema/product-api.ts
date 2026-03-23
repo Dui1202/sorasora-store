@@ -3,7 +3,10 @@ import {
   createProductFormBaseSchema,
   localProductImageSchema,
 } from "./create-product-form";
-import { updateProductFormBaseSchema } from "./update-product-form";
+import {
+  updateProductFormBaseSchema,
+  updateProductVariantBaseSchema,
+} from "./update-product-form";
 import {
   productImageBaseSchema,
   productVariantImageBaseSchema,
@@ -46,16 +49,13 @@ export const multipartPayloadCreateProductSchema = createProductFormBaseSchema
 ///Payload fields for Product Variant
 
 export const multipartPayloadUpdateProductVariantSchema =
-  updateProductFormBaseSchema.shape.variants
-    .unwrap()
-    .element.omit({ newImage: true })
-    .extend({
-      newImage: z
-        .object({
-          alt: z.string().trim().optional(),
-        })
-        .optional(),
-    });
+  updateProductVariantBaseSchema.omit({ newImage: true }).extend({
+    newImage: z
+      .object({
+        alt: z.string().trim().optional(),
+      })
+      .optional(),
+  });
 
 ///Payload fields for Product
 

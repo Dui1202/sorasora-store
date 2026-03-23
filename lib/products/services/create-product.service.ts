@@ -37,7 +37,10 @@ export async function createProductService(formData: FormData) {
 
     return newProduct;
   } catch (error) {
-    cleanUpProductImagesService(uploadedProductImages, uploadedVariantImages);
+    await cleanUpProductImagesService(
+      uploadedProductImages,
+      uploadedVariantImages,
+    );
     throw error;
   }
 }
