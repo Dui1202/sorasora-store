@@ -1,6 +1,5 @@
 import z from "zod";
 import { productBaseSchema, productVariantBaseSchema } from "./product-base";
-import { create } from "domain";
 
 // For image preview before upload, we use a local schema that includes the File object.
 export const localProductImageSchema = z.object({
@@ -20,6 +19,7 @@ const createProductVariantFormSchema = productVariantBaseSchema
     image: true,
   })
   .extend({
+    clientKey: z.string().trim().min(1, "Variant client key is required"),
     image: localProductVariantImageSchema.optional(),
   });
 

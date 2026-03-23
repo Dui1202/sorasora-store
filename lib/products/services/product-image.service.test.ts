@@ -1,5 +1,4 @@
 import { SupplierCountry } from "@/app/generated/prisma/enums";
-import { AppError } from "@/core/errors/errors";
 import type { CreateProductFormValidationData } from "@/lib/validation-schema/product-schema";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,6 +47,7 @@ const createValidationData = (
   ],
   variants: [
     {
+      clientKey: "variant-strawberry",
       name: "Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
@@ -92,7 +92,7 @@ describe("product-image.service", () => {
     expect(uploadProductImagesMock.mock.calls[0]?.[0]).toBeInstanceOf(Buffer);
   });
 
-  it("uploads variant images only when variations are enabled", async () => {
+  it("uploads variant images keyed by stable client ids", async () => {
     uploadProductImagesMock.mockResolvedValueOnce({
       path: "products/variants/strawberry.png",
     });
@@ -101,12 +101,17 @@ describe("product-image.service", () => {
       createValidationData(),
     );
 
-    expect(uploadedImages).toEqual([
-      {
-        path: "products/variants/strawberry.png",
-        alt: "Variant front",
-      },
-    ]);
+    expect(uploadedImages).toEqual(
+      new Map([
+        [
+          "variant-strawberry",
+          {
+            path: "products/variants/strawberry.png",
+            alt: "Variant front",
+          },
+        ],
+      ]),
+    );
     expect(uploadProductImagesMock).toHaveBeenCalledTimes(1);
   });
 
@@ -114,6 +119,7 @@ describe("product-image.service", () => {
     const data = createValidationData({
       variants: [
         {
+          clientKey: "variant-strawberry",
           name: "Strawberry",
           sku: "POCKY-STRAWBERRY",
           costPrice: 120,
@@ -133,7 +139,15 @@ describe("product-image.service", () => {
   it("cleans up uploaded product and variant image paths together", async () => {
     await cleanUpProductImagesService(
       [{ path: "products/main.png", alt: "Front angle", position: 0 }],
-      [{ path: "products/variants/strawberry.png", alt: "Variant front" }],
+      new Map([
+        [
+          "variant-strawberry",
+          {
+            path: "products/variants/strawberry.png",
+            alt: "Variant front",
+          },
+        ],
+      ]),
     );
 
     expect(removeProductImagesMock).toHaveBeenCalledWith([
@@ -148,9 +162,17 @@ describe("product-image.service", () => {
     await expect(
       cleanUpProductImagesService(
         [{ path: "products/main.png", alt: "Front angle", position: 0 }],
-        [{ path: "products/variants/strawberry.png", alt: "Variant front" }],
+        new Map([
+          [
+            "variant-strawberry",
+            {
+              path: "products/variants/strawberry.png",
+              alt: "Variant front",
+            },
+          ],
+        ]),
       ),
-    ).rejects.toMatchObject<AppError>({
+    ).rejects.toMatchObject({
       code: "CLEANUP_PRODUCT_IMAGES_FAILED",
       status: 500,
     });

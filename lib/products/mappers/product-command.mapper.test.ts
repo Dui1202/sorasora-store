@@ -78,6 +78,7 @@ describe("product-command.mapper", () => {
         baseSellingPrice: undefined,
         variants: [
           {
+            clientKey: "variant-strawberry",
             name: "Strawberry",
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
@@ -97,12 +98,15 @@ describe("product-command.mapper", () => {
           position: 0,
         },
       ],
-      [
-        {
-          path: "products/variants/strawberry.png",
-          alt: "Variant front",
-        },
-      ],
+      new Map([
+        [
+          "variant-strawberry",
+          {
+            path: "products/variants/strawberry.png",
+            alt: "Variant front",
+          },
+        ],
+      ]),
     );
 
     expect(command.variants).toEqual([
@@ -120,6 +124,91 @@ describe("product-command.mapper", () => {
     ]);
   });
 
+  it("maps uploaded variant images by stable client key instead of map order", () => {
+    const command = toCreateProductCommand(
+      createFormData({
+        hasVariation: true,
+        baseSku: undefined,
+        baseCostPrice: undefined,
+        baseSellingPrice: undefined,
+        variants: [
+          {
+            clientKey: "variant-strawberry",
+            name: "Strawberry",
+            sku: "POCKY-STRAWBERRY",
+            costPrice: 120,
+            sellingPrice: 180,
+            position: 0,
+            image: {
+              file: createFile("variant-1.png"),
+              alt: "Strawberry front",
+            },
+          },
+          {
+            clientKey: "variant-matcha",
+            name: "Matcha",
+            sku: "POCKY-MATCHA",
+            costPrice: 130,
+            sellingPrice: 190,
+            position: 1,
+            image: {
+              file: createFile("variant-2.png"),
+              alt: "Matcha front",
+            },
+          },
+        ],
+      }),
+      [
+        {
+          path: "products/main.png",
+          alt: "Front angle",
+          position: 0,
+        },
+      ],
+      new Map([
+        [
+          "variant-matcha",
+          {
+            path: "products/variants/matcha.png",
+            alt: "Matcha front",
+          },
+        ],
+        [
+          "variant-strawberry",
+          {
+            path: "products/variants/strawberry.png",
+            alt: "Strawberry front",
+          },
+        ],
+      ]),
+    );
+
+    expect(command.variants).toEqual([
+      {
+        name: "Strawberry",
+        sku: "POCKY-STRAWBERRY",
+        costPrice: 120,
+        sellingPrice: 180,
+        position: 0,
+        image: {
+          path: "products/variants/strawberry.png",
+          alt: "Strawberry front",
+        },
+      },
+      {
+        name: "Matcha",
+        sku: "POCKY-MATCHA",
+        costPrice: 130,
+        sellingPrice: 190,
+        position: 1,
+        image: {
+          path: "products/variants/matcha.png",
+          alt: "Matcha front",
+        },
+      },
+    ]);
+  });
+
   it("throws when variation products do not receive all uploaded variant images", () => {
     expect(() =>
       toCreateProductCommand(
@@ -130,6 +219,7 @@ describe("product-command.mapper", () => {
           baseSellingPrice: undefined,
           variants: [
             {
+              clientKey: "variant-strawberry",
               name: "Strawberry",
               sku: "POCKY-STRAWBERRY",
               costPrice: 120,
@@ -149,7 +239,7 @@ describe("product-command.mapper", () => {
             position: 0,
           },
         ],
-        [],
+        new Map(),
       ),
     ).toThrow("Variant images are required for every variant.");
   });

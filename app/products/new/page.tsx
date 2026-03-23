@@ -32,7 +32,10 @@ const CreateNewProductPage = () => {
 
     for (const variant of data.variants) {
       if (variant.image?.file) {
-        multipartFormData.append("variantImages", variant.image.file);
+        multipartFormData.append(
+          `variantImages:${variant.clientKey}`,
+          variant.image.file,
+        );
       }
     }
 

@@ -30,8 +30,8 @@ export async function uploadProductImagesService(
 
 export async function uploadProductVariantImagesService(
   data: CreateProductFormValidationData,
-): Promise<ProductVariantImage[]> {
-  const uploadedVariantImages: ProductVariantImage[] = [];
+): Promise<Map<string, ProductVariantImage>> {
+  const uploadedVariantImages = new Map<string, ProductVariantImage>();
 
   if (data.hasVariation) {
     for (const variant of data.variants) {
@@ -42,7 +42,7 @@ export async function uploadProductVariantImagesService(
       const bytes = await variant.image.file.arrayBuffer();
       const uploadResult = await uploadProductImages(Buffer.from(bytes));
 
-      uploadedVariantImages.push({
+      uploadedVariantImages.set(variant.clientKey, {
         path: uploadResult.path,
         alt: variant.image.alt,
       });
@@ -54,13 +54,13 @@ export async function uploadProductVariantImagesService(
 
 export async function cleanUpProductImagesService(
   uploadedProductImages: ProductImage[],
-  uploadedVariantImages: ProductVariantImage[],
+  uploadedVariantImages: Map<string, ProductVariantImage>,
 ) {
   if (uploadedProductImages.length > 0) {
     try {
       await removeProductImages([
         ...uploadedProductImages.map((img) => img.path),
-        ...uploadedVariantImages.map((img) => img.path),
+        ...Array.from(uploadedVariantImages.values()).map((img) => img.path),
       ]);
     } catch (cleanupError) {
       throw new AppError(

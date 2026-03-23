@@ -1,5 +1,10 @@
 import { OptionInputObject } from "../option-input-group";
-import { PriceFormVariantInput } from "../types";
+import {
+  CreatePriceFormVariantInput,
+  PriceFormVariantImageInput,
+  PriceFormVariantInput,
+  UpdatePriceFormVariantInput,
+} from "../types";
 import { Variation } from "../variation-field-group/type";
 import {
   createVariantSignature,
@@ -209,7 +214,33 @@ function toVariations(entries: ParsedVariantEntry[]): Variation[] | null {
   });
 }
 
-function toSeedImage(image: PriceFormVariantInput["image"]) {
+function isCreatePriceFormVariantInput(
+  variant: PriceFormVariantInput,
+): variant is CreatePriceFormVariantInput {
+  return "image" in variant;
+}
+
+function isUpdatePriceFormVariantInput(
+  variant: PriceFormVariantInput,
+): variant is UpdatePriceFormVariantInput {
+  return "existImage" in variant || "newImage" in variant;
+}
+
+function getVariantImageForSeed(
+  variant: PriceFormVariantInput,
+): PriceFormVariantImageInput | undefined {
+  if (isCreatePriceFormVariantInput(variant)) {
+    return variant.image;
+  }
+
+  if (isUpdatePriceFormVariantInput(variant)) {
+    return variant.newImage ?? variant.existImage;
+  }
+
+  return undefined;
+}
+
+function toSeedImage(image: PriceFormVariantImageInput | undefined) {
   if (!image) {
     return {
       imageFile: undefined,
@@ -235,7 +266,7 @@ function toSeedImage(image: PriceFormVariantInput["image"]) {
 
 function toDraftSeeds(entries: ParsedVariantEntry[]): VariantDraftSeed[] {
   return entries.map((entry) => {
-    const image = toSeedImage(entry.variant.image);
+    const image = toSeedImage(getVariantImageForSeed(entry.variant));
 
     return {
       signature: entry.signature,
@@ -314,6 +345,7 @@ export function mapDraftRowsToFormVariants(
 ): PriceFormVariantInput[] {
   return rows.map((row, index) => {
     return {
+      clientKey: row.clientKey,
       name: buildVariantName(row.selectedOptions),
       sku: row.sku.trim(),
       costPrice: row.costPrice,

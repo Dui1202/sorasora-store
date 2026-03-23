@@ -43,11 +43,11 @@ const createBasePayload = () => ({
 const createMultipartFormData = ({
   payload = createBasePayload(),
   productFiles = [createFile("product-1.png")],
-  variantFiles = [] as File[],
+  variantFiles = [] as Array<{ clientKey: string; file: File }>,
 }: {
   payload?: Record<string, unknown>;
   productFiles?: File[];
-  variantFiles?: File[];
+  variantFiles?: Array<{ clientKey: string; file: File }>;
 }) => {
   const formData = new FormData();
 
@@ -57,8 +57,11 @@ const createMultipartFormData = ({
     formData.append("images", file);
   }
 
-  for (const file of variantFiles) {
-    formData.append("variantImages", file);
+  for (const variantFile of variantFiles) {
+    formData.append(
+      `variantImages:${variantFile.clientKey}`,
+      variantFile.file,
+    );
   }
 
   return formData;
@@ -145,6 +148,7 @@ describe("createProductService", () => {
         baseSellingPrice: undefined,
         variants: [
           {
+            clientKey: "variant-strawberry",
             name: "Strawberry",
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
@@ -156,7 +160,12 @@ describe("createProductService", () => {
           },
         ],
       },
-      variantFiles: [createFile("variant-1.png")],
+      variantFiles: [
+        {
+          clientKey: "variant-strawberry",
+          file: createFile("variant-1.png"),
+        },
+      ],
     });
 
     await expect(createProductService(formData)).rejects.toThrow(

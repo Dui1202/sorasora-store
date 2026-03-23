@@ -6,13 +6,10 @@ import {
   removeProductImages,
   uploadProductImages,
 } from "@/lib/infrastructure/storage/server";
+
 import {
-  UpdateProductFormValidationResult,
-  validateUpdateProductFormData,
-} from "@/lib/products/validation";
-import {
-  ProductImages,
-  ProductVariantImages,
+  ProductImage,
+  ProductVariantImage,
   ProductWithRelations,
 } from "@/lib/validation-schema/product-schema";
 import {
@@ -107,8 +104,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return toErrorResponse(error);
   }
 
-  const uploadedProductImages: ProductImages = [];
-  const uploadedVariantImages: ProductVariantImages = [];
+  const uploadedProductImages: ProductImage[] = [];
+  const uploadedVariantImages: ProductVariantImage[] = [];
 
   try {
     for (const image of formValidation.data.newProductImages) {

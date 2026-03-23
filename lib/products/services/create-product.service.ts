@@ -18,7 +18,7 @@ export async function createProductService(formData: FormData) {
   }
 
   let uploadedProductImages: ProductImage[] = [];
-  let uploadedVariantImages: ProductVariantImage[] = [];
+  let uploadedVariantImages = new Map<string, ProductVariantImage>();
 
   try {
     uploadedProductImages = await uploadProductImagesService(

@@ -9,7 +9,7 @@ import {
 export const toCreateProductCommand = (
   data: CreateProductFormData,
   uploadedProductImages: ProductImage[] = [],
-  uploadedVariantImages: ProductVariantImage[] = [],
+  uploadedVariantImages: Map<string, ProductVariantImage> = new Map(),
 ): CreateProductCommandData => {
   const productImages = productBaseSchema.shape.productImages.parse(
     uploadedProductImages,
@@ -24,12 +24,14 @@ export const toCreateProductCommand = (
 
   const variants = data.hasVariation
     ? (() => {
-        if (uploadedVariantImages.length !== data.variants.length) {
+        if (uploadedVariantImages.size !== data.variants.length) {
           throw new Error("Variant images are required for every variant.");
         }
 
         return data.variants.map((variant, index) => {
-          const uploadedVariantImage = uploadedVariantImages[index];
+          const uploadedVariantImage = uploadedVariantImages.get(
+            variant.clientKey,
+          );
 
           if (!uploadedVariantImage) {
             throw new Error("Variant image is required for every variant.");

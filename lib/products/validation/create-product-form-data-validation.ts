@@ -53,9 +53,38 @@ export const validateCreateProductFormData = (
   const imageFiles = formData
     .getAll("images")
     .filter((value): value is File => value instanceof File);
-  const variantImageFiles = formData
-    .getAll("variantImages")
-    .filter((value): value is File => value instanceof File);
+  const variantImageFilesByClientKey = new Map<string, File>();
+
+  for (const [entryKey, entryValue] of formData.entries()) {
+    if (!entryKey.startsWith("variantImages:")) {
+      continue;
+    }
+
+    if (!(entryValue instanceof File)) {
+      return {
+        success: false,
+        error: "Variant image payload must be a file.",
+      };
+    }
+
+    const clientKey = entryKey.slice("variantImages:".length).trim();
+
+    if (!clientKey) {
+      return {
+        success: false,
+        error: "Variant image client key is missing.",
+      };
+    }
+
+    if (variantImageFilesByClientKey.has(clientKey)) {
+      return {
+        success: false,
+        error: "Duplicate variant image client key detected.",
+      };
+    }
+
+    variantImageFilesByClientKey.set(clientKey, entryValue);
+  }
 
   if (imageFiles.length !== payloadValidation.data.productImages.length) {
     return {
@@ -66,7 +95,7 @@ export const validateCreateProductFormData = (
 
   if (
     payloadValidation.data.hasVariation &&
-    variantImageFiles.length !== payloadValidation.data.variants.length
+    variantImageFilesByClientKey.size !== payloadValidation.data.variants.length
   ) {
     return {
       success: false,
@@ -76,12 +105,13 @@ export const validateCreateProductFormData = (
 
   const formDataCandidate = {
     ...payloadValidation.data,
-    variants: payloadValidation.data.variants.map((variant, index) => ({
+    variants: payloadValidation.data.variants.map((variant) => ({
       ...variant,
       image:
-        payloadValidation.data.hasVariation && variantImageFiles[index]
+        payloadValidation.data.hasVariation &&
+        variantImageFilesByClientKey.get(variant.clientKey)
           ? {
-              file: variantImageFiles[index],
+              file: variantImageFilesByClientKey.get(variant.clientKey)!,
               alt: variant.image?.alt,
             }
           : undefined,
