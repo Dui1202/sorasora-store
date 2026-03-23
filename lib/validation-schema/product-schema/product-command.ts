@@ -1,53 +1,77 @@
 import z from "zod";
 import {
   productBaseSchema,
-  ProductImages,
-  ProductVariantImages,
+  ProductImage,
+  ProductVariantImage,
   ProductWithRelations,
 } from "./product-base";
-import { CreateProductFormData } from "./create-product-form";
-import { UpdateProductFormInputData } from "./update-product-form";
+import {
+  UpdateProductFormData,
+  UpdateProductFormInputData,
+} from "./update-product-form";
 
 // Explicit mapper
-export const toCreateProductCommand = (
-  data: CreateProductFormData,
-  uploadedProductImages: ProductImages = [],
-  uploadedVariantImages: ProductVariantImages = [],
-): CreateProductCommandData => {
-  const productImages = productBaseSchema.shape.productImages.parse(
-    uploadedProductImages,
-  );
+
+export const toUpdateProductCommand = (
+  data: UpdateProductFormData,
+  uploadedProductImages: ProductImage[] = [],
+  uploadedVariantImages: ProductVariantImage[] = [],
+): UpdateProductCommandData => {
+  if (uploadedProductImages.length !== data.newProductImages.length) {
+    throw new Error(
+      "Uploaded product images count does not match the new product images.",
+    );
+  }
+
+  const expectedUploadedVariantImages = data.hasVariation
+    ? data.variants.filter((variant) => variant.newImage).length
+    : 0;
+
+  if (uploadedVariantImages.length !== expectedUploadedVariantImages) {
+    throw new Error(
+      "Uploaded variant images count does not match variants requiring new images.",
+    );
+  }
+
+  const productImages = productBaseSchema.shape.productImages
+    .parse([...data.existProductImages, ...uploadedProductImages])
+    .sort((a, b) => a.position - b.position);
   const fallbackVariantImage = productImages[0];
 
   if (!fallbackVariantImage) {
     throw new Error(
-      "Uploaded product images are required before creating the product command.",
+      "At least one product image is required before updating the product command.",
     );
   }
 
+  let uploadedVariantImageIndex = 0;
+
   const variants = data.hasVariation
-    ? (() => {
-        if (uploadedVariantImages.length !== data.variants.length) {
-          throw new Error("Variant images are required for every variant.");
-        }
+    ? data.variants.map((variant, index) => {
+        const image =
+          variant.existImage ??
+          (() => {
+            const uploadedVariantImage =
+              uploadedVariantImages[uploadedVariantImageIndex];
 
-        return data.variants.map((variant, index) => {
-          const uploadedVariantImage = uploadedVariantImages[index];
+            if (!uploadedVariantImage) {
+              throw new Error("Variant image is required for every variant.");
+            }
 
-          if (!uploadedVariantImage) {
-            throw new Error("Variant image is required for every variant.");
-          }
+            uploadedVariantImageIndex += 1;
 
-          return {
-            name: variant.name,
-            sku: variant.sku,
-            costPrice: variant.costPrice,
-            sellingPrice: variant.sellingPrice,
-            position: variant.position ?? index,
-            image: uploadedVariantImage,
-          };
-        });
-      })()
+            return uploadedVariantImage;
+          })();
+
+        return {
+          name: variant.name,
+          sku: variant.sku,
+          costPrice: variant.costPrice,
+          sellingPrice: variant.sellingPrice,
+          position: variant.position ?? index,
+          image,
+        };
+      })
     : (() => {
         if (
           !data.baseSku ||
@@ -101,24 +125,27 @@ export const toUpdateProductCommandInput = (
     baseSku: hasVariation ? undefined : baseVariant.sku,
     baseCostPrice: hasVariation ? undefined : baseVariant.costPrice,
     baseSellingPrice: hasVariation ? undefined : baseVariant.sellingPrice,
-    variants: variants.map((variant) => ({
-      name: variant.name,
-      sku: variant.sku,
-      costPrice: variant.costPrice,
-      sellingPrice: variant.sellingPrice,
-      position: variant.position,
-      image: variant.image
-        ? { path: variant.image.path, alt: variant.image.alt ?? undefined }
-        : undefined,
+    variants: hasVariation
+      ? undefined
+      : variants.map((variant) => ({
+          name: variant.name,
+          sku: variant.sku,
+          costPrice: variant.costPrice,
+          sellingPrice: variant.sellingPrice,
+          position: variant.position,
+          newImage: undefined,
+          existImage: {
+            path: variant.image!.path,
+            alt: variant.image!.alt ?? undefined,
+          },
+        })),
+    newProductImages: [],
+    existProductImages: product.productImages.map((image) => ({
+      path: image.path,
+      alt: image.alt ?? undefined,
     })),
-    productImages: [...product.productImages]
-      .sort((a, b) => a.position - b.position)
-      .map((img) => ({
-        path: img.path,
-        alt: img.alt ?? "",
-        position: img.position,
-      })),
   };
 };
 
 export type CreateProductCommandData = z.output<typeof productBaseSchema>;
+export type UpdateProductCommandData = z.output<typeof productBaseSchema>;

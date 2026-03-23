@@ -2,7 +2,9 @@ export type AppErrorCode =
   | "UNSUPPORTED_FILE_TYPE"
   | "FILE_TOO_LARGE"
   | "UPLOAD_FAILED"
-  | "INVALID_PRODUCT_ID";
+  | "INVALID_PRODUCT_ID"
+  | "REMOVE_IMAGE_FAILED"
+  | "CLEANUP_PRODUCT_IMAGES_FAILED";
 
 export class AppError extends Error {
   constructor(

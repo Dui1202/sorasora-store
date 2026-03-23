@@ -3,30 +3,10 @@
 import ProductForm from "@/feature/products/product-form/product-form";
 import { useProduct } from "@/hooks/use-products";
 import { toUpdateProductCommandInput } from "@/lib/validation-schema/product-schema/product-command";
-import {
-  UpdateProductFormData,
-} from "@/lib/validation-schema/product-schema";
+import { UpdateProductFormData } from "@/lib/validation-schema/product-schema";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
-
-function isLocalProductImage(
-  image: UpdateProductFormData["productImages"][number],
-): image is Extract<
-  UpdateProductFormData["productImages"][number],
-  { file: File }
-> {
-  return "file" in image;
-}
-
-function isLocalVariantImage(
-  image: NonNullable<UpdateProductFormData["variants"][number]["image"]>,
-): image is Extract<
-  NonNullable<UpdateProductFormData["variants"][number]["image"]>,
-  { file: File }
-> {
-  return "file" in image;
-}
 
 const EditProductPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,36 +29,37 @@ const EditProductPage = () => {
           ...data,
           variants: data.variants.map((variant) => ({
             ...variant,
-            image: variant.image
-              ? isLocalVariantImage(variant.image)
-                ? { alt: variant.image.alt }
-                : { path: variant.image.path, alt: variant.image.alt }
+            existImage: variant.existImage
+              ? {
+                  path: variant.existImage.path,
+                  alt: variant.existImage.alt,
+                }
+              : undefined,
+            newImage: variant.newImage
+              ? {
+                  alt: variant.newImage.alt,
+                }
               : undefined,
           })),
-          productImages: data.productImages.map((image) =>
-            isLocalProductImage(image)
-              ? {
-                  alt: image.alt,
-                  position: image.position,
-                }
-              : {
-                  path: image.path,
-                  alt: image.alt,
-                  position: image.position,
-                },
-          ),
+          existProductImages: data.existProductImages.map((image) => ({
+            path: image.path,
+            alt: image.alt,
+            position: image.position,
+          })),
+          newProductImages: data.newProductImages.map((image) => ({
+            alt: image.alt,
+            position: image.position,
+          })),
         }),
       );
 
-      for (const image of data.productImages) {
-        if (isLocalProductImage(image)) {
-          multipartFormData.append("images", image.file);
-        }
+      for (const image of data.newProductImages) {
+        multipartFormData.append("images", image.file);
       }
 
       for (const variant of data.variants) {
-        if (variant.image && isLocalVariantImage(variant.image)) {
-          multipartFormData.append("variantImages", variant.image.file);
+        if (variant.newImage) {
+          multipartFormData.append("variantImages", variant.newImage.file);
         }
       }
 

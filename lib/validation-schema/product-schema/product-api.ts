@@ -1,5 +1,8 @@
 import z from "zod";
-import { createProductFormBaseSchema } from "./create-product-form";
+import {
+  createProductFormBaseSchema,
+  localProductImageSchema,
+} from "./create-product-form";
 import { updateProductFormBaseSchema } from "./update-product-form";
 import {
   productImageBaseSchema,
@@ -40,36 +43,34 @@ export const multipartPayloadCreateProductSchema = createProductFormBaseSchema
 
 //**Update Product Payload**
 
-///Payload fields for Variant Image
-const existingVariantImageMetadata = productVariantImageBaseSchema;
-const newVariantImageMetadata = productVariantImageBaseSchema.omit({
-  path: true,
-});
-
-///Payload fields for Product Image
-const existingImageMetadata = productImageBaseSchema;
-const newImageMetadata = productImageBaseSchema.omit({ path: true });
-
 ///Payload fields for Product Variant
+
 export const multipartPayloadUpdateProductVariantSchema =
   updateProductFormBaseSchema.shape.variants
     .unwrap()
-    .element.omit({ image: true })
+    .element.omit({ newImage: true })
     .extend({
-      image: z.union([existingVariantImageMetadata, newVariantImageMetadata]),
+      newImage: z
+        .object({
+          alt: z.string().trim().optional(),
+        })
+        .optional(),
     });
 
 ///Payload fields for Product
+
+const newProductImagePayloadSchema = localProductImageSchema.omit({
+  file: true,
+});
+
 export const multipartPayloadUpdateProductSchema = updateProductFormBaseSchema
   .omit({
-    productImages: true,
+    newProductImages: true,
     variants: true,
   })
   .extend({
     variants: z.array(multipartPayloadUpdateProductVariantSchema).default([]),
-    productImages: z
-      .array(z.union([existingImageMetadata, newImageMetadata]))
-      .min(1, "Upload at least 1 product image!"),
+    newProducImages: z.array(newProductImagePayloadSchema).optional(),
   });
 
 export type UploadProductImageResponse = z.infer<

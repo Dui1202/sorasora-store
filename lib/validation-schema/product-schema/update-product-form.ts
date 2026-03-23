@@ -10,26 +10,32 @@ import {
   productVariantImageBaseSchema,
 } from "./product-base";
 
-// Update product image validation schema
-const updateProductImageSchema = z.union([
-  localProductImageSchema,
-  productImageBaseSchema,
-]);
-
-// Update product variant image validation schema
-const updateProductVariantImageSchema = z.union([
-  localProductVariantImageSchema,
-  productVariantImageBaseSchema,
-]);
-
-// Update product variant form validation schema
+// Update product variant validation schema
 const updateProductVariantSchema = productVariantBaseSchema
   .omit({
     image: true,
   })
   .extend({
-    /// For non-image edits
-    image: updateProductVariantImageSchema.optional(),
+    existImage: productVariantImageBaseSchema.optional(),
+    newImage: localProductVariantImageSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      (!data.existImage && !data.newImage) ||
+      (data.existImage && data.newImage)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Variant must have exactly one image",
+        path: ["existImage"],
+      });
+
+      ctx.addIssue({
+        code: "custom",
+        message: "Variant must have exactly one image",
+        path: ["newImage"],
+      });
+    }
   });
 
 // Main update product form validation schema
@@ -39,7 +45,8 @@ export const updateProductFormBaseSchema = createProductFormBaseSchema
     variants: true,
   })
   .extend({
-    productImages: z.array(updateProductImageSchema).min(1),
+    newProductImages: z.array(localProductImageSchema).default([]),
+    existProductImages: z.array(productImageBaseSchema).default([]),
     variants: z.array(updateProductVariantSchema).default([]),
   });
 
@@ -55,17 +62,15 @@ export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
         });
       }
 
-      data.variants.forEach((variant, index) => {
-        if (!variant.image) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Variant image is required.",
-            path: ["variants", index, "image"],
-          });
-        }
-      });
-
       return;
+    }
+
+    if (data.variants.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Variants must be empty when variations are disabled.",
+        path: ["variants"],
+      });
     }
 
     if (!data.baseSku) {
@@ -91,6 +96,20 @@ export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
         path: ["baseSellingPrice"],
       });
     }
+
+    if (!data.newProductImages.length && !data.existProductImages.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Image is required",
+        path: ["newProductImages"],
+      });
+
+      ctx.addIssue({
+        code: "custom",
+        message: "Image is required",
+        path: ["existProductImages"],
+      });
+    }
   },
 );
 
@@ -100,9 +119,4 @@ export type UpdateProductFormInputData = z.input<
 
 export type UpdateProductFormData = z.output<
   typeof updateProductFormBaseSchema
->;
-
-export type UpdateProductImage = z.infer<typeof updateProductImageSchema>;
-export type UpdateProductVariantImage = z.infer<
-  typeof updateProductVariantImageSchema
 >;

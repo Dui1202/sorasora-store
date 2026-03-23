@@ -1,1 +1,1 @@
-export { validateCreateProductFormData as validateProductFormData } from "./product-validation/product-validation";
+export { createProductService } from "./services/create-product.service";

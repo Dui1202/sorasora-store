@@ -5,7 +5,7 @@ import {
   removeProductImages,
   uploadProductImages,
 } from "@/lib/infrastructure/storage/server";
-import { validateCreateProductFormData } from "@/lib/products/product-validation";
+import { validateCreateProductFormData } from "@/lib/products/validation";
 import {
   CreateProductCommandData,
   ProductImages,
@@ -36,6 +36,7 @@ export async function GET() {
 
   return NextResponse.json(products);
 }
+
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
 
@@ -83,22 +84,6 @@ async function handleMultipartCreate(request: NextRequest) {
       });
     }
 
-    if (formValidation.data.hasVariation) {
-      for (const variant of formValidation.data.variants) {
-        if (!variant.image) {
-          throw new Error("Variant image is required for every variant.");
-        }
-
-        const bytes = await variant.image.file.arrayBuffer();
-        const uploadResult = await uploadProductImages(Buffer.from(bytes));
-
-        uploadedVariantImages.push({
-          path: uploadResult.path,
-          alt: variant.image.alt,
-        });
-      }
-    }
-
     const command = toCreateProductCommand(
       formValidation.data,
       uploadedProductImages,
@@ -108,20 +93,6 @@ async function handleMultipartCreate(request: NextRequest) {
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    if (uploadedProductImages.length > 0) {
-      try {
-        await removeProductImages([
-          ...uploadedProductImages.map((img) => img.path),
-          ...uploadedVariantImages.map((img) => img.path),
-        ]);
-      } catch (cleanupError) {
-        console.error(
-          "Failed to clean up uploaded images after create failure",
-          cleanupError,
-        );
-      }
-    }
-
     if (error instanceof AppError) {
       return NextResponse.json(
         {
@@ -157,59 +128,4 @@ async function handleMultipartCreate(request: NextRequest) {
       { status: 500 },
     );
   }
-}
-
-async function createProduct(command: CreateProductCommandData) {
-  const {
-    name,
-    description,
-    variants,
-    supplierCountry,
-    franchiseId,
-    productImages,
-    isPublished,
-    hasVariation,
-  } = command;
-
-  return prisma.product.create({
-    data: {
-      name,
-      description: description || undefined,
-      supplierCountry,
-      franchiseId,
-      isPublished: isPublished,
-      hasVariation,
-      variants: {
-        create: variants.map((variant) => ({
-          name: variant.name,
-          sku: variant.sku,
-          costPrice: variant.costPrice,
-          sellingPrice: variant.sellingPrice,
-          position: variant.position,
-          image: {
-            create: {
-              path: variant.image.path,
-              alt: variant.image.alt,
-            },
-          },
-        })),
-      },
-
-      productImages: {
-        create: productImages.map((productImage) => ({
-          path: productImage.path,
-          alt: productImage.alt,
-          position: productImage.position,
-        })),
-      },
-    },
-    include: {
-      variants: {
-        include: {
-          image: true,
-        },
-      },
-      productImages: true,
-    },
-  });
 }

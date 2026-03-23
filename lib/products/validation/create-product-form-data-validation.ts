@@ -1,13 +1,13 @@
 import {
   createProductFormSchema,
+  CreateProductFormValidationData,
   multipartPayloadSchema,
 } from "@/lib/validation-schema/product-schema";
-import z from "zod";
 
 type CreateProductFormValidationResult =
   | {
       success: true;
-      data: z.infer<typeof createProductFormSchema>;
+      data: CreateProductFormValidationData;
     }
   | {
       success: false;

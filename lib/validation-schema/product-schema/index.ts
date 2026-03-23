@@ -12,11 +12,10 @@ export {
   supplierCountrySchema,
 } from "./product-base";
 export type {
-  ProductImages,
-  ProductVariantImages,
+  ProductImage,
+  ProductVariantImage,
   ProductWithRelations,
 } from "./product-base";
-export { toCreateProductCommand } from "./product-command";
 export type { CreateProductCommandData } from "./product-command";
 export {
   createProductFormBaseSchema,
@@ -27,12 +26,11 @@ export {
 export type {
   CreateProductFormData,
   CreateProductFormInputData,
+  CreateProductFormValidationData,
   LocalProductImage,
 } from "./create-product-form";
 export { updateProductFormSchema } from "./update-product-form";
 export type {
   UpdateProductFormData,
   UpdateProductFormInputData,
-  UpdateProductImage,
-  UpdateProductVariantImage,
 } from "./update-product-form";

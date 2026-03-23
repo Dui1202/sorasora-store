@@ -1,8 +1,13 @@
 import z from "zod";
-import { updateProductFormSchema } from "../../validation-schema/product-schema";
+import {
+  LocalProductImage,
+  updateProductFormSchema,
+} from "../../validation-schema/product-schema";
 import { multipartPayloadUpdateProductSchema } from "../../validation-schema/product-schema/product-api";
+import { Product } from "@/app/generated/prisma/client";
+import { ProductImage } from "@/lib/validation-schema/product-schema/product-base";
 
-type UpdateProductFormValidationResult =
+export type UpdateProductFormValidationResult =
   | {
       success: true;
       data: z.infer<typeof updateProductFormSchema>;
@@ -55,24 +60,18 @@ export const validateUpdateProductFormData = (
     .getAll("variantImages")
     .filter((value): value is File => value instanceof File);
 
-  const newImagesFromPayloads = payloadValidation.data.productImages.map(
-    (image) => !("path" in image),
-  );
-
-  if (imageFiles.length !== newImagesFromPayloads.length) {
+  if (imageFiles.length !== payloadValidation.data.newProducImages?.length) {
     return {
       success: false,
       error: "Image files count does not match product metadata.",
     };
   }
 
-  const newVariantImagesFormPayloads = payloadValidation.data.variants.map(
-    (variant) => !("path" in variant.image),
-  );
-
   if (
     payloadValidation.data.hasVariation &&
-    variantImageFiles.length !== newVariantImagesFormPayloads.length
+    variantImageFiles.length !==
+      payloadValidation.data.variants.filter((variant) => variant.newImage)
+        .length
   ) {
     return {
       success: false,
@@ -80,26 +79,45 @@ export const validateUpdateProductFormData = (
     };
   }
 
-  const formDataCandidate = {
-    ...payloadValidation.data,
-    variants: payloadValidation.data.variants.map((variant, index) => ({
-      ...variant,
-      image:
-        payloadValidation.data.hasVariation && variantImageFiles[index]
-          ? {
-              file: variantImageFiles[index],
-              alt: variant.image?.alt,
-            }
-          : undefined,
-    })),
-    productImages: payloadValidation.data.productImages.map((image, index) => ({
-      file: imageFiles[index],
-      alt: image.alt,
-      position: image.position,
-    })),
+  const formDataCandidate = () => {
+    let variantImageFileIndex = 0;
+
+    return {
+      ...payloadValidation.data,
+      variants: payloadValidation.data.variants.map((variant) => {
+        if (!variant.newImage) {
+          return {
+            ...variant,
+            newImage: undefined,
+          };
+        }
+
+        const file = variantImageFiles[variantImageFileIndex];
+
+        if (!file) {
+          throw new Error("Missing uploaded file for variant image.");
+        }
+
+        variantImageFileIndex += 1;
+
+        return {
+          ...variant,
+          newImage: {
+            file,
+            alt: variant.newImage.alt,
+          },
+        };
+      }),
+      newProductImages: imageFiles.map((file, index) => ({
+        file,
+        alt: payloadValidation.data.newProducImages?.[index]?.alt,
+        position:
+          payloadValidation.data.newProducImages?.[index]?.position ?? 0,
+      })),
+    };
   };
 
-  const formValidation = updateProductFormSchema.safeParse(formDataCandidate);
+  const formValidation = updateProductFormSchema.safeParse(formDataCandidate());
 
   if (!formValidation.success) {
     return {

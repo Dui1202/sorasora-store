@@ -41,11 +41,8 @@ export const productBaseSchema = z.object({
     .min(1, "Upload at least 1 product image!"),
 });
 
-export type ProductImages = z.infer<typeof productImageBaseSchema>[];
 export type ProductImage = z.infer<typeof productImageBaseSchema>;
-export type ProductVariantImages = z.infer<
-  typeof productVariantImageBaseSchema
->[];
+export type ProductVariantImage = z.infer<typeof productVariantImageBaseSchema>;
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
     variants: {
