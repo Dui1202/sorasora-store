@@ -1,11 +1,6 @@
 import z from "zod";
-import {
-  LocalProductImage,
-  updateProductFormSchema,
-} from "../../validation-schema/product-schema";
+import { updateProductFormSchema } from "../../validation-schema/product-schema";
 import { multipartPayloadUpdateProductSchema } from "../../validation-schema/product-schema/product-api";
-import { Product } from "@/app/generated/prisma/client";
-import { ProductImage } from "@/lib/validation-schema/product-schema/product-base";
 
 export type UpdateProductFormValidationResult =
   | {

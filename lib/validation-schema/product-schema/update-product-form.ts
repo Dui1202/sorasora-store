@@ -123,3 +123,6 @@ export type UpdateProductFormInputData = z.input<
 export type UpdateProductFormData = z.output<
   typeof updateProductFormBaseSchema
 >;
+export type UpdateProductFormValidationData = z.infer<
+  typeof updateProductFormSchema
+>;

@@ -1,5 +1,8 @@
 import { SupplierCountry } from "@/app/generated/prisma/enums";
-import type { CreateProductFormValidationData } from "@/lib/validation-schema/product-schema";
+import type {
+  CreateProductFormValidationData,
+  UpdateProductFormValidationData,
+} from "@/lib/validation-schema/product-schema";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { removeProductImagesMock, uploadProductImagesMock } = vi.hoisted(() => ({
@@ -62,6 +65,55 @@ const createValidationData = (
   ...overrides,
 });
 
+const createUpdateValidationData = (
+  overrides: Partial<UpdateProductFormValidationData> = {},
+): UpdateProductFormValidationData => ({
+  name: "Pocky",
+  description: "Chocolate biscuit sticks",
+  supplierCountry: SupplierCountry.JAPAN,
+  franchiseId: undefined,
+  isPublished: false,
+  hasVariation: true,
+  baseSku: undefined,
+  baseCostPrice: undefined,
+  baseSellingPrice: undefined,
+  existProductImages: [
+    {
+      path: "products/existing-main.png",
+      alt: "Existing main",
+      position: 0,
+    },
+  ],
+  newProductImages: [],
+  variants: [
+    {
+      name: "Strawberry",
+      sku: "POCKY-STRAWBERRY",
+      costPrice: 120,
+      sellingPrice: 180,
+      position: 0,
+      existImage: {
+        path: "products/variants/existing-strawberry.png",
+        alt: "Existing strawberry",
+      },
+      newImage: undefined,
+    },
+    {
+      name: "Chocolate",
+      sku: "POCKY-CHOCOLATE",
+      costPrice: 110,
+      sellingPrice: 170,
+      position: 1,
+      existImage: undefined,
+      newImage: {
+        file: createFile("variant-2.png"),
+        alt: "New chocolate",
+      },
+    },
+  ],
+  ...overrides,
+});
+
 describe("product-image.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,7 +125,7 @@ describe("product-image.service", () => {
       .mockResolvedValueOnce({ path: "products/secondary.png" });
 
     const uploadedImages = await uploadProductImagesService(
-      createValidationData(),
+      createValidationData().productImages,
     );
 
     expect(uploadedImages).toEqual([
@@ -98,7 +150,7 @@ describe("product-image.service", () => {
     });
 
     const uploadedImages = await uploadProductVariantImagesService(
-      createValidationData(),
+      createValidationData().variants,
     );
 
     expect(uploadedImages).toEqual(
@@ -112,6 +164,27 @@ describe("product-image.service", () => {
         ],
       ]),
     );
+    expect(uploadProductImagesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("uploads only update variant newImages in variant order", async () => {
+    uploadProductImagesMock.mockResolvedValueOnce({
+      path: "products/variants/chocolate.png",
+    });
+
+    const uploadedImages = await uploadProductVariantImagesService(
+      createUpdateValidationData().variants,
+      {
+        mode: "update",
+      },
+    );
+
+    expect(uploadedImages).toEqual([
+      {
+        path: "products/variants/chocolate.png",
+        alt: "New chocolate",
+      },
+    ]);
     expect(uploadProductImagesMock).toHaveBeenCalledTimes(1);
   });
 
@@ -130,9 +203,9 @@ describe("product-image.service", () => {
       ],
     });
 
-    await expect(uploadProductVariantImagesService(data)).rejects.toThrow(
-      "Variant image is required for every variant.",
-    );
+    await expect(
+      uploadProductVariantImagesService(data.variants),
+    ).rejects.toThrow("Variant image is required for every variant.");
     expect(uploadProductImagesMock).not.toHaveBeenCalled();
   });
 
@@ -153,6 +226,19 @@ describe("product-image.service", () => {
     expect(removeProductImagesMock).toHaveBeenCalledWith([
       "products/main.png",
       "products/variants/strawberry.png",
+    ]);
+  });
+
+  it("cleans up uploaded variant image paths even when no new product images were uploaded", async () => {
+    await cleanUpProductImagesService([], [
+      {
+        path: "products/variants/chocolate.png",
+        alt: "Variant front",
+      },
+    ]);
+
+    expect(removeProductImagesMock).toHaveBeenCalledWith([
+      "products/variants/chocolate.png",
     ]);
   });
 

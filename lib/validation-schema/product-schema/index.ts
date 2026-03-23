@@ -16,7 +16,6 @@ export type {
   ProductVariantImage,
   ProductWithRelations,
 } from "./product-base";
-export type { CreateProductCommandData } from "./product-command";
 export {
   createProductFormBaseSchema,
   localProductImageSchema,
@@ -33,4 +32,5 @@ export { updateProductFormSchema } from "./update-product-form";
 export type {
   UpdateProductFormData,
   UpdateProductFormInputData,
+  UpdateProductFormValidationData,
 } from "./update-product-form";

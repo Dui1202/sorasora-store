@@ -1,5 +1,8 @@
 import prisma from "@/lib/infrastructure/database/prisma";
-import { CreateProductCommandData } from "@/lib/validation-schema/product-schema";
+import {
+  CreateProductCommandData,
+  UpdateProductCommandData,
+} from "../mappers/product-command.mapper";
 
 export async function createProduct(command: CreateProductCommandData) {
   const {
@@ -42,6 +45,96 @@ export async function createProduct(command: CreateProductCommandData) {
           path: productImage.path,
           alt: productImage.alt,
           position: productImage.position,
+        })),
+      },
+    },
+    include: {
+      variants: {
+        include: {
+          image: true,
+        },
+      },
+      productImages: true,
+    },
+  });
+}
+
+export async function updateProduct(
+  id: string,
+  command: UpdateProductCommandData,
+) {
+  const {
+    name,
+    description,
+    supplierCountry,
+    franchiseId,
+    isPublished,
+    hasVariation,
+    productImages,
+    variants,
+  } = command;
+
+  return prisma.product.update({
+    where: {
+      id,
+    },
+    data: {
+      name,
+      description: description || null,
+      supplierCountry,
+      franchiseId: franchiseId ?? null,
+      isPublished,
+      hasVariation,
+      productImages: {
+        deleteMany: {},
+        create: productImages.map((productImage) => ({
+          path: productImage.path,
+          alt: productImage.alt,
+          position: productImage.position,
+        })),
+      },
+      variants: {
+        deleteMany: {
+          sku: {
+            notIn: variants.map((variant) => variant.sku),
+          },
+        },
+        upsert: variants.map((variant) => ({
+          where: {
+            sku: variant.sku,
+          },
+          update: {
+            name: variant.name,
+            sku: variant.sku,
+            costPrice: variant.costPrice,
+            sellingPrice: variant.sellingPrice,
+            position: variant.position,
+            image: {
+              upsert: {
+                create: {
+                  path: variant.image.path,
+                  alt: variant.image.alt,
+                },
+                update: {
+                  path: variant.image.path,
+                  alt: variant.image.alt,
+                },
+              },
+            },
+          },
+          create: {
+            name: variant.name,
+            sku: variant.sku,
+            costPrice: variant.costPrice,
+            sellingPrice: variant.sellingPrice,
+            position: variant.position,
+            image: {
+              create: {
+                path: variant.image.path,
+                alt: variant.image.alt,
+              },
+            },
+          },
         })),
       },
     },
