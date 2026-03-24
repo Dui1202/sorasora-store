@@ -22,10 +22,10 @@ export async function createProductService(formData: FormData) {
 
   try {
     uploadedProductImages = await uploadProductImagesService(
-      formValidation.data,
+      formValidation.data.productImages,
     );
     uploadedVariantImages = await uploadProductVariantImagesService(
-      formValidation.data,
+      formValidation.data.variants,
     );
 
     const command = toCreateProductCommand(

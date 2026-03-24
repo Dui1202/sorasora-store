@@ -1,11 +1,8 @@
+import { AppError } from "@/core/errors/errors";
 import z from "zod";
-import {
-  LocalProductImage,
-  updateProductFormSchema,
-} from "../../validation-schema/product-schema";
+import { updateProductFormSchema } from "../../validation-schema/product-schema";
 import { multipartPayloadUpdateProductSchema } from "../../validation-schema/product-schema/product-api";
-import { Product } from "@/app/generated/prisma/client";
-import { ProductImage } from "@/lib/validation-schema/product-schema/product-base";
+import { createMultipartValidationError } from "./multipart-validation-error";
 
 export type UpdateProductFormValidationResult =
   | {
@@ -14,7 +11,7 @@ export type UpdateProductFormValidationResult =
     }
   | {
       success: false;
-      error: string;
+      error: AppError;
     };
 
 export const validateUpdateProductFormData = (
@@ -25,7 +22,7 @@ export const validateUpdateProductFormData = (
   if (typeof payloadField !== "string") {
     return {
       success: false,
-      error: "Missing payload field",
+      error: createMultipartValidationError("Missing payload field"),
     };
   }
 
@@ -37,7 +34,7 @@ export const validateUpdateProductFormData = (
   } catch {
     return {
       success: false,
-      error: "Invalid payload format",
+      error: createMultipartValidationError("Invalid payload format"),
     };
   }
 
@@ -48,7 +45,10 @@ export const validateUpdateProductFormData = (
   if (!payloadValidation.success) {
     return {
       success: false,
-      error: "Invalid payload format",
+      error: createMultipartValidationError("Invalid payload format", {
+        source: "payload",
+        issues: z.flattenError(payloadValidation.error),
+      }),
     };
   }
 
@@ -60,10 +60,16 @@ export const validateUpdateProductFormData = (
     .getAll("variantImages")
     .filter((value): value is File => value instanceof File);
 
-  if (imageFiles.length !== payloadValidation.data.newProducImages?.length) {
+  if (imageFiles.length !== payloadValidation.data.newProductImages?.length) {
     return {
       success: false,
-      error: "Image files count does not match product metadata.",
+      error: createMultipartValidationError(
+        "Image files count does not match product metadata.",
+        {
+          expected: payloadValidation.data.newProductImages?.length ?? 0,
+          received: imageFiles.length,
+        },
+      ),
     };
   }
 
@@ -75,7 +81,15 @@ export const validateUpdateProductFormData = (
   ) {
     return {
       success: false,
-      error: "Variant image files count does not match variant metadata.",
+      error: createMultipartValidationError(
+        "Variant image files count does not match variant metadata.",
+        {
+          expected: payloadValidation.data.variants.filter(
+            (variant) => variant.newImage,
+          ).length,
+          received: variantImageFiles.length,
+        },
+      ),
     };
   }
 
@@ -110,9 +124,9 @@ export const validateUpdateProductFormData = (
       }),
       newProductImages: imageFiles.map((file, index) => ({
         file,
-        alt: payloadValidation.data.newProducImages?.[index]?.alt,
+        alt: payloadValidation.data.newProductImages?.[index]?.alt,
         position:
-          payloadValidation.data.newProducImages?.[index]?.position ?? 0,
+          payloadValidation.data.newProductImages?.[index]?.position ?? 0,
       })),
     };
   };
@@ -122,7 +136,10 @@ export const validateUpdateProductFormData = (
   if (!formValidation.success) {
     return {
       success: false,
-      error: formValidation.error.message,
+      error: createMultipartValidationError("Invalid form data", {
+        source: "formDataCandidate",
+        issues: z.flattenError(formValidation.error),
+      }),
     };
   }
 

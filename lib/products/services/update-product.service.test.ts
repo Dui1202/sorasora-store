@@ -1,0 +1,211 @@
+import { AppError } from "@/core/errors/errors";
+import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  updateProductMock,
+  removeProductImagesMock,
+  uploadProductImagesMock,
+} = vi.hoisted(() => ({
+  updateProductMock: vi.fn(),
+  uploadProductImagesMock: vi.fn(),
+  removeProductImagesMock: vi.fn(),
+}));
+
+vi.mock("@/lib/products/repositories/product.repository", () => ({
+  updateProduct: updateProductMock,
+}));
+
+vi.mock("@/lib/infrastructure/storage/server", () => ({
+  uploadProductImages: uploadProductImagesMock,
+  removeProductImages: removeProductImagesMock,
+}));
+
+import { updateProductService } from "./update-product.service";
+
+const createFile = (name: string, content = "image-bytes") =>
+  new File([content], name, { type: "image/png" });
+
+const createBasePayload = () => ({
+  name: "Pocky",
+  description: "Chocolate biscuit sticks",
+  supplierCountry: SupplierCountry.JAPAN,
+  franchiseId: undefined,
+  isPublished: false,
+  hasVariation: true,
+  baseSku: undefined,
+  baseCostPrice: undefined,
+  baseSellingPrice: undefined,
+  existProductImages: [
+    {
+      path: "products/existing-main.png",
+      alt: "Existing main",
+      position: 0,
+    },
+  ],
+  newProductImages: [
+    {
+      alt: "New detail",
+      position: 1,
+    },
+  ],
+  variants: [
+    {
+      name: "Strawberry",
+      sku: "POCKY-STRAWBERRY",
+      costPrice: 120,
+      sellingPrice: 180,
+      position: 0,
+      existImage: {
+        path: "products/variants/existing-strawberry.png",
+        alt: "Existing strawberry",
+      },
+      newImage: undefined,
+    },
+    {
+      name: "Chocolate",
+      sku: "POCKY-CHOCOLATE",
+      costPrice: 110,
+      sellingPrice: 170,
+      position: 1,
+      existImage: undefined,
+      newImage: {
+        alt: "New chocolate",
+      },
+    },
+  ],
+});
+
+const createMultipartFormData = ({
+  payload = createBasePayload(),
+  productFiles = [createFile("product-1.png")],
+  variantFiles = [createFile("variant-1.png")],
+}: {
+  payload?: Record<string, unknown>;
+  productFiles?: File[];
+  variantFiles?: File[];
+}) => {
+  const formData = new FormData();
+
+  formData.set("payload", JSON.stringify(payload));
+
+  for (const file of productFiles) {
+    formData.append("images", file);
+  }
+
+  for (const file of variantFiles) {
+    formData.append("variantImages", file);
+  }
+
+  return formData;
+};
+
+describe("updateProductService", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("uploads new product and variant images before updating the product", async () => {
+    uploadProductImagesMock
+      .mockResolvedValueOnce({
+        path: "products/new-detail.png",
+      })
+      .mockResolvedValueOnce({
+        path: "products/variants/new-chocolate.png",
+      });
+    updateProductMock.mockResolvedValueOnce({
+      id: "product_123",
+      name: "Pocky",
+    });
+
+    const result = await updateProductService(
+      "product_123",
+      createMultipartFormData({}),
+    );
+
+    expect(result).toEqual({
+      id: "product_123",
+      name: "Pocky",
+    });
+    expect(uploadProductImagesMock).toHaveBeenCalledTimes(2);
+    expect(updateProductMock).toHaveBeenCalledWith("product_123", {
+      name: "Pocky",
+      description: "Chocolate biscuit sticks",
+      supplierCountry: SupplierCountry.JAPAN,
+      franchiseId: undefined,
+      isPublished: false,
+      hasVariation: true,
+      productImages: [
+        {
+          path: "products/existing-main.png",
+          alt: "Existing main",
+          position: 0,
+        },
+        {
+          path: "products/new-detail.png",
+          alt: "New detail",
+          position: 1,
+        },
+      ],
+      variants: [
+        {
+          name: "Strawberry",
+          sku: "POCKY-STRAWBERRY",
+          costPrice: 120,
+          sellingPrice: 180,
+          position: 0,
+          image: {
+            path: "products/variants/existing-strawberry.png",
+            alt: "Existing strawberry",
+          },
+        },
+        {
+          name: "Chocolate",
+          sku: "POCKY-CHOCOLATE",
+          costPrice: 110,
+          sellingPrice: 170,
+          position: 1,
+          image: {
+            path: "products/variants/new-chocolate.png",
+            alt: "New chocolate",
+          },
+        },
+      ],
+    });
+    expect(removeProductImagesMock).not.toHaveBeenCalled();
+  });
+
+  it("cleans up newly uploaded images when the update fails after upload", async () => {
+    uploadProductImagesMock
+      .mockResolvedValueOnce({
+        path: "products/new-detail.png",
+      })
+      .mockResolvedValueOnce({
+        path: "products/variants/new-chocolate.png",
+      });
+    updateProductMock.mockRejectedValueOnce(new Error("database down"));
+
+    await expect(
+      updateProductService("product_123", createMultipartFormData({})),
+    ).rejects.toThrow("database down");
+
+    expect(removeProductImagesMock).toHaveBeenCalledWith([
+      "products/new-detail.png",
+      "products/variants/new-chocolate.png",
+    ]);
+  });
+
+  it("rejects invalid multipart form data before any upload or update work starts", async () => {
+    const formData = new FormData();
+
+    await expect(
+      updateProductService("product_123", formData),
+    ).rejects.toMatchObject({
+      code: "INVALID_MULTIPART_FORM_DATA",
+      message: "Missing payload field",
+      status: 400,
+    } satisfies Partial<AppError>);
+    expect(uploadProductImagesMock).not.toHaveBeenCalled();
+    expect(updateProductMock).not.toHaveBeenCalled();
+  });
+});
