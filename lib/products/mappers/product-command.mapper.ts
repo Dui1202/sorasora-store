@@ -2,7 +2,6 @@ import {
   CreateProductFormData,
   ProductImage,
   ProductVariantImage,
-  CreateProductCommandData,
   productBaseSchema,
   UpdateProductFormData,
   ProductWithRelations,
@@ -240,8 +239,7 @@ export const toUpdateProductCommandInput = (
     baseCostPrice: hasVariation ? undefined : baseVariant.costPrice,
     baseSellingPrice: hasVariation ? undefined : baseVariant.sellingPrice,
     variants: hasVariation
-      ? undefined
-      : variants.map((variant) => ({
+      ? variants.map((variant) => ({
           name: variant.name,
           sku: variant.sku,
           costPrice: variant.costPrice,
@@ -252,11 +250,13 @@ export const toUpdateProductCommandInput = (
             path: variant.image!.path,
             alt: variant.image!.alt ?? undefined,
           },
-        })),
+        }))
+      : [],
     newProductImages: [],
     existProductImages: product.productImages.map((image) => ({
       path: image.path,
       alt: image.alt ?? undefined,
+      position: image.position,
     })),
   };
 };

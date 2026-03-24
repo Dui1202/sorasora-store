@@ -5,7 +5,9 @@ export type AppErrorCode =
   | "UPLOAD_FAILED"
   | "INVALID_PRODUCT_ID"
   | "REMOVE_IMAGE_FAILED"
-  | "CLEANUP_PRODUCT_IMAGES_FAILED";
+  | "PRODUCT_NOT_FOUND"
+  | "CLEANUP_PRODUCT_IMAGES_FAILED"
+  | "UPDATE_PRODUCT_FAILED";
 
 export class AppError extends Error {
   constructor(
