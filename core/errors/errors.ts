@@ -1,4 +1,5 @@
 export type AppErrorCode =
+  | "INVALID_MULTIPART_FORM_DATA"
   | "UNSUPPORTED_FILE_TYPE"
   | "FILE_TOO_LARGE"
   | "UPLOAD_FAILED"

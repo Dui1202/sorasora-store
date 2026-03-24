@@ -7,10 +7,6 @@ import {
   updateProductFormBaseSchema,
   updateProductVariantBaseSchema,
 } from "./update-product-form";
-import {
-  productImageBaseSchema,
-  productVariantImageBaseSchema,
-} from "./product-base";
 
 // Response validation schema for uploaded product image
 export const uploadedProductImageSchema = z.object({
@@ -70,7 +66,7 @@ export const multipartPayloadUpdateProductSchema = updateProductFormBaseSchema
   })
   .extend({
     variants: z.array(multipartPayloadUpdateProductVariantSchema).default([]),
-    newProducImages: z.array(newProductImagePayloadSchema).optional(),
+    newProductImages: z.array(newProductImagePayloadSchema).optional(),
   });
 
 export type UploadProductImageResponse = z.infer<

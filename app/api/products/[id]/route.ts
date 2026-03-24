@@ -1,18 +1,7 @@
-import { Prisma } from "@/app/generated/prisma/client";
-import { AppError } from "@/core/errors/errors";
 import { toErrorResponse } from "@/core/errors/http";
 import prisma from "@/lib/infrastructure/database/prisma";
-import {
-  removeProductImages,
-  uploadProductImages,
-} from "@/lib/infrastructure/storage/server";
+import { removeProductImages } from "@/lib/infrastructure/storage/server";
 import { updateProductService } from "@/lib/products/services/update-product.service";
-
-import {
-  ProductImage,
-  ProductVariantImage,
-  ProductWithRelations,
-} from "@/lib/validation-schema/product-schema";
 
 import { NextRequest, NextResponse } from "next/server";
 

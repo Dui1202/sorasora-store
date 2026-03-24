@@ -1,3 +1,4 @@
+import { AppError } from "@/core/errors/errors";
 import { SupplierCountry } from "@/app/generated/prisma/enums";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -42,7 +43,7 @@ const createBasePayload = () => ({
       position: 0,
     },
   ],
-  newProducImages: [
+  newProductImages: [
     {
       alt: "New detail",
       position: 1,
@@ -197,9 +198,13 @@ describe("updateProductService", () => {
   it("rejects invalid multipart form data before any upload or update work starts", async () => {
     const formData = new FormData();
 
-    await expect(updateProductService("product_123", formData)).rejects.toBe(
-      "Missing payload field",
-    );
+    await expect(
+      updateProductService("product_123", formData),
+    ).rejects.toMatchObject({
+      code: "INVALID_MULTIPART_FORM_DATA",
+      message: "Missing payload field",
+      status: 400,
+    } satisfies Partial<AppError>);
     expect(uploadProductImagesMock).not.toHaveBeenCalled();
     expect(updateProductMock).not.toHaveBeenCalled();
   });
