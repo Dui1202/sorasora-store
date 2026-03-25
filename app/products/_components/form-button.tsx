@@ -14,7 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
+import {
+  CreateProductFormInputData,
+  UpdateProductFormInputData,
+} from "@/lib/validation-schema/product-schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
@@ -30,7 +33,9 @@ const FormButton = ({ isSubmitting }: FormButtonProps) => {
   const onContinueButtonClick = () => {
     router.push("/products");
   };
-  const { register, setValue } = useFormContext<CreateProductFormInputData>();
+  const { register, setValue } = useFormContext<
+    CreateProductFormInputData | UpdateProductFormInputData
+  >();
   useEffect(() => {
     register("isPublished");
   }, [register]);

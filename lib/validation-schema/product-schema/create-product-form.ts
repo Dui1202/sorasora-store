@@ -1,5 +1,10 @@
 import z from "zod";
-import { productBaseSchema, productVariantBaseSchema } from "./product-base";
+import {
+  productBaseSchema,
+  productVariantBaseSchema,
+  stockBaseSchema,
+  supplierCountrySchema,
+} from "./product-base";
 
 // For image preview before upload, we use a local schema that includes the File object.
 export const localProductImageSchema = z.object({
@@ -26,10 +31,19 @@ const createProductVariantFormSchema = productVariantBaseSchema
 // Main create product form validation schema
 export const createProductFormBaseSchema = productBaseSchema
   .omit({
+    supplierCountry: true,
+    franchiseId: true,
+    warehouseId: true,
+    isPublished: true,
+    hasVariation: true,
     productImages: true,
     variants: true,
   })
   .extend({
+    supplierCountry: supplierCountrySchema.optional(),
+    franchiseId: z.cuid("Invalid franchise Id").optional(),
+    warehouseId: z.cuid("Invalid warehouse Id").optional(),
+    isPublished: z.boolean().default(false),
     hasVariation: z.boolean().default(false),
     baseSku: z.string().trim().optional(),
     baseCostPrice: z
@@ -42,6 +56,7 @@ export const createProductFormBaseSchema = productBaseSchema
       .int()
       .min(0, "Sale price must be 0 or greater")
       .optional(),
+    baseStock: stockBaseSchema.optional(),
     variants: z.array(createProductVariantFormSchema).default([]),
     productImages: z.array(localProductImageSchema).default([]),
   });
@@ -49,6 +64,22 @@ export const createProductFormBaseSchema = productBaseSchema
 // Add extra validation for the createProductFormBaseSchema
 export const createProductFormSchema = createProductFormBaseSchema.superRefine(
   (data, ctx) => {
+    if (!data.supplierCountry) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Supplier country is required",
+        path: ["supplierCountry"],
+      });
+    }
+
+    if (!data.warehouseId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Warehouse is required",
+        path: ["warehouseId"],
+      });
+    }
+
     if (data.hasVariation) {
       if (data.variants.length < 1) {
         ctx.addIssue({
@@ -92,6 +123,14 @@ export const createProductFormSchema = createProductFormBaseSchema.superRefine(
         code: "custom",
         message: "Sale price must be 0 or greater",
         path: ["baseSellingPrice"],
+      });
+    }
+
+    if (!data.baseStock) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Stock quantity must be 0 or greater",
+        path: ["baseStock", "quantity"],
       });
     }
   },

@@ -8,6 +8,7 @@ import {
   ProductWithRelations,
   UpdateProductFormInputData,
 } from "@/lib/validation-schema/product-schema";
+import { getProductInventoryState } from "../inventory/product-inventory";
 import z from "zod";
 
 const updateProductCommandSchema = productBaseSchema.extend({
@@ -54,6 +55,7 @@ export const toCreateProductCommand = (
             sku: variant.sku,
             costPrice: variant.costPrice,
             sellingPrice: variant.sellingPrice,
+            stock: variant.stock,
             position: variant.position ?? index,
             image: uploadedVariantImage,
           };
@@ -76,6 +78,7 @@ export const toCreateProductCommand = (
             sku: data.baseSku,
             costPrice: data.baseCostPrice,
             sellingPrice: data.baseSellingPrice,
+            stock: data.baseStock,
             position: 0,
             image: fallbackVariantImage,
           },
@@ -87,6 +90,7 @@ export const toCreateProductCommand = (
     description: data.description,
     supplierCountry: data.supplierCountry,
     franchiseId: data.franchiseId,
+    warehouseId: data.warehouseId,
     variants,
     productImages,
     isPublished: data.isPublished,
@@ -236,6 +240,7 @@ export const toUpdateProductCommand = (
           sku: variant.sku,
           costPrice: variant.costPrice,
           sellingPrice: variant.sellingPrice,
+          stock: variant.stock,
           position: variant.position ?? index,
           image,
         };
@@ -258,6 +263,7 @@ export const toUpdateProductCommand = (
             sku: data.baseSku,
             costPrice: data.baseCostPrice,
             sellingPrice: data.baseSellingPrice,
+            stock: data.baseStock,
             position: 0,
             image: fallbackVariantImage,
           },
@@ -269,6 +275,7 @@ export const toUpdateProductCommand = (
     description: data.description,
     supplierCountry: data.supplierCountry,
     franchiseId: data.franchiseId,
+    warehouseId: data.warehouseId,
     variants,
     productImages,
     isPublished: data.isPublished,
@@ -285,17 +292,24 @@ export const toUpdateProductCommandInput = (
   );
   const hasVariation = product.hasVariation;
   const baseVariant = variants[0];
+  const inventoryState = getProductInventoryState(product);
 
   return {
     name: product.name,
     description: product.description ?? undefined,
     supplierCountry: product.supplierCountry,
     franchiseId: product.franchiseId ?? undefined,
+    warehouseId: inventoryState.warehouseId,
     hasVariation,
     baseVariantId: hasVariation ? undefined : baseVariant.id,
     baseSku: hasVariation ? undefined : baseVariant.sku,
     baseCostPrice: hasVariation ? undefined : baseVariant.costPrice,
     baseSellingPrice: hasVariation ? undefined : baseVariant.sellingPrice,
+    baseStock: hasVariation
+      ? undefined
+      : {
+          quantity: inventoryState.variantQuantityById.get(baseVariant.id) ?? 0,
+        },
     variants: hasVariation
       ? variants.map((variant) => ({
           id: variant.id,
@@ -303,6 +317,9 @@ export const toUpdateProductCommandInput = (
           sku: variant.sku,
           costPrice: variant.costPrice,
           sellingPrice: variant.sellingPrice,
+          stock: {
+            quantity: inventoryState.variantQuantityById.get(variant.id) ?? 0,
+          },
           position: variant.position,
           newImage: undefined,
           existImage: {

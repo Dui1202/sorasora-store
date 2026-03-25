@@ -13,13 +13,29 @@ import { useMemo } from "react";
 
 const EditProductPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: product } = useProduct(id);
-  const productInput = useMemo(() => {
+  const { data: product, error } = useProduct(id);
+  const productInputResult = useMemo(() => {
     if (!product) {
-      return null;
+      return {
+        productInput: null,
+        errorMessage: null,
+      };
     }
 
-    return toUpdateProductCommandInput(product);
+    try {
+      return {
+        productInput: toUpdateProductCommandInput(product),
+        errorMessage: null,
+      };
+    } catch (mapperError) {
+      return {
+        productInput: null,
+        errorMessage:
+          mapperError instanceof Error
+            ? mapperError.message
+            : "Failed to load product inventory state.",
+      };
+    }
   }, [product]);
 
   const onSubmit = useMemo(() => {
@@ -29,12 +45,32 @@ const EditProductPage = () => {
     };
   }, [id]);
 
-  if (!id || !productInput) {
+  if (!id) {
+    return null;
+  }
+
+  if (error) {
+    return <p className="p-5 text-sm text-destructive">Failed to load product.</p>;
+  }
+
+  if (productInputResult.errorMessage) {
+    return (
+      <p className="p-5 text-sm text-destructive">
+        {productInputResult.errorMessage}
+      </p>
+    );
+  }
+
+  if (!productInputResult.productInput) {
     return null;
   }
 
   return (
-    <ProductForm mode="update" product={productInput} onSubmit={onSubmit} />
+    <ProductForm
+      mode="update"
+      product={productInputResult.productInput}
+      onSubmit={onSubmit}
+    />
   );
 };
 

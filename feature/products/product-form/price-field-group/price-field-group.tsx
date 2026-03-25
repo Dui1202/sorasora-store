@@ -120,6 +120,12 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
       return digits === "" ? undefined : Number(digits);
     },
   });
+  const baseStockField = register("baseStock.quantity", {
+    setValueAs: (value) => {
+      const digits = toDigitsOnly(String(value ?? ""));
+      return digits === "" ? undefined : Number(digits);
+    },
+  });
 
   useEffect(() => {
     if (!initialVariationState.parseError) {
@@ -157,6 +163,10 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
         shouldDirty: true,
         shouldValidate: true,
       });
+      setValue("baseStock", undefined, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
       return;
     }
 
@@ -177,6 +187,10 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
       shouldValidate: true,
     });
     setValue("baseSellingPrice", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("baseStock", undefined, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -253,11 +267,16 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
                     baseCostPriceField.onChange(event);
 
                     setBreakEvenPrice(
-                      calculateBreakEvenPrice(
-                        supplierCountry,
-                        "NONE",
-                        parseInt(toDigitsOnly(event.target.value) || "0", 10),
-                      ) ?? 0,
+                      supplierCountry
+                        ? (calculateBreakEvenPrice(
+                            supplierCountry,
+                            "NONE",
+                            parseInt(
+                              toDigitsOnly(event.target.value) || "0",
+                              10,
+                            ),
+                          ) ?? 0)
+                        : 0,
                     );
                   }}
                 />
@@ -297,7 +316,18 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
           <FieldGroup className="grid grid-cols-2">
             <Field className="col-span-1">
               <FieldLabel>Stock</FieldLabel>
-              <Input placeholder="Stock..." />
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Stock..."
+                {...baseStockField}
+                onKeyDown={handleDigitOnlyKeyDown}
+                onPaste={handleDigitOnlyPaste}
+                onChange={(event) => {
+                  baseStockField.onChange(event);
+                }}
+              />
             </Field>
           </FieldGroup>
         </>

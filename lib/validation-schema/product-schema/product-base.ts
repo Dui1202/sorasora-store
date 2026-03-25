@@ -3,6 +3,9 @@ import { Prisma, SupplierCountry } from "@/app/generated/prisma/browser";
 import { z } from "zod";
 
 export const supplierCountrySchema = z.enum(SupplierCountry);
+export const stockBaseSchema = z.object({
+  quantity: z.number().int().min(0, "Stock quantity must be 0 or greater"),
+});
 
 //Product Variant Image validation schema
 export const productVariantImageBaseSchema = z.object({
@@ -23,6 +26,7 @@ export const productVariantBaseSchema = z.object({
   sku: z.string().trim().min(1, "SKU is required"),
   costPrice: z.number().int().min(0, "Original price must be 0 or greater"),
   sellingPrice: z.number().int().min(0, "Sale price must be 0 or greater"),
+  stock: stockBaseSchema,
   position: z.coerce.number().int().min(0).default(0),
   image: productVariantImageBaseSchema,
 });
@@ -33,6 +37,7 @@ export const productBaseSchema = z.object({
   description: z.string().trim().optional(),
   supplierCountry: supplierCountrySchema,
   franchiseId: z.cuid("Invalid franchise Id").optional(),
+  warehouseId: z.cuid("Invalid warehouse Id"),
   isPublished: z.boolean().default(false),
   hasVariation: z.boolean().default(false),
   variants: z.array(productVariantBaseSchema).min(1),
@@ -48,6 +53,11 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
     variants: {
       include: {
         image: true;
+        stocks: {
+          include: {
+            warehouse: true;
+          };
+        };
       };
     };
     productImages: true;

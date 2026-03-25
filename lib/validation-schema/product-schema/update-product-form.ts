@@ -102,6 +102,14 @@ export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
       });
     }
 
+    if (!data.baseStock) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Stock quantity must be 0 or greater",
+        path: ["baseStock", "quantity"],
+      });
+    }
+
     if (!data.newProductImages.length && !data.existProductImages.length) {
       ctx.addIssue({
         code: "custom",

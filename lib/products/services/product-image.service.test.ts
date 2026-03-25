@@ -31,11 +31,13 @@ const createValidationData = (
   description: "Chocolate biscuit sticks",
   supplierCountry: SupplierCountry.JAPAN,
   franchiseId: undefined,
+  warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
   hasVariation: true,
   baseSku: undefined,
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
+  baseStock: undefined,
   productImages: [
     {
       file: createFile("product-1.png"),
@@ -55,6 +57,9 @@ const createValidationData = (
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
+      stock: {
+        quantity: 5,
+      },
       position: 0,
       image: {
         file: createFile("variant-1.png"),
@@ -72,11 +77,13 @@ const createUpdateValidationData = (
   description: "Chocolate biscuit sticks",
   supplierCountry: SupplierCountry.JAPAN,
   franchiseId: undefined,
+  warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
   hasVariation: true,
   baseSku: undefined,
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
+  baseStock: undefined,
   existProductImages: [
     {
       path: "products/existing-main.png",
@@ -91,6 +98,9 @@ const createUpdateValidationData = (
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
+      stock: {
+        quantity: 5,
+      },
       position: 0,
       existImage: {
         path: "products/variants/existing-strawberry.png",
@@ -103,6 +113,9 @@ const createUpdateValidationData = (
       sku: "POCKY-CHOCOLATE",
       costPrice: 110,
       sellingPrice: 170,
+      stock: {
+        quantity: 7,
+      },
       position: 1,
       existImage: undefined,
       newImage: {
@@ -197,6 +210,9 @@ describe("product-image.service", () => {
           sku: "POCKY-STRAWBERRY",
           costPrice: 120,
           sellingPrice: 180,
+          stock: {
+            quantity: 5,
+          },
           position: 0,
           image: undefined,
         },

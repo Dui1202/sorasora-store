@@ -269,11 +269,12 @@ function toDraftSeeds(entries: ParsedVariantEntry[]): VariantDraftSeed[] {
     const image = toSeedImage(getVariantImageForSeed(entry.variant));
 
     return {
+      variantId: "id" in entry.variant ? entry.variant.id : undefined,
       signature: entry.signature,
       sku: entry.variant.sku,
       costPrice: entry.variant.costPrice,
       sellingPrice: entry.variant.sellingPrice,
-      stock: 0,
+      stock: entry.variant.stock.quantity,
       imageFile: image.imageFile,
       imagePath: image.imagePath,
       imageAlt: image.imageAlt,
@@ -342,25 +343,47 @@ export function buildVariantName(selectedOptions: VariantOptionSelection[]) {
 
 export function mapDraftRowsToFormVariants(
   rows: VariantDraftRow[],
+  mode: "create" | "update",
 ): PriceFormVariantInput[] {
   return rows.map((row, index) => {
-    return {
-      clientKey: row.clientKey,
+    const commonFields = {
       name: buildVariantName(row.selectedOptions),
       sku: row.sku.trim(),
       costPrice: row.costPrice,
       sellingPrice: row.sellingPrice,
+      stock: {
+        quantity: row.stock,
+      },
       position: index,
-      image: row.imageFile
+    };
+
+    if (mode === "create") {
+      return {
+        clientKey: row.clientKey,
+        ...commonFields,
+        image: row.imageFile
+          ? {
+              file: row.imageFile,
+              alt: row.imageAlt,
+            }
+          : undefined,
+      };
+    }
+
+    return {
+      id: row.variantId,
+      ...commonFields,
+      existImage: row.imagePath
+        ? {
+            path: row.imagePath,
+            alt: row.imageAlt,
+          }
+        : undefined,
+      newImage: row.imageFile
         ? {
             file: row.imageFile,
             alt: row.imageAlt,
           }
-        : row.imagePath
-          ? {
-              path: row.imagePath,
-              alt: row.imageAlt,
-            }
         : undefined,
     };
   });

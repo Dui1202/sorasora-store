@@ -19,6 +19,7 @@ export type VariantCombination = {
 };
 
 export type VariantDraftRow = VariantCombination & {
+  variantId?: string;
   clientKey: string;
   costPrice: number;
   sellingPrice: number;
@@ -103,6 +104,7 @@ function createDefaultDraftRow(
 ): VariantDraftRow {
   return {
     ...combination,
+    variantId: undefined,
     clientKey: crypto.randomUUID(),
     costPrice: 0,
     sellingPrice: 0,

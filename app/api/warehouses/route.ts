@@ -3,6 +3,20 @@ import { warehouseBaseSchema } from "@/lib/validation-schema/warehouse-schema";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
+export async function GET() {
+  const warehouses = await prisma.warehouse.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  return NextResponse.json(warehouses);
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
 

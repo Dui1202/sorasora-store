@@ -8,6 +8,7 @@ import {
   findProductById,
   updateProduct,
 } from "../repositories/product.repository";
+import { getProductInventoryState } from "../inventory/product-inventory";
 import { validateUpdateProductFormData } from "../validation/update-product-form-data-validation";
 import {
   cleanUpProductImagesService,
@@ -27,6 +28,7 @@ export async function updateProductService(
   if (!product) {
     throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
   }
+  getProductInventoryState(product);
 
   const formValidation = validateUpdateProductFormData(formData);
   if (!formValidation.success) {

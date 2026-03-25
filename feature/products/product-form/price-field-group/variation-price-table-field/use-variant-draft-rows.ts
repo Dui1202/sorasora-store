@@ -11,6 +11,7 @@ import {
 } from "./variation-price-table-field-utils";
 
 export type VariantDraftSeed = {
+  variantId?: string;
   signature: string;
   costPrice: number;
   sellingPrice: number;
@@ -59,6 +60,7 @@ export function useVariantDraftRows(
 
       return {
         ...row,
+        variantId: seed.variantId,
         costPrice: seed.costPrice,
         sellingPrice: seed.sellingPrice,
         sku: seed.sku,

@@ -36,12 +36,14 @@ const createBasePayload = () => ({
   description: "Chocolate biscuit sticks",
   supplierCountry: SupplierCountry.JAPAN,
   franchiseId: undefined,
+  warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
   hasVariation: true,
   baseVariantId: undefined,
   baseSku: undefined,
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
+  baseStock: undefined,
   existProductImages: [
     {
       path: "products/existing-main.png",
@@ -62,6 +64,9 @@ const createBasePayload = () => ({
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
+      stock: {
+        quantity: 5,
+      },
       position: 0,
       existImage: {
         path: "products/variants/existing-strawberry.png",
@@ -75,6 +80,9 @@ const createBasePayload = () => ({
       sku: "POCKY-CHOCOLATE",
       costPrice: 110,
       sellingPrice: 170,
+      stock: {
+        quantity: 7,
+      },
       position: 1,
       existImage: undefined,
       newImage: {
@@ -117,6 +125,18 @@ describe("updateProductService", () => {
       variants: [
         {
           id: EXISTING_VARIANT_ID,
+          stocks: [
+            {
+              id: "stock_1",
+              variantId: EXISTING_VARIANT_ID,
+              warehouseId: "ckwarehouse1234567890abcde1",
+              quantity: 4,
+              warehouse: {
+                id: "ckwarehouse1234567890abcde1",
+                name: "Main Warehouse",
+              },
+            },
+          ],
           image: {
             path: "products/variants/existing-strawberry.png",
             alt: "Existing strawberry",
@@ -163,6 +183,7 @@ describe("updateProductService", () => {
         description: "Chocolate biscuit sticks",
         supplierCountry: SupplierCountry.JAPAN,
         franchiseId: undefined,
+        warehouseId: "ckwarehouse1234567890abcde1",
         isPublished: false,
         hasVariation: true,
         productImages: [
@@ -184,6 +205,9 @@ describe("updateProductService", () => {
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
             sellingPrice: 180,
+            stock: {
+              quantity: 5,
+            },
             position: 0,
             image: {
               path: "products/variants/existing-strawberry.png",
@@ -196,6 +220,9 @@ describe("updateProductService", () => {
             sku: "POCKY-CHOCOLATE",
             costPrice: 110,
             sellingPrice: 170,
+            stock: {
+              quantity: 7,
+            },
             position: 1,
             image: {
               path: "products/variants/new-chocolate.png",

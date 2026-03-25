@@ -1,19 +1,8 @@
 "use client";
 
-import { Prisma } from "@/app/generated/prisma/browser";
+import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
-type ProductWithRelations = Prisma.ProductGetPayload<{
-  include: {
-    productImages: true;
-    variants: {
-      include: {
-        image: true;
-      };
-    };
-  };
-}>;
 
 export const useProducts = () =>
   useQuery<ProductWithRelations[]>({

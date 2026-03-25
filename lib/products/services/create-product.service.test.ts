@@ -27,11 +27,15 @@ const createBasePayload = () => ({
   name: "Pocky",
   description: "Chocolate biscuit sticks",
   supplierCountry: SupplierCountry.JAPAN,
+  warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
   hasVariation: false,
   baseSku: "POCKY-BASE",
   baseCostPrice: 100,
   baseSellingPrice: 150,
+  baseStock: {
+    quantity: 12,
+  },
   variants: [],
   productImages: [
     {
@@ -94,6 +98,7 @@ describe("createProductService", () => {
       description: "Chocolate biscuit sticks",
       supplierCountry: SupplierCountry.JAPAN,
       franchiseId: undefined,
+      warehouseId: "ckwarehouse1234567890abcde1",
       isPublished: false,
       hasVariation: false,
       productImages: [
@@ -109,6 +114,9 @@ describe("createProductService", () => {
           sku: "POCKY-BASE",
           costPrice: 100,
           sellingPrice: 150,
+          stock: {
+            quantity: 12,
+          },
           position: 0,
           image: {
             path: "products/main.png",
@@ -149,6 +157,7 @@ describe("createProductService", () => {
         baseSku: undefined,
         baseCostPrice: undefined,
         baseSellingPrice: undefined,
+        baseStock: undefined,
         variants: [
           {
             clientKey: "variant-strawberry",
@@ -156,6 +165,9 @@ describe("createProductService", () => {
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
             sellingPrice: 180,
+            stock: {
+              quantity: 5,
+            },
             position: 0,
             image: {
               alt: "Variant front",

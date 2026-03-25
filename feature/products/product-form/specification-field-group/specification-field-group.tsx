@@ -18,20 +18,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
+import {
+  CreateProductFormInputData,
+  UpdateProductFormInputData,
+} from "@/lib/validation-schema/product-schema";
 import { Controller, useFormContext } from "react-hook-form";
 import type { FranchiseDto } from "../../dto/franchises-dto";
+import type { WarehouseDto } from "../../dto/warehouses-dto";
 import { useFranchises } from "./use-franchises";
+import { useWarehouses } from "./use-warehouses";
 import { Button } from "@/components/ui/button";
 
 const SpecificationFieldGroup = () => {
-  const { control } = useFormContext<CreateProductFormInputData>();
+  const { control } = useFormContext<
+    CreateProductFormInputData | UpdateProductFormInputData
+  >();
   const {
     data: franchises,
     isLoading: isLoadingFranchises,
     isError: isFranchisesError,
     refetch: refetchFranchises,
   } = useFranchises();
+  const {
+    data: warehouses,
+    isLoading: isLoadingWarehouses,
+    isError: isWarehousesError,
+    refetch: refetchWarehouses,
+  } = useWarehouses();
 
   return (
     <FieldGroup className="flex flex-row">
@@ -66,8 +79,14 @@ const SpecificationFieldGroup = () => {
           render={({ field }) => (
             <Combobox
               items={franchises ?? []}
-              value={field.value}
-              onValueChange={field.onChange}
+              value={
+                franchises?.find((franchise) => franchise.id === field.value) ??
+                null
+              }
+              onValueChange={(franchise) => field.onChange(franchise?.id)}
+              itemToStringLabel={(franchise) => franchise.name}
+              itemToStringValue={(franchise) => franchise.id}
+              isItemEqualToValue={(item, value) => item.id === value.id}
               name={field.name}
             >
               <ComboboxInput placeholder="Select a franchise" />
@@ -89,7 +108,7 @@ const SpecificationFieldGroup = () => {
                 ) : (
                   <ComboboxList>
                     {(item: FranchiseDto) => (
-                      <ComboboxItem key={item.id} value={item.id}>
+                      <ComboboxItem key={item.id} value={item}>
                         {item.name}
                       </ComboboxItem>
                     )}
@@ -100,6 +119,54 @@ const SpecificationFieldGroup = () => {
           )}
           control={control}
           name="franchiseId"
+        />
+      </Field>
+      <Field>
+        <FieldLabel>Warehouse</FieldLabel>
+        <Controller
+          render={({ field }) => (
+            <Combobox
+              items={warehouses ?? []}
+              value={
+                warehouses?.find((warehouse) => warehouse.id === field.value) ??
+                null
+              }
+              onValueChange={(warehouse) => field.onChange(warehouse?.id)}
+              itemToStringLabel={(warehouse) => warehouse.name}
+              itemToStringValue={(warehouse) => warehouse.id}
+              isItemEqualToValue={(item, value) => item.id === value.id}
+              name={field.name}
+            >
+              <ComboboxInput placeholder="Select a warehouse" />
+              <ComboboxContent>
+                <ComboboxEmpty>No warehouse found</ComboboxEmpty>
+                {isLoadingWarehouses ? (
+                  <Skeleton />
+                ) : isWarehousesError ? (
+                  <div className="p-2 text-sm text-red-600">
+                    Failed to load warehouses.
+                    <Button
+                      type="button"
+                      onClick={() => refetchWarehouses()}
+                      className="ml-2 underline"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : (
+                  <ComboboxList>
+                    {(item: WarehouseDto) => (
+                      <ComboboxItem key={item.id} value={item}>
+                        {item.name}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                )}
+              </ComboboxContent>
+            </Combobox>
+          )}
+          control={control}
+          name="warehouseId"
         />
       </Field>
     </FieldGroup>

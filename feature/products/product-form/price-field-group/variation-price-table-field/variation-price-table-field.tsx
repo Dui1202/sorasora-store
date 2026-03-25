@@ -49,7 +49,7 @@ const VariationPriceTableField = ({
     useVariantDraftRows(combinations, initialDraftSeeds);
 
   useEffect(() => {
-    onVariantsChange?.(mapDraftRowsToFormVariants(draftRows));
+    onVariantsChange?.(mapDraftRowsToFormVariants(draftRows, mode));
   }, [draftRows, mode, onVariantsChange]);
 
   const tableRows = useMemo(() => {
