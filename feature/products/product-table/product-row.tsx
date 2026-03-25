@@ -1,16 +1,11 @@
-import { TypographyH2, TypographyMuted } from "@/components/typography";
+import { TypographyMuted } from "@/components/typography";
 import { TypographyH3 } from "@/components/typography/typographyh3";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
 import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
-import { ChevronUp, Table } from "lucide-react";
-import React, { Fragment, useState } from "react";
+import { ChevronUp } from "lucide-react";
+import { useState } from "react";
 import ProductActionButtons from "./product-action-buttons";
 
 type ProductRowProps = {
@@ -38,6 +33,9 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
             <div>
               <TypographyH3>{product.name}</TypographyH3>
               <TypographyMuted>Product Id: {product.id}</TypographyMuted>
+              <TypographyMuted>
+                {product.isPublished ? "Published" : "Unpublished"}
+              </TypographyMuted>
             </div>
           </div>
           {hasVariants && (

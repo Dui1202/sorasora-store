@@ -4,16 +4,19 @@ export type PlatformCode = "SHOPEE" | "NONE";
 
 export const COUNTRY_CONFIG = {
   CHINA: {
+    currencyCode: "CNY",
     exchangeRateToVND: 4000,
     handlingPercent: 0.03,
   },
   JAPAN: {
+    currencyCode: "JPY",
     exchangeRateToVND: 170,
     handlingPercent: 0.05,
   },
 } satisfies Record<
   SupplierCountry,
   {
+    currencyCode: string;
     exchangeRateToVND: number;
     handlingPercent: number;
   }

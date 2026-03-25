@@ -4,13 +4,7 @@ import {
   UpdateProductCommandData,
 } from "../mappers/product-command.mapper";
 import { AppError } from "@/core/errors/errors";
-import { removeProductImages } from "@/lib/infrastructure/storage/server";
 import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
-import { UpdateProductFormValidationResult } from "../validation/update-product-form-data-validation";
-import {
-  findProductImagesToDelete,
-  removeProductImagesFromStorage,
-} from "./product.respository.utils";
 
 type ProductRecord = Awaited<ReturnType<typeof prisma.product.findUnique>>;
 
@@ -85,8 +79,8 @@ export async function createProduct(command: CreateProductCommandData) {
 export async function updateProduct(
   id: string,
   command: UpdateProductCommandData,
-  formValidation: Extract<UpdateProductFormValidationResult, { success: true }>,
-) {
+  product: ProductWithRelations,
+): Promise<ProductWithRelations> {
   const {
     name,
     description,
@@ -98,129 +92,139 @@ export async function updateProduct(
     variants,
   } = command;
 
-  const product = await findProductById(id, true);
+  const existingVariantIds = new Set(
+    product.variants.map((variant) => variant.id),
+  );
+  const submittedExistingVariantIds = variants.flatMap((variant) =>
+    variant.id ? [variant.id] : [],
+  );
+  const removedVariantIds = product.variants
+    .filter((variant) => !submittedExistingVariantIds.includes(variant.id))
+    .map((variant) => variant.id);
 
-  if (!product) {
-    throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+  for (const variant of variants) {
+    if (variant.id && !existingVariantIds.has(variant.id)) {
+      throw new AppError(
+        "UPDATE_PRODUCT_FAILED",
+        "Variant does not belong to product",
+        400,
+      );
+    }
   }
 
-  const { productImagesToDelete, variantImagesToDelete } =
-    findProductImagesToDelete(product, formValidation);
-
-  let updatedProduct = null;
-  try {
-    await prisma.$transaction(async (tx) => {
-      await tx.productImage.deleteMany({
-        where: {
-          path: {
-            in: Array.from(productImagesToDelete),
-          },
-        },
-      });
+  return prisma.$transaction(async (tx) => {
+    if (removedVariantIds.length > 0) {
       await tx.productVariantImage.deleteMany({
         where: {
-          path: {
-            in: Array.from(variantImagesToDelete),
+          variantId: {
+            in: removedVariantIds,
+          },
+          variant: {
+            productId: id,
           },
         },
       });
 
-      updatedProduct = await tx.product.update({
+      await tx.productVariant.deleteMany({
         where: {
-          id,
-        },
-        data: {
-          name,
-          description: description || null,
-          supplierCountry,
-          franchiseId: franchiseId ?? null,
-          isPublished,
-          hasVariation,
-          productImages: {
-            deleteMany: {},
-            create: productImages.map((productImage) => ({
-              path: productImage.path,
-              alt: productImage.alt,
-              position: productImage.position,
-            })),
+          productId: id,
+          id: {
+            in: removedVariantIds,
           },
-          variants: {
-            deleteMany: {
-              sku: {
-                notIn: variants.map((variant) => variant.sku),
-              },
-            },
-            upsert: variants.map((variant) => ({
-              where: {
-                sku: variant.sku,
-              },
-              update: {
-                name: variant.name,
-                sku: variant.sku,
-                costPrice: variant.costPrice,
-                sellingPrice: variant.sellingPrice,
-                position: variant.position,
-                image: {
-                  upsert: {
-                    create: {
-                      path: variant.image.path,
-                      alt: variant.image.alt,
-                    },
-                    update: {
-                      path: variant.image.path,
-                      alt: variant.image.alt,
-                    },
-                  },
-                },
-              },
-              create: {
-                name: variant.name,
-                sku: variant.sku,
-                costPrice: variant.costPrice,
-                sellingPrice: variant.sellingPrice,
-                position: variant.position,
-                image: {
-                  create: {
-                    path: variant.image.path,
-                    alt: variant.image.alt,
-                  },
-                },
-              },
-            })),
-          },
-        },
-        include: {
-          variants: {
-            include: {
-              image: true,
-            },
-          },
-          productImages: true,
         },
       });
+    }
+
+    await tx.product.update({
+      where: {
+        id,
+      },
+      data: {
+        name,
+        description: description || null,
+        supplierCountry,
+        franchiseId: franchiseId ?? null,
+        isPublished,
+        hasVariation,
+        productImages: {
+          deleteMany: {},
+          create: productImages.map((productImage) => ({
+            path: productImage.path,
+            alt: productImage.alt,
+            position: productImage.position,
+          })),
+        },
+      },
     });
-  } catch (error) {
-    throw new AppError(
-      "UPDATE_PRODUCT_FAILED",
-      "Failed to update product",
-      500,
-    );
-  }
 
-  try {
-    await removeProductImagesFromStorage(
-      productImagesToDelete,
-      variantImagesToDelete,
-    );
-  } catch (error) {
-    throw new AppError(
-      "UPDATE_PRODUCT_FAILED",
-      "Failed to update product",
-      500,
-    );
-  }
+    for (const variant of variants) {
+      if (variant.id) {
+        await tx.productVariant.update({
+          where: {
+            id: variant.id,
+          },
+          data: {
+            name: variant.name,
+            sku: variant.sku,
+            costPrice: variant.costPrice,
+            sellingPrice: variant.sellingPrice,
+            position: variant.position,
+            image: {
+              upsert: {
+                create: {
+                  path: variant.image.path,
+                  alt: variant.image.alt,
+                },
+                update: {
+                  path: variant.image.path,
+                  alt: variant.image.alt,
+                },
+              },
+            },
+          },
+        });
 
-  return updatedProduct;
+        continue;
+      }
+
+      await tx.productVariant.create({
+        data: {
+          productId: id,
+          name: variant.name,
+          sku: variant.sku,
+          costPrice: variant.costPrice,
+          sellingPrice: variant.sellingPrice,
+          position: variant.position,
+          image: {
+            create: {
+              path: variant.image.path,
+              alt: variant.image.alt,
+            },
+          },
+        },
+      });
+    }
+
+    const updatedProduct = await tx.product.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        variants: {
+          include: {
+            image: true,
+          },
+        },
+        productImages: true,
+      },
+    });
+
+    if (!updatedProduct) {
+      throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+    }
+
+    return updatedProduct;
+  });
 }
 export async function findProductById(
   id: string,

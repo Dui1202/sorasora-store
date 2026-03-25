@@ -3,15 +3,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUploadButton from "./image-upload-button";
 import { useFormContext } from "react-hook-form";
-import { CreateProductFormInputData } from "@/lib/validation-schema/product-schema";
+import {
+  CreateProductFormInputData,
+  UpdateProductFormInputData,
+} from "@/lib/validation-schema/product-schema";
 
-const BasicInformationFieldGroup = () => {
-  const { register } = useFormContext<CreateProductFormInputData>();
+type BasicInformationFieldGroupProps = {
+  mode: "create" | "update";
+};
+
+const BasicInformationFieldGroup = ({
+  mode,
+}: BasicInformationFieldGroupProps) => {
+  const { register } = useFormContext<
+    CreateProductFormInputData | UpdateProductFormInputData
+  >();
   return (
     <FieldGroup>
       <Field>
         <FieldLabel>Product Images</FieldLabel>
-        <ImageUploadButton />
+        <ImageUploadButton mode={mode} />
       </Field>
       <Field>
         <FieldLabel>Product Name</FieldLabel>

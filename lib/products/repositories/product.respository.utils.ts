@@ -36,11 +36,25 @@ export const removeProductImagesFromStorage = async (
   productImagesToDelete: Set<string>,
   variantImagesToDelete: Set<string>,
 ) => {
+  if (
+    productImagesToDelete.size === 0 &&
+    variantImagesToDelete.size === 0
+  ) {
+    return;
+  }
+
   try {
-    await Promise.all([
-      removeProductImages([...productImagesToDelete]),
-      removeProductImages([...variantImagesToDelete]),
-    ]);
+    const removals: Promise<unknown>[] = [];
+
+    if (productImagesToDelete.size > 0) {
+      removals.push(removeProductImages([...productImagesToDelete]));
+    }
+
+    if (variantImagesToDelete.size > 0) {
+      removals.push(removeProductImages([...variantImagesToDelete]));
+    }
+
+    await Promise.all(removals);
   } catch (err) {
     throw new AppError(
       "REMOVE_IMAGE_FAILED",

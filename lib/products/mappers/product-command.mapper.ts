@@ -3,11 +3,20 @@ import {
   ProductImage,
   ProductVariantImage,
   productBaseSchema,
+  productVariantBaseSchema,
   UpdateProductFormData,
   ProductWithRelations,
   UpdateProductFormInputData,
 } from "@/lib/validation-schema/product-schema";
 import z from "zod";
+
+const updateProductCommandSchema = productBaseSchema.extend({
+  variants: z.array(
+    productVariantBaseSchema.extend({
+      id: z.cuid("Invalid variant id").optional(),
+    }),
+  ),
+});
 
 export const toCreateProductCommand = (
   data: CreateProductFormData,
@@ -123,7 +132,53 @@ export const toCreateProductMultipartFormData = (
 
   return multipartFormData;
 };
+export const toUpdateProductMultipartFormData = (
+  data: UpdateProductFormData,
+) => {
+  const multipartFormData = new FormData();
 
+  multipartFormData.append(
+    "payload",
+    JSON.stringify({
+      ...data,
+      variants: data.variants.map((variant) => ({
+        ...variant,
+        existImage: variant.existImage
+          ? {
+              path: variant.existImage.path,
+              alt: variant.existImage.alt,
+            }
+          : undefined,
+        newImage: variant.newImage
+          ? {
+              alt: variant.newImage.alt,
+            }
+          : undefined,
+      })),
+      existProductImages: data.existProductImages.map((image) => ({
+        path: image.path,
+        alt: image.alt,
+        position: image.position,
+      })),
+      newProductImages: data.newProductImages.map((image) => ({
+        alt: image.alt,
+        position: image.position,
+      })),
+    }),
+  );
+
+  for (const image of data.newProductImages) {
+    multipartFormData.append("images", image.file);
+  }
+
+  for (const variant of data.variants) {
+    if (variant.newImage) {
+      multipartFormData.append("variantImages", variant.newImage.file);
+    }
+  }
+
+  return multipartFormData;
+};
 export const toUpdateProductCommand = (
   data: UpdateProductFormData,
   uploadedProductImages: ProductImage[] = [],
@@ -176,6 +231,7 @@ export const toUpdateProductCommand = (
           })();
 
         return {
+          id: variant.id,
           name: variant.name,
           sku: variant.sku,
           costPrice: variant.costPrice,
@@ -197,6 +253,7 @@ export const toUpdateProductCommand = (
 
         return [
           {
+            id: data.baseVariantId,
             name: data.name,
             sku: data.baseSku,
             costPrice: data.baseCostPrice,
@@ -207,7 +264,7 @@ export const toUpdateProductCommand = (
         ];
       })();
 
-  return productBaseSchema.parse({
+  return updateProductCommandSchema.parse({
     name: data.name,
     description: data.description,
     supplierCountry: data.supplierCountry,
@@ -235,11 +292,13 @@ export const toUpdateProductCommandInput = (
     supplierCountry: product.supplierCountry,
     franchiseId: product.franchiseId ?? undefined,
     hasVariation,
+    baseVariantId: hasVariation ? undefined : baseVariant.id,
     baseSku: hasVariation ? undefined : baseVariant.sku,
     baseCostPrice: hasVariation ? undefined : baseVariant.costPrice,
     baseSellingPrice: hasVariation ? undefined : baseVariant.sellingPrice,
     variants: hasVariation
       ? variants.map((variant) => ({
+          id: variant.id,
           name: variant.name,
           sku: variant.sku,
           costPrice: variant.costPrice,
@@ -262,4 +321,6 @@ export const toUpdateProductCommandInput = (
 };
 
 export type CreateProductCommandData = z.output<typeof productBaseSchema>;
-export type UpdateProductCommandData = z.output<typeof productBaseSchema>;
+export type UpdateProductCommandData = z.output<
+  typeof updateProductCommandSchema
+>;

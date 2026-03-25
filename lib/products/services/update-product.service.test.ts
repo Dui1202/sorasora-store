@@ -4,16 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   updateProductMock,
+  findProductByIdMock,
   removeProductImagesMock,
   uploadProductImagesMock,
 } = vi.hoisted(() => ({
   updateProductMock: vi.fn(),
+  findProductByIdMock: vi.fn(),
   uploadProductImagesMock: vi.fn(),
   removeProductImagesMock: vi.fn(),
 }));
 
 vi.mock("@/lib/products/repositories/product.repository", () => ({
   updateProduct: updateProductMock,
+  findProductById: findProductByIdMock,
 }));
 
 vi.mock("@/lib/infrastructure/storage/server", () => ({
@@ -22,6 +25,8 @@ vi.mock("@/lib/infrastructure/storage/server", () => ({
 }));
 
 import { updateProductService } from "./update-product.service";
+
+const EXISTING_VARIANT_ID = "ck1234567890abcde1234567";
 
 const createFile = (name: string, content = "image-bytes") =>
   new File([content], name, { type: "image/png" });
@@ -33,6 +38,7 @@ const createBasePayload = () => ({
   franchiseId: undefined,
   isPublished: false,
   hasVariation: true,
+  baseVariantId: undefined,
   baseSku: undefined,
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
@@ -51,6 +57,7 @@ const createBasePayload = () => ({
   ],
   variants: [
     {
+      id: EXISTING_VARIANT_ID,
       name: "Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
@@ -63,6 +70,7 @@ const createBasePayload = () => ({
       newImage: undefined,
     },
     {
+      id: undefined,
       name: "Chocolate",
       sku: "POCKY-CHOCOLATE",
       costPrice: 110,
@@ -103,6 +111,26 @@ const createMultipartFormData = ({
 describe("updateProductService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findProductByIdMock.mockResolvedValue({
+      id: "product_123",
+      hasVariation: true,
+      variants: [
+        {
+          id: EXISTING_VARIANT_ID,
+          image: {
+            path: "products/variants/existing-strawberry.png",
+            alt: "Existing strawberry",
+          },
+        },
+      ],
+      productImages: [
+        {
+          path: "products/existing-main.png",
+          alt: "Existing main",
+          position: 0,
+        },
+      ],
+    });
   });
 
   it("uploads new product and variant images before updating the product", async () => {
@@ -128,50 +156,58 @@ describe("updateProductService", () => {
       name: "Pocky",
     });
     expect(uploadProductImagesMock).toHaveBeenCalledTimes(2);
-    expect(updateProductMock).toHaveBeenCalledWith("product_123", {
-      name: "Pocky",
-      description: "Chocolate biscuit sticks",
-      supplierCountry: SupplierCountry.JAPAN,
-      franchiseId: undefined,
-      isPublished: false,
-      hasVariation: true,
-      productImages: [
-        {
-          path: "products/existing-main.png",
-          alt: "Existing main",
-          position: 0,
-        },
-        {
-          path: "products/new-detail.png",
-          alt: "New detail",
-          position: 1,
-        },
-      ],
-      variants: [
-        {
-          name: "Strawberry",
-          sku: "POCKY-STRAWBERRY",
-          costPrice: 120,
-          sellingPrice: 180,
-          position: 0,
-          image: {
-            path: "products/variants/existing-strawberry.png",
-            alt: "Existing strawberry",
+    expect(updateProductMock).toHaveBeenCalledWith(
+      "product_123",
+      {
+        name: "Pocky",
+        description: "Chocolate biscuit sticks",
+        supplierCountry: SupplierCountry.JAPAN,
+        franchiseId: undefined,
+        isPublished: false,
+        hasVariation: true,
+        productImages: [
+          {
+            path: "products/existing-main.png",
+            alt: "Existing main",
+            position: 0,
           },
-        },
-        {
-          name: "Chocolate",
-          sku: "POCKY-CHOCOLATE",
-          costPrice: 110,
-          sellingPrice: 170,
-          position: 1,
-          image: {
-            path: "products/variants/new-chocolate.png",
-            alt: "New chocolate",
+          {
+            path: "products/new-detail.png",
+            alt: "New detail",
+            position: 1,
           },
-        },
-      ],
-    });
+        ],
+        variants: [
+          {
+            id: EXISTING_VARIANT_ID,
+            name: "Strawberry",
+            sku: "POCKY-STRAWBERRY",
+            costPrice: 120,
+            sellingPrice: 180,
+            position: 0,
+            image: {
+              path: "products/variants/existing-strawberry.png",
+              alt: "Existing strawberry",
+            },
+          },
+          {
+            id: undefined,
+            name: "Chocolate",
+            sku: "POCKY-CHOCOLATE",
+            costPrice: 110,
+            sellingPrice: 170,
+            position: 1,
+            image: {
+              path: "products/variants/new-chocolate.png",
+              alt: "New chocolate",
+            },
+          },
+        ],
+      },
+      expect.objectContaining({
+        id: "product_123",
+      }),
+    );
     expect(removeProductImagesMock).not.toHaveBeenCalled();
   });
 

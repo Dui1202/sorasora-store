@@ -1,17 +1,13 @@
-import { SkeletonTable } from "@/components/skeleton-table";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useProducts } from "@/hooks/use-products";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
 import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
 import ProductRow from "./product-row";
-import { Card } from "@/components/ui/card";
 
 type ProductTableProps = {
   products: ProductWithRelations[];

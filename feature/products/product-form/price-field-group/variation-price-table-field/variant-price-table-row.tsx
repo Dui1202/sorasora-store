@@ -1,11 +1,22 @@
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
 import { TableCell, TableRow } from "@/components/ui/table";
+import {
+  handleDigitOnlyKeyDown,
+  handleDigitOnlyPaste,
+  toDigitsOnly,
+} from "../number-guard";
 import VariantImageInput from "./variant-image-input";
 import { VariantTableRow } from "./use-variant-combinations";
 import { NumericDraftField } from "./variation-price-table-field-utils";
 
 type VariantPriceTableRowProps = {
   row: VariantTableRow;
+  costCurrencyCode: string;
   isSingleVariation: boolean;
   onNumericFieldChange: (
     combinationKey: string,
@@ -18,6 +29,7 @@ type VariantPriceTableRowProps = {
 
 const VariantPriceTableRow = ({
   row,
+  costCurrencyCode,
   isSingleVariation,
   onNumericFieldChange,
   onSkuChange,
@@ -48,37 +60,47 @@ const VariantPriceTableRow = ({
       {!isSingleVariation && <TableCell>{secondOption?.optionValue}</TableCell>}
 
       <TableCell>
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={row.costPrice}
-          onChange={(event) => {
-            onNumericFieldChange(
-              row.combinationKey,
-              "costPrice",
-              event.target.value,
-            );
-          }}
-          placeholder="0"
-        />
+        <InputGroup>
+          <InputGroupAddon>{costCurrencyCode}</InputGroupAddon>
+          <InputGroupInput
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={row.costPrice}
+            onKeyDown={handleDigitOnlyKeyDown}
+            onPaste={handleDigitOnlyPaste}
+            onChange={(event) => {
+              onNumericFieldChange(
+                row.combinationKey,
+                "costPrice",
+                toDigitsOnly(event.target.value),
+              );
+            }}
+            placeholder="0"
+          />
+        </InputGroup>
       </TableCell>
 
       <TableCell>
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={row.sellingPrice}
-          onChange={(event) => {
-            onNumericFieldChange(
-              row.combinationKey,
-              "sellingPrice",
-              event.target.value,
-            );
-          }}
-          placeholder="0"
-        />
+        <InputGroup>
+          <InputGroupAddon>VND</InputGroupAddon>
+          <InputGroupInput
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={row.sellingPrice}
+            onKeyDown={handleDigitOnlyKeyDown}
+            onPaste={handleDigitOnlyPaste}
+            onChange={(event) => {
+              onNumericFieldChange(
+                row.combinationKey,
+                "sellingPrice",
+                toDigitsOnly(event.target.value),
+              );
+            }}
+            placeholder="0"
+          />
+        </InputGroup>
       </TableCell>
 
       <TableCell>
@@ -96,15 +118,17 @@ const VariantPriceTableRow = ({
 
       <TableCell>
         <Input
-          type="number"
+          type="text"
           inputMode="numeric"
-          min={0}
+          pattern="[0-9]*"
           value={row.stock}
+          onKeyDown={handleDigitOnlyKeyDown}
+          onPaste={handleDigitOnlyPaste}
           onChange={(event) => {
             onNumericFieldChange(
               row.combinationKey,
               "stock",
-              event.target.value,
+              toDigitsOnly(event.target.value),
             );
           }}
           placeholder="0"

@@ -15,6 +15,7 @@ export const updateProductVariantBaseSchema = productVariantBaseSchema
     image: true,
   })
   .extend({
+    id: z.cuid("Invalid variant id").optional(),
     existImage: productVariantImageBaseSchema.optional(),
     newImage: localProductVariantImageSchema.optional(),
   });
@@ -48,6 +49,7 @@ export const updateProductFormBaseSchema = createProductFormBaseSchema
     variants: true,
   })
   .extend({
+    baseVariantId: z.cuid("Invalid variant id").optional(),
     newProductImages: z.array(localProductImageSchema).default([]),
     existProductImages: z.array(productImageBaseSchema).default([]),
     variants: z.array(updateProductVariantSchema).default([]),

@@ -5,20 +5,29 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import {
+  handleDigitOnlyKeyDown,
+  handleDigitOnlyPaste,
+  toDigitsOnly,
+} from "./number-guard";
 import VariationFieldGroup from "./variation-field-group/variation-field-group";
 import { calculateBreakEvenPrice } from "./pricing/calculate-break-even-price";
+import { COUNTRY_CONFIG } from "./pricing/config";
 import {
   createEmptyVariation,
   useVariation,
 } from "./variation-field-group/use-variation";
 import VariationPriceTableField from "./variation-price-table-field/variation-price-table-field";
-import {
-  parseExistingVariantsForEditor,
-} from "./variation-price-table-field/variation-price-table-field-utils";
+import { parseExistingVariantsForEditor } from "./variation-price-table-field/variation-price-table-field-utils";
 import { VariantDraftSeed } from "./variation-price-table-field/use-variant-draft-rows";
 import {
   PriceFormInputData,
@@ -69,21 +78,28 @@ const toInitialVariationState = (
 };
 
 const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
-  const { control, setValue, register, getValues, setError, clearErrors, formState } =
-    useFormContext<PriceFormInputData>();
+  const {
+    control,
+    setValue,
+    register,
+    getValues,
+    setError,
+    clearErrors,
+    formState,
+  } = useFormContext<PriceFormInputData>();
   const { errors } = formState;
 
   const initialVariationState = useMemo<InitialVariationEditorState>(() => {
-    const hasVariation = getValues("hasVariation");
+    const hasVariation = getValues("hasVariation") ?? false;
     const variants = getValues("variants") ?? [];
     return toInitialVariationState(mode, hasVariation, variants);
   }, [getValues, mode]);
 
   const variationState = useVariation(initialVariationState.initialVariations);
   const { addVariation, isVariationEnable, variations } = variationState;
-  const [initialDraftSeeds, setInitialDraftSeeds] = useState<VariantDraftSeed[]>(
-    initialVariationState.initialDraftSeeds,
-  );
+  const [initialDraftSeeds, setInitialDraftSeeds] = useState<
+    VariantDraftSeed[]
+  >(initialVariationState.initialDraftSeeds);
   const previousIsVariationEnableRef = useRef(isVariationEnable);
 
   const supplierCountry = useWatch({
@@ -92,11 +108,17 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
   });
 
   const baseCostPriceField = register("baseCostPrice", {
-    valueAsNumber: true,
+    setValueAs: (value) => {
+      const digits = toDigitsOnly(String(value ?? ""));
+      return digits === "" ? undefined : Number(digits);
+    },
   });
 
   const baseSellingPriceField = register("baseSellingPrice", {
-    valueAsNumber: true,
+    setValueAs: (value) => {
+      const digits = toDigitsOnly(String(value ?? ""));
+      return digits === "" ? undefined : Number(digits);
+    },
   });
 
   useEffect(() => {
@@ -181,6 +203,9 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
   }, [addVariation, clearErrors]);
 
   const [breakEvenPrice, setBreakEvenPrice] = useState(0);
+  const costCurrencyCode = supplierCountry
+    ? COUNTRY_CONFIG[supplierCountry].currencyCode
+    : "Local";
   const variantsErrorMessage =
     typeof errors.variants?.message === "string"
       ? errors.variants.message
@@ -214,23 +239,29 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
               <FieldDescription>
                 Orginal price in the supplier country&apos;s currency
               </FieldDescription>
-              <Input
-                type="number"
-                min={0}
-                placeholder="Orginal price..."
-                {...baseCostPriceField}
-                onChange={(event) => {
-                  baseCostPriceField.onChange(event);
+              <InputGroup>
+                <InputGroupAddon>{costCurrencyCode}</InputGroupAddon>
+                <InputGroupInput
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Orginal price..."
+                  {...baseCostPriceField}
+                  onKeyDown={handleDigitOnlyKeyDown}
+                  onPaste={handleDigitOnlyPaste}
+                  onChange={(event) => {
+                    baseCostPriceField.onChange(event);
 
-                  setBreakEvenPrice(
-                    calculateBreakEvenPrice(
-                      supplierCountry,
-                      "NONE",
-                      parseInt(event.target.value || "0", 10),
-                    ) ?? 0,
-                  );
-                }}
-              />
+                    setBreakEvenPrice(
+                      calculateBreakEvenPrice(
+                        supplierCountry,
+                        "NONE",
+                        parseInt(toDigitsOnly(event.target.value) || "0", 10),
+                      ) ?? 0,
+                    );
+                  }}
+                />
+              </InputGroup>
               <FieldDescription>
                 Break-even Price:
                 {breakEvenPrice}
@@ -239,12 +270,21 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
             <Field>
               <FieldLabel>Sale Price</FieldLabel>
               <FieldDescription>Price you want to sale for</FieldDescription>
-              <Input
-                type="number"
-                min={0}
-                placeholder="Sale price..."
-                {...baseSellingPriceField}
-              />
+              <InputGroup>
+                <InputGroupAddon>VND</InputGroupAddon>
+                <InputGroupInput
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Sale price..."
+                  {...baseSellingPriceField}
+                  onKeyDown={handleDigitOnlyKeyDown}
+                  onPaste={handleDigitOnlyPaste}
+                  onChange={(event) => {
+                    baseSellingPriceField.onChange(event);
+                  }}
+                />
+              </InputGroup>
             </Field>
             <Field>
               <FieldLabel>SKU</FieldLabel>
@@ -269,6 +309,7 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
           <VariationPriceTableField
             mode={mode}
             variations={variations}
+            costCurrencyCode={costCurrencyCode}
             initialDraftSeeds={initialDraftSeeds}
             onVariantsChange={handleVariantsChange}
           />

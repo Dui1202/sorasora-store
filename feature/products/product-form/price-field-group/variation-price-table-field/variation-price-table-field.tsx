@@ -28,6 +28,7 @@ import {
 type VariationPriceTableFieldProps = {
   mode: PriceFormMode;
   variations: Variation[];
+  costCurrencyCode: string;
   initialDraftSeeds?: VariantDraftSeed[];
   onVariantsChange?: (variants: PriceFormVariantInput[]) => void;
 };
@@ -35,6 +36,7 @@ type VariationPriceTableFieldProps = {
 const VariationPriceTableField = ({
   mode,
   variations,
+  costCurrencyCode,
   initialDraftSeeds,
   onVariantsChange,
 }: VariationPriceTableFieldProps) => {
@@ -89,6 +91,7 @@ const VariationPriceTableField = ({
             <VariantPriceTableRow
               key={row.combinationKey}
               row={row}
+              costCurrencyCode={costCurrencyCode}
               isSingleVariation={isSingleVariation}
               onNumericFieldChange={updateNumericField}
               onSkuChange={updateSku}

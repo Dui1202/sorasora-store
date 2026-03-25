@@ -97,7 +97,7 @@ const ProductFormFields = ({ mode }: { mode: "create" | "update" }) => {
       <SectionCard>
         <FieldSet>
           <FieldLegend>Basic Information</FieldLegend>
-          <BasicInformationFieldGroup />
+          <BasicInformationFieldGroup mode={mode} />
         </FieldSet>
       </SectionCard>
       <SectionCard>

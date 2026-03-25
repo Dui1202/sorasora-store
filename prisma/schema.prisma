@@ -37,19 +37,19 @@ model Product {
 }
 
 model ProductVariant {
-  id           String               @id @default(cuid())
-  productId    String
-  sku          String               @unique
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  name         String
-  costPrice    Int
-  sellingPrice Int
-  product      Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  image        ProductVariantImage?
-  stocks       Stock[]
-  movements    StockMovement[]
-  position     Int                  @default(0)
+  id             String               @id @default(cuid())
+  productId      String
+  sku            String               @unique
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  name           String
+  costPrice      Int
+  sellingPrice   Int
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  image          ProductVariantImage?
+  stocks         Stock[]
+  position       Int                  @default(0)
+  stockMovements StockMovement[]
 
   @@index([productId])
 }
@@ -97,17 +97,19 @@ model Stock {
 }
 
 model StockMovement {
-  id            String         @id @default(cuid())
-  variantId     String
+  id            String          @id @default(cuid())
+  variantId     String?
+  variantSku    String
+  variantName   String
   warehouseId   String
   type          MovementType
   quantity      Int
   referenceId   String?
   note          String?
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime        @default(now())
   referenceType ReferenceType?
-  variant       ProductVariant @relation(fields: [variantId], references: [id])
-  warehouse     Warehouse      @relation(fields: [warehouseId], references: [id])
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id])
 
   @@index([referenceId, referenceType])
   @@index([variantId])

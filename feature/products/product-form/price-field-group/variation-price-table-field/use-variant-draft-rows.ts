@@ -22,6 +22,17 @@ export type VariantDraftSeed = {
   imagePreviewUrl?: string;
 };
 
+export function mergeCurrentDraftRows(
+  previousRows: VariantDraftRow[],
+  seededDraftRows: VariantDraftRow[],
+  combinations: VariantCombination[],
+) {
+  const sourceRows =
+    previousRows.length > 0 ? previousRows : seededDraftRows;
+
+  return mergeDraftValues(sourceRows, combinations);
+}
+
 export function useVariantDraftRows(
   combinations: VariantCombination[],
   initialDraftSeeds: VariantDraftSeed[] = [],
@@ -61,9 +72,11 @@ export function useVariantDraftRows(
   }, [combinations, initialDraftSeeds]);
 
   const draftRows = useMemo(() => {
-    const sourceRows =
-      draftRowsState.length > 0 ? draftRowsState : seededDraftRows;
-    return mergeDraftValues(sourceRows, combinations);
+    return mergeCurrentDraftRows(
+      draftRowsState,
+      seededDraftRows,
+      combinations,
+    );
   }, [combinations, draftRowsState, seededDraftRows]);
 
   useEffect(() => {
@@ -99,7 +112,11 @@ export function useVariantDraftRows(
       const nextValue = parseNonNegativeInt(rawValue);
 
       setDraftRowsState((previousRows) => {
-        return mergeDraftValues(previousRows, combinations).map((row) => {
+        return mergeCurrentDraftRows(
+          previousRows,
+          seededDraftRows,
+          combinations,
+        ).map((row) => {
           if (row.combinationKey !== combinationKey) {
             return row;
           }
@@ -111,13 +128,17 @@ export function useVariantDraftRows(
         });
       });
     },
-    [combinations],
+    [combinations, seededDraftRows],
   );
 
   const updateSku = useCallback(
     (combinationKey: string, sku: string) => {
       setDraftRowsState((previousRows) => {
-        return mergeDraftValues(previousRows, combinations).map((row) => {
+        return mergeCurrentDraftRows(
+          previousRows,
+          seededDraftRows,
+          combinations,
+        ).map((row) => {
           if (row.combinationKey !== combinationKey) {
             return row;
           }
@@ -129,7 +150,7 @@ export function useVariantDraftRows(
         });
       });
     },
-    [combinations],
+    [combinations, seededDraftRows],
   );
 
   const updateVariantImage = useCallback(
@@ -137,7 +158,11 @@ export function useVariantDraftRows(
       const previewUrl = URL.createObjectURL(file);
 
       setDraftRowsState((previousRows) => {
-        return mergeDraftValues(previousRows, combinations).map((row) => {
+        return mergeCurrentDraftRows(
+          previousRows,
+          seededDraftRows,
+          combinations,
+        ).map((row) => {
           if (getImageGroupKey(row) !== groupKey) {
             return row;
           }
@@ -152,7 +177,7 @@ export function useVariantDraftRows(
         });
       });
     },
-    [combinations],
+    [combinations, seededDraftRows],
   );
 
   return {

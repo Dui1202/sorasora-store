@@ -5,12 +5,11 @@ import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/g
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-  UpdateProductImage,
 } from "@/lib/validation-schema/product-schema";
 import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { UploadedImagePreview } from "./type";
 import UploadedImagesContainer from "./uploaded-images-container";
 import { usePreviewImage } from "./use-preview-image";
@@ -18,49 +17,73 @@ import { usePreviewImage } from "./use-preview-image";
 type ProductFormInputData =
   | CreateProductFormInputData
   | UpdateProductFormInputData;
-const EMPTY_PRODUCT_IMAGES: UpdateProductImage[] = [];
 
-const ImageUploadButton = () => {
+type ImageUploadButtonProps = {
+  mode: "create" | "update";
+};
+
+const EMPTY_UPLOADED_IMAGES: UploadedImagePreview[] = [];
+
+const ImageUploadButton = ({ mode }: ImageUploadButtonProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isInitializedRef = useRef(false);
-  const { watch, setValue, register } = useFormContext<ProductFormInputData>();
+  const { control, setValue, register } = useFormContext<ProductFormInputData>();
+  const formValues = useWatch({ control });
 
-  const initialProductImages =
-    (watch("productImages") as UpdateProductImage[] | undefined) ??
-    EMPTY_PRODUCT_IMAGES;
+  const existingProductImages = useMemo(() => {
+    if (mode !== "update" || !("existProductImages" in formValues)) {
+      return [];
+    }
 
-  function isExistingImage(
-    img: UpdateProductImage,
-  ): img is Extract<UpdateProductImage, { path: string }> {
-    return "path" in img;
-  }
-  const initialImages: UploadedImagePreview[] = useMemo<UploadedImagePreview[]>(
-    () =>
-      initialProductImages
-        .filter(isExistingImage)
-        .map<UploadedImagePreview>((img) => {
-          return {
-            id: img.path,
-            type: "uploaded",
-            displayUrl: getProductImagePublicUrl(img.path),
-            fileName: img.alt || "",
-            path: img.path,
-            alt: img.alt,
-            position: img.position,
-          };
-        })
-        .sort((a, b) => a.position - b.position),
-    [initialProductImages],
+    return (formValues.existProductImages ?? []).flatMap((image) => {
+      if (!image?.path) {
+        return [];
+      }
+
+      return [
+        {
+          path: image.path,
+          alt: image.alt,
+          position: typeof image.position === "number" ? image.position : 0,
+        },
+      ];
+    });
+  }, [formValues, mode]);
+
+  const initialImages = useMemo<UploadedImagePreview[]>(
+    () => {
+      if (mode !== "update") {
+        return EMPTY_UPLOADED_IMAGES;
+      }
+
+      return (existingProductImages ?? [])
+        .map((image) => ({
+          id: image.path,
+          type: "uploaded" as const,
+          displayUrl: getProductImagePublicUrl(image.path),
+          fileName: image.alt || "",
+          path: image.path,
+          alt: image.alt,
+          position: image.position,
+        }))
+        .sort((a, b) => a.position - b.position);
+    },
+    [existingProductImages, mode],
   );
 
   const { previewImages, addImages, reorder, remove } =
     usePreviewImage(initialImages);
 
   useEffect(() => {
-    register("productImages");
-  }, [register]);
+    if (mode === "create") {
+      register("productImages");
+      return;
+    }
 
-  // sync images
+    register("existProductImages");
+    register("newProductImages");
+  }, [mode, register]);
+
   useEffect(() => {
     if (previewImages.length < 1 && !isInitializedRef.current) {
       return;
@@ -69,28 +92,73 @@ const ImageUploadButton = () => {
     const isFirstSync = !isInitializedRef.current;
     isInitializedRef.current = true;
 
+    if (mode === "create") {
+      setValue(
+        "productImages",
+        previewImages
+          .filter(
+            (
+              image,
+            ): image is Extract<typeof image, { type: "file"; file: File }> =>
+              image.type === "file",
+          )
+          .map((image) => ({
+            file: image.file,
+            alt: image.alt ?? image.fileName,
+            position: image.position,
+          })),
+        {
+          shouldDirty: !isFirstSync,
+          shouldTouch: true,
+          shouldValidate: true,
+        },
+      );
+
+      return;
+    }
+
     setValue(
-      "productImages",
-      previewImages.map((img) =>
-        img.type === "file"
-          ? {
-              file: img.file,
-              alt: img.alt ?? img.fileName,
-              position: img.position,
-            }
-          : {
-              path: img.path,
-              alt: img.alt ?? img.fileName,
-              position: img.position,
-            },
-      ),
+      "existProductImages",
+      previewImages
+        .filter(
+          (
+            image,
+          ): image is Extract<typeof image, { type: "uploaded"; path: string }> =>
+            image.type === "uploaded",
+        )
+        .map((image) => ({
+          path: image.path,
+          alt: image.alt ?? image.fileName,
+          position: image.position,
+        })),
       {
         shouldDirty: !isFirstSync,
         shouldTouch: true,
         shouldValidate: true,
       },
     );
-  }, [previewImages, setValue]);
+
+    setValue(
+      "newProductImages",
+      previewImages
+        .filter(
+          (
+            image,
+          ): image is Extract<typeof image, { type: "file"; file: File }> =>
+            image.type === "file",
+        )
+        .map((image) => ({
+          file: image.file,
+          alt: image.alt ?? image.fileName,
+          position: image.position,
+        })),
+      {
+        shouldDirty: !isFirstSync,
+        shouldTouch: true,
+        shouldValidate: true,
+      },
+    );
+  }, [mode, previewImages, setValue]);
 
   const handleButtonClick = () => {
     inputRef.current?.click();
