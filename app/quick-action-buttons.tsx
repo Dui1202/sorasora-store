@@ -8,10 +8,15 @@ const QuickActionButtons = () => {
     { title: "Notification", icon: <Bell /> },
   ];
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       {buttons.map((item) => {
         return (
-          <Button className="rounded-full" variant="secondary" key={item.title}>
+          <Button
+            className="rounded-full"
+            variant="secondary"
+            size="icon"
+            key={item.title}
+          >
             {item.icon}
           </Button>
         );

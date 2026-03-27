@@ -35,6 +35,12 @@ export const calculateBreakEvenPrice = (
   const breakEvenPrice =
     (landedPrice + totalFixedFee) / (1 - totalPercentageFee);
 
-  return breakEvenPrice;
+  return Math.ceil(breakEvenPrice);
 };
 
+export const getFormattedPrice = (price: number) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+};

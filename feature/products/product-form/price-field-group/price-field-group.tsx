@@ -15,12 +15,16 @@ import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
+  formatDigitsWithPeriodSeparator,
   handleDigitOnlyKeyDown,
   handleDigitOnlyPaste,
   toDigitsOnly,
 } from "./number-guard";
 import VariationFieldGroup from "./variation-field-group/variation-field-group";
-import { calculateBreakEvenPrice } from "./pricing/calculate-break-even-price";
+import {
+  calculateBreakEvenPrice,
+  getFormattedPrice,
+} from "./pricing/calculate-break-even-price";
 import { COUNTRY_CONFIG } from "./pricing/config";
 import {
   createEmptyVariation,
@@ -105,6 +109,10 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
   const supplierCountry = useWatch({
     control,
     name: "supplierCountry",
+  });
+  const baseSellingPrice = useWatch({
+    control,
+    name: "baseSellingPrice",
   });
 
   const baseCostPriceField = register("baseCostPrice", {
@@ -283,7 +291,7 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
               </InputGroup>
               <FieldDescription>
                 Break-even Price:
-                {breakEvenPrice}
+                {" " + getFormattedPrice(breakEvenPrice)}
               </FieldDescription>
             </Field>
             <Field>
@@ -297,10 +305,21 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
                   pattern="[0-9]*"
                   placeholder="Sale price..."
                   {...baseSellingPriceField}
+                  value={formatDigitsWithPeriodSeparator(
+                    String(baseSellingPrice ?? ""),
+                  )}
                   onKeyDown={handleDigitOnlyKeyDown}
                   onPaste={handleDigitOnlyPaste}
                   onChange={(event) => {
-                    baseSellingPriceField.onChange(event);
+                    const digits = toDigitsOnly(event.target.value);
+                    setValue(
+                      "baseSellingPrice",
+                      digits === "" ? undefined : Number(digits),
+                      {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      },
+                    );
                   }}
                 />
               </InputGroup>

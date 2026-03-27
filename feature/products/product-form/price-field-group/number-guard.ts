@@ -17,6 +17,16 @@ export function toDigitsOnly(value: string) {
   return value.replace(/\D+/g, "");
 }
 
+export function formatDigitsWithPeriodSeparator(value: string) {
+  const digits = toDigitsOnly(value);
+
+  if (digits === "") {
+    return "";
+  }
+
+  return new Intl.NumberFormat("vi-VN").format(Number(digits));
+}
+
 export function handleDigitOnlyKeyDown(
   event: KeyboardEvent<HTMLInputElement>,
 ) {

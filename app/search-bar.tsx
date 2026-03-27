@@ -9,7 +9,7 @@ import React from "react";
 
 const SearchBar = () => {
   return (
-    <InputGroup className="max-w-xl">
+    <InputGroup className="max-w-xl self-center">
       <InputGroupInput placeholder="Search..." />
       <InputGroupAddon>
         <Search />
