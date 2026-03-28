@@ -9,7 +9,7 @@ import { SpecificationFieldGroup } from "@/feature/products/product-form/specifi
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heading } from "@radix-ui/themes";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import FormButton from "../../../app/products/_components/form-button";
+import FormButton from "./form-button";
 import BasicInformationFieldGroup from "./basic-information-field-group/basic-information-field-group";
 import {
   CreateProductFormData,

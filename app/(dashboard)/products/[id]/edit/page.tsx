@@ -50,7 +50,9 @@ const EditProductPage = () => {
   }
 
   if (error) {
-    return <p className="p-5 text-sm text-destructive">Failed to load product.</p>;
+    return (
+      <p className="p-5 text-sm text-destructive">Failed to load product.</p>
+    );
   }
 
   if (productInputResult.errorMessage) {
