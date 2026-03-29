@@ -1,6 +1,6 @@
 "use client";
 
-import { TypographyH2 } from "@/components/typography";
+import { ErrorMessage, TypographyH2 } from "@/components/typography";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,13 +23,13 @@ import {
   SignUpSchema,
 } from "@/lib/validation-schema/sign-up-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 const SignUpForm = () => {
   const router = useRouter();
-
   const methods = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -53,7 +53,9 @@ const SignUpForm = () => {
         toast.error(result.error.message ?? "Failed to sign up.");
         return;
       }
+
       router.push("/");
+      router.refresh();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unexpected error happened.";
@@ -79,9 +81,7 @@ const SignUpForm = () => {
                   autoComplete="name"
                 />
                 {formState.errors.name && (
-                  <p className="text-sm text-destructive">
-                    {formState.errors.name.message}
-                  </p>
+                  <ErrorMessage>{formState.errors.name.message}</ErrorMessage>
                 )}
               </Field>
               <Field>
@@ -95,9 +95,7 @@ const SignUpForm = () => {
                   autoComplete="email"
                 />
                 {formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {formState.errors.email.message}
-                  </p>
+                  <ErrorMessage>{formState.errors.email.message}</ErrorMessage>
                 )}
               </Field>
               <Field>
@@ -111,9 +109,9 @@ const SignUpForm = () => {
                   autoComplete="new-password"
                 />
                 {formState.errors.password && (
-                  <p className="text-sm text-destructive">
+                  <ErrorMessage>
                     {formState.errors.password.message}
-                  </p>
+                  </ErrorMessage>
                 )}
               </Field>
               <Field>
@@ -125,9 +123,9 @@ const SignUpForm = () => {
                   autoComplete="new-password"
                 />
                 {formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive">
+                  <ErrorMessage>
                     {formState.errors.confirmPassword.message}
-                  </p>
+                  </ErrorMessage>
                 )}
               </Field>
             </FieldGroup>
@@ -144,7 +142,14 @@ const SignUpForm = () => {
           </div>
         </form>
       </CardContent>
-      <CardFooter></CardFooter>
+      <CardFooter>
+        <p>
+          Already have an account?{" "}
+          <Link href={"/sign-in"} className="text-primary underline">
+            Sign in
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 };
