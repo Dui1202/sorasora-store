@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import NavSidebar from "./nav-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import NavBar from "./nav-bar";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth/auth";
+import { UserRole } from "@/app/generated/prisma/enums";
+import { requireRole } from "@/lib/auth/authorization";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,13 +15,8 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  await requireRole([UserRole.STAFF, UserRole.ADMIN]);
 
-  if (!session) {
-    redirect("/sign-in");
-  }
   return (
     <SidebarProvider>
       <NavSidebar />
