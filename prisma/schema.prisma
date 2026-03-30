@@ -50,6 +50,7 @@ model ProductVariant {
   stocks         Stock[]
   position       Int                  @default(0)
   stockMovements StockMovement[]
+  isArchived     Boolean              @default(false)
 
   @@index([productId])
 }
