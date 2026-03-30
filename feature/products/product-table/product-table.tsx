@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -25,7 +26,7 @@ const ProductTable = ({ products }: ProductTableProps) => {
   return (
     <Card className="p-5">
       <Table>
-        <TableHeader color="">
+        <TableHeader>
           <TableRow>
             {tableColumns.map((column) => {
               return <TableHead key={column.id}>{column.label}</TableHead>;
@@ -33,6 +34,16 @@ const ProductTable = ({ products }: ProductTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
+          {products.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="py-6 text-center text-muted-foreground"
+              >
+                No products found.
+              </TableCell>
+            </TableRow>
+          ) : null}
           {products?.map((product, index) => {
             return (
               <ProductRow key={product.id} product={product} index={index} />

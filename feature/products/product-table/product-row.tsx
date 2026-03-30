@@ -14,9 +14,11 @@ type ProductRowProps = {
 };
 const ProductRow = ({ product, index }: ProductRowProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const coverProductImagePublicUrl = getProductImagePublicUrl(
-    product.productImages[0].path,
-  );
+  const primaryProductImage = product.productImages[0];
+  const primaryVariant = product.variants[0];
+  const coverProductImagePublicUrl = primaryProductImage
+    ? getProductImagePublicUrl(primaryProductImage.path)
+    : null;
 
   const hasVariants = product.variants.length > 1;
 
@@ -28,8 +30,19 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
           {index + 1}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
-          <div className="flex gap-4">
-            <img src={coverProductImagePublicUrl} width="100" height="100" />
+            <div className="flex gap-4">
+              {coverProductImagePublicUrl ? (
+                <img
+                  src={coverProductImagePublicUrl}
+                  width="100"
+                  height="100"
+                  alt={primaryProductImage?.alt ?? product.name}
+                />
+              ) : (
+                <div className="flex h-[100px] w-[100px] items-center justify-center rounded-md border text-xs text-muted-foreground">
+                  No image
+              </div>
+            )}
             <div>
               <TypographyH3>{product.name}</TypographyH3>
               <TypographyMuted>Product Id: {product.id}</TypographyMuted>
@@ -47,10 +60,10 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
           )}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
-          {product.variants[0].costPrice}
+          {primaryVariant?.costPrice ?? "-"}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
-          {product.variants[0].sellingPrice}
+          {primaryVariant?.sellingPrice ?? "-"}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
           <ProductActionButtons id={product.id} />
@@ -60,13 +73,26 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
       {isOpen &&
         hasVariants &&
         product.variants.map((variant) => {
-          const variantImageUrl = getProductImagePublicUrl(variant.image!.path);
+          const variantImageUrl = variant.image
+            ? getProductImagePublicUrl(variant.image.path)
+            : null;
           return (
             <TableRow key={variant.id}>
               <TableCell></TableCell>
               <TableCell className="pl-10">
                 <div className="flex gap-4">
-                  <img src={variantImageUrl} width="100" height="100" />
+                  {variantImageUrl ? (
+                    <img
+                      src={variantImageUrl}
+                      width="100"
+                      height="100"
+                      alt={variant.image?.alt ?? variant.name}
+                    />
+                  ) : (
+                    <div className="flex h-[100px] w-[100px] items-center justify-center rounded-md border text-xs text-muted-foreground">
+                      No image
+                    </div>
+                  )}
                   <div>
                     <TypographyH3>{variant.name}</TypographyH3>
                     <TypographyMuted>Variant Id: {variant.id}</TypographyMuted>

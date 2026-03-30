@@ -3,7 +3,6 @@ import { toErrorResponse } from "@/core/errors/http";
 import { requireApiRole } from "@/lib/auth/authorization";
 import {
   archiveProductService,
-  getProductInventoryState,
   getProductWithRelationsByIdService,
   updateProductService,
 } from "@/lib/products";
@@ -60,8 +59,6 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
-
-    getProductInventoryState(product);
 
     return NextResponse.json(product, { status: 200 });
   } catch (error) {

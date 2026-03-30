@@ -54,7 +54,6 @@ const SignInForm = () => {
       }
 
       router.push(routes.admin.root);
-      router.refresh();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unexpected error happened.";

@@ -5,7 +5,7 @@ import { useProduct } from "@/hooks/use-products";
 import {
   toUpdateProductCommandInput,
   toUpdateProductMultipartFormData,
-} from "@/lib/products/mappers/product-command.mapper";
+} from "@/lib/products";
 import { UpdateProductFormData } from "@/lib/validation-schema/product-schema";
 import axios from "axios";
 import { useParams } from "next/navigation";
@@ -50,8 +50,12 @@ const EditProductPage = () => {
   }
 
   if (error) {
+    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
+      ? error.response?.data?.message ?? "Failed to load product."
+      : "Failed to load product.";
+
     return (
-      <p className="p-5 text-sm text-destructive">Failed to load product.</p>
+      <p className="p-5 text-sm text-destructive">{errorMessage}</p>
     );
   }
 

@@ -1,11 +1,12 @@
 import "server-only";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import type { UserRole } from "@/app/generated/prisma/enums";
 import { AppError } from "@/core/errors/errors";
+import { hasSessionCookie } from "@/lib/auth/session-cookie";
 import { routes } from "@/lib/routes";
 
 export async function requireSession() {
@@ -21,12 +22,19 @@ export async function requireSession() {
 }
 
 export async function requireGuest() {
+  const cookieStore = await cookies();
+  const hasExistingSessionCookie = hasSessionCookie(cookieStore);
+
+  if (!hasExistingSessionCookie) {
+    return null;
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (session) {
-    redirect(routes.admin.root);
+    redirect(routes.root);
   }
 
   return session;
@@ -37,7 +45,7 @@ export async function requireRole(allowedRoles: UserRole[]) {
   const userRole = session.user.role as UserRole | undefined;
 
   if (!userRole || !allowedRoles.includes(userRole)) {
-    redirect(routes.admin.root);
+    redirect(routes.root);
   }
 
   return session;
@@ -53,11 +61,7 @@ export async function requireApiRole(
   const userRole = session?.user.role as UserRole | undefined;
 
   if (!session) {
-    throw new AppError(
-      "AUTHENTICATION_ERROR",
-      "Authentication required",
-      401,
-    );
+    throw new AppError("AUTHENTICATION_ERROR", "Authentication required", 401);
   }
 
   if (!userRole || !allowedRoles.includes(userRole)) {
