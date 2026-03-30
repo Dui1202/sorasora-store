@@ -6,6 +6,7 @@ import {
 export async function listProductsService() {
   return findProducts();
 }
-export async function getProductByIdService(id: string, hasRelations: boolean) {
-  return findProductById(id, hasRelations);
+
+export async function getProductWithRelationsByIdService(id: string) {
+  return findProductById(id, true);
 }

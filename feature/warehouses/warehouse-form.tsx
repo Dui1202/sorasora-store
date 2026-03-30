@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { routes } from "@/lib/routes";
 import { Warehouse } from "@/lib/validation-schema/warehouse-schema";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
@@ -37,7 +38,7 @@ const WarehouseForm = () => {
   const submitWarehouse: SubmitHandler<Warehouse> = async (data) => {
     try {
       await axios.post("/api/warehouses", data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to create warehouse. Please try again.", {
         position: "top-center",
       });
@@ -49,7 +50,7 @@ const WarehouseForm = () => {
   };
 
   const onContinueButtonClick = () => {
-    router.push("/warehouses");
+    router.push(routes.admin.warehouses);
   };
 
   return (

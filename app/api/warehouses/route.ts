@@ -1,44 +1,61 @@
+import { UserRole } from "@/app/generated/prisma/enums";
+import { toErrorResponse } from "@/core/errors/http";
 import prisma from "@/lib/infrastructure/database/prisma";
+import { requireApiRole } from "@/lib/auth/authorization";
 import { warehouseBaseSchema } from "@/lib/validation-schema/warehouse-schema";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
-export async function GET() {
-  const warehouses = await prisma.warehouse.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+const ADMIN_ROLES = [UserRole.STAFF, UserRole.ADMIN];
 
-  return NextResponse.json(warehouses);
+export async function GET(request: NextRequest) {
+  try {
+    await requireApiRole(request, ADMIN_ROLES);
+
+    const warehouses = await prisma.warehouse.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return NextResponse.json(warehouses);
+  } catch (error) {
+    return toErrorResponse(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    await requireApiRole(request, ADMIN_ROLES);
 
-  const validationResult = warehouseBaseSchema.safeParse(body);
+    const body = await request.json();
 
-  if (!validationResult.success) {
-    return NextResponse.json(
-      {
-        error: "Validation failed",
-        issues: z.treeifyError(validationResult.error),
+    const validationResult = warehouseBaseSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          issues: z.treeifyError(validationResult.error),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { name } = validationResult.data;
+
+    const newWareHouse = await prisma.warehouse.create({
+      data: {
+        name,
       },
-      { status: 400 },
-    );
+    });
+
+    return NextResponse.json(newWareHouse, { status: 201 });
+  } catch (error) {
+    return toErrorResponse(error);
   }
-
-  const { name } = validationResult.data;
-
-  const newWareHouse = await prisma.warehouse.create({
-    data: {
-      name,
-    },
-  });
-
-  return NextResponse.json(newWareHouse, { status: 201 });
 }

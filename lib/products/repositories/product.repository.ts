@@ -34,7 +34,13 @@ const activeProductRelations = {
   },
 };
 
-async function ensureWarehouseExists(warehouseId: string) {
+/**
+ * Ensures a warehouse with the given id exists.
+ * If the warehouse does not exist, it will throw an AppError with code 404.
+ * @param warehouseId - The id of the warehouse to check.
+ * @throws If the warehouse does not exist.
+ */
+async function ensureWarehouseExists(warehouseId: string): Promise<void> {
   const warehouse = await prisma.warehouse.findUnique({
     where: {
       id: warehouseId,
@@ -51,7 +57,12 @@ async function ensureWarehouseExists(warehouseId: string) {
   }
 }
 
-export async function findProducts() {
+/**
+ * Finds all active products.
+ * The products are returned with their active variants and images.
+ * @returns A promise that resolves to an array of active products.
+ */
+export async function findProducts(): Promise<ProductWithRelations[]> {
   return prisma.product.findMany({
     where: {
       isArchived: false,
@@ -60,7 +71,17 @@ export async function findProducts() {
   });
 }
 
-export async function createProduct(command: CreateProductCommandData) {
+/**
+ * Creates a new product with the given data.
+ * The product will be created with its variants and images.
+ * The product's variants will also have their stocks created.
+ * A product creation note will be added to the product's variants' stock movements.
+ * @param command - The data of the product to create.
+ * @return A promise that resolves to the created product.
+ */
+export async function createProduct(
+  command: CreateProductCommandData,
+): Promise<ProductWithRelations> {
   const {
     name,
     description,
@@ -138,6 +159,12 @@ export async function createProduct(command: CreateProductCommandData) {
   });
 }
 
+/**
+ * Archives a product and its variants. This will set the isArchived field to true on the product and all its variants.
+ * Additionally, it will delete all stock records associated with the product's active variants and delete all product images associated with the product.
+ * @param id The id of the product to be archived
+ * @returns The archived product
+ */
 export async function archiveProduct(id: string) {
   return prisma.$transaction(async (tx) => {
     const activeVariantIds = (
@@ -200,6 +227,17 @@ export async function archiveProduct(id: string) {
   });
 }
 
+/**
+ * Updates a product with the given command data.
+ * The product's variants will also be updated based on the command data.
+ * If a variant does not exist in the command data, it will be removed from the product.
+ * If a variant's stock quantity is changed, a stock movement will be created to record the change.
+ * If a variant's warehouse is changed, a stock movement will be created to record the change.
+ * @param id - The id of the product to update.
+ * @param command - The data of the product to update.
+ * @param product - The existing product data.
+ * @returns A promise that resolves to the updated product.
+ */
 export async function updateProduct(
   id: string,
   command: UpdateProductCommandData,
@@ -301,7 +339,9 @@ export async function updateProduct(
 
     for (const variant of variants) {
       const existingVariant = variant.id
-        ? product.variants.find((productVariant) => productVariant.id === variant.id)
+        ? product.variants.find(
+            (productVariant) => productVariant.id === variant.id,
+          )
         : undefined;
       const previousStock = existingVariant?.stocks[0];
       const previousQuantity = previousStock?.quantity ?? 0;
@@ -490,6 +530,12 @@ export async function findProductById(
   id: string,
   hasRelations: boolean,
 ): Promise<ProductWithRelations | ProductRecord>;
+/**
+ * Finds a product by its id.
+ * @param id - The id of the product to find.
+ * @param hasRelations - Whether to include the product's active variants and images in the response.
+ * @returns A promise that resolves to the found product, or null if it does not exist.
+ */
 export async function findProductById(
   id: string,
   hasRelations: boolean,

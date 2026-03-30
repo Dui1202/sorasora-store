@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth-client";
+import { routes } from "@/lib/routes";
 import {
   signInSchema,
   SignInSchema,
@@ -52,7 +53,7 @@ const SignInForm = () => {
         return;
       }
 
-      router.push("/");
+      router.push(routes.admin.root);
       router.refresh();
     } catch (error) {
       const message =
@@ -114,8 +115,8 @@ const SignInForm = () => {
       </CardContent>
       <CardFooter>
         <p>
-          Don't have an account?{" "}
-          <Link href={"/sign-up"} className="text-primary underline">
+          Don&apos;t have an account?{" "}
+          <Link href={routes.auth.signUp} className="text-primary underline">
             Sign up
           </Link>
         </p>

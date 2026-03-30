@@ -28,6 +28,7 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import Image from "next/image";
 import logo from "@/public/logo.png";
+import { routes } from "@/lib/routes";
 type LinkObject = {
   title: string;
   href: string;
@@ -44,17 +45,17 @@ const NavSidebar = () => {
 const NavLinks = () => {
   const pathName = usePathname();
   const generalLinks: LinkObject[] = [
-    { title: "Dashboard", href: "/", icon: <LayoutDashboard /> },
-    { title: "Products", href: "/products", icon: <ShoppingBag /> },
-    { title: "Orders", href: "/orders", icon: <ScrollText /> },
-    { title: "Customers", href: "/customers", icon: <UsersRound /> },
-    { title: "Shipping", href: "/shipping", icon: <Truck /> },
-    { title: "Warehouses", href: "/warehouses", icon: <Warehouse /> },
-    { title: "Franchises", href: "/franchises", icon: <HeartPlus /> },
+    { title: "Dashboard", href: routes.admin.root, icon: <LayoutDashboard /> },
+    { title: "Products", href: routes.admin.products, icon: <ShoppingBag /> },
+    { title: "Orders", href: routes.admin.orders, icon: <ScrollText /> },
+    { title: "Customers", href: routes.admin.customers, icon: <UsersRound /> },
+    { title: "Shipping", href: routes.admin.shipping, icon: <Truck /> },
+    { title: "Warehouses", href: routes.admin.warehouses, icon: <Warehouse /> },
+    { title: "Franchises", href: routes.admin.franchises, icon: <HeartPlus /> },
   ];
   const supportLinks: LinkObject[] = [
-    { title: "Settings", href: "/settings", icon: <Settings /> },
-    { title: "Help", href: "/help", icon: <CircleQuestionMark /> },
+    { title: "Settings", href: routes.admin.settings, icon: <Settings /> },
+    { title: "Help", href: routes.admin.help, icon: <CircleQuestionMark /> },
   ];
 
   return (
@@ -75,7 +76,10 @@ const NavLinks = () => {
           <SidebarGroupLabel>General</SidebarGroupLabel>
           <SidebarMenu>
             {generalLinks.map((item) => {
-              const isActive = pathName === item.href;
+              const isActive =
+                pathName === item.href ||
+                (item.href !== routes.admin.root &&
+                  pathName.startsWith(`${item.href}/`));
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive}>
@@ -92,7 +96,9 @@ const NavLinks = () => {
           <SidebarGroupLabel>Support</SidebarGroupLabel>
           <SidebarMenu>
             {supportLinks.map((item) => {
-              const isActive = pathName === item.href;
+              const isActive =
+                pathName === item.href ||
+                pathName.startsWith(`${item.href}/`);
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive}>

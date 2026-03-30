@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { routes } from "@/lib/routes";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
@@ -34,7 +35,7 @@ const ProductActionButtons = ({ id }: Props) => {
   return (
     <div className="gap-2 flex flex-col">
       <Button variant="secondary">
-        <Link href={`/products/${id}/edit`}>Edit</Link>
+        <Link href={routes.admin.productEdit(id)}>Edit</Link>
       </Button>
       <Button variant="secondary">Delist</Button>
       <Button

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth-client";
 import { useDelay } from "@/lib/dev/use-delay";
+import { routes } from "@/lib/routes";
 import { CircleUserRound, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,7 +37,7 @@ const UserProfile = () => {
         toast.error(result.error.message ?? "Failed to sign out.");
         return;
       }
-      router.push("/sign-in");
+      router.push(routes.auth.signIn);
       router.refresh();
     } catch (error) {
       const message =
@@ -64,7 +65,7 @@ const UserProfile = () => {
     return (
       <div>
         <Button asChild>
-          <Link href={"/sign-up"}>Sign up</Link>
+          <Link href={routes.auth.signUp}>Sign up</Link>
         </Button>
       </div>
     );

@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { routes } from "@/lib/routes";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
@@ -31,7 +32,7 @@ const FormButton = ({ isSubmitting }: FormButtonProps) => {
   const [isPublishButtonClicked, setIsPublishButtonClicked] = useState(false);
 
   const onContinueButtonClick = () => {
-    router.push("/products");
+    router.push(routes.admin.products);
   };
   const { register, setValue } = useFormContext<
     CreateProductFormInputData | UpdateProductFormInputData

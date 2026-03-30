@@ -20,24 +20,15 @@ export async function archiveProductService(productId: string) {
 
   const archivedProduct = await archiveProduct(productId);
 
-  try {
-    await removeProductImagesFromStorage(
-      productImagesToDelete,
-      variantImagesToDelete,
+  await removeProductImagesFromStorage(
+    productImagesToDelete,
+    variantImagesToDelete,
+  ).catch((error) => {
+    console.error(
+      "Error removing product images from storage after archiving product:",
+      error,
     );
-  } catch (error) {
-    throw new AppError(
-      "ARCHIVE_PRODUCT_IMAGE_CLEANUP_FAILED",
-      "Product archived but image cleanup failed",
-      500,
-      {
-        productId,
-        cause: error,
-        productImagesToDelete: [...productImagesToDelete],
-        variantImagesToDelete: [...variantImagesToDelete],
-      },
-    );
-  }
+  });
 
   return archivedProduct;
 }

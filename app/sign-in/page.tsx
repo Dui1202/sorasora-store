@@ -3,6 +3,7 @@ import SignInForm from "./sign-in-form";
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import AuthPageBackground from "@/components/auth-page-background";
+import { routes } from "@/lib/routes";
 
 const SignInPage = async () => {
   const session = await auth.api.getSession({
@@ -10,7 +11,7 @@ const SignInPage = async () => {
   });
 
   if (session) {
-    redirect("/");
+    redirect(routes.admin.root);
   }
   return (
     <AuthPageBackground>

@@ -3,6 +3,7 @@ import SignUpForm from "./sign-up-form";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AuthPageBackground from "@/components/auth-page-background";
+import { routes } from "@/lib/routes";
 
 const SignUpPage = async () => {
   const session = await auth.api.getSession({
@@ -10,7 +11,7 @@ const SignUpPage = async () => {
   });
 
   if (session) {
-    redirect("/");
+    redirect(routes.admin.root);
   }
   return (
     <AuthPageBackground>

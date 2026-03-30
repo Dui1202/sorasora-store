@@ -1,9 +1,14 @@
+import { UserRole } from "@/app/generated/prisma/enums";
 import { toErrorResponse } from "@/core/errors/http";
+import { requireApiRole } from "@/lib/auth/authorization";
 import { createProductService, listProductsService } from "@/lib/products";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+const ADMIN_ROLES = [UserRole.STAFF, UserRole.ADMIN];
+
+export async function GET(request: NextRequest) {
   try {
+    await requireApiRole(request, ADMIN_ROLES);
     const products = await listProductsService();
     return NextResponse.json(products);
   } catch (error) {
@@ -12,16 +17,22 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const contentType = request.headers.get("content-type") ?? "";
+  try {
+    await requireApiRole(request, ADMIN_ROLES);
 
-  if (contentType.includes("multipart/form-data")) {
-    return handleMultipartCreate(request);
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("multipart/form-data")) {
+      return handleMultipartCreate(request);
+    }
+
+    return NextResponse.json(
+      { error: "Unsupported content type. Use multipart/form-data." },
+      { status: 415 },
+    );
+  } catch (error) {
+    return toErrorResponse(error);
   }
-
-  return NextResponse.json(
-    { error: "Unsupported content type. Use multipart/form-data." },
-    { status: 415 },
-  );
 }
 
 async function handleMultipartCreate(request: NextRequest) {
