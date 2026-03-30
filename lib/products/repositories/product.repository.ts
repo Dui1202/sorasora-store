@@ -8,11 +8,31 @@ import {
   UpdateProductCommandData,
 } from "../mappers/product-command.mapper";
 
-type ProductRecord = Awaited<ReturnType<typeof prisma.product.findUnique>>;
+type ProductRecord = Awaited<ReturnType<typeof prisma.product.findFirst>>;
 
 const PRODUCT_CREATION_NOTE = "Product creation";
 const PRODUCT_UPDATE_NOTE = "Product update";
 const PRODUCT_TRANSFER_NOTE = "Warehouse transfer from product update";
+
+const activeProductRelations = {
+  productImages: true,
+  variants: {
+    where: {
+      isArchived: false,
+    },
+    orderBy: {
+      position: "asc" as const,
+    },
+    include: {
+      image: true,
+      stocks: {
+        include: {
+          warehouse: true,
+        },
+      },
+    },
+  },
+};
 
 async function ensureWarehouseExists(warehouseId: string) {
   const warehouse = await prisma.warehouse.findUnique({
@@ -33,19 +53,10 @@ async function ensureWarehouseExists(warehouseId: string) {
 
 export async function findProducts() {
   return prisma.product.findMany({
-    include: {
-      productImages: true,
-      variants: {
-        include: {
-          image: true,
-          stocks: {
-            include: {
-              warehouse: true,
-            },
-          },
-        },
-      },
+    where: {
+      isArchived: false,
     },
+    include: activeProductRelations,
   });
 }
 
@@ -127,6 +138,68 @@ export async function createProduct(command: CreateProductCommandData) {
   });
 }
 
+export async function archiveProduct(id: string) {
+  return prisma.$transaction(async (tx) => {
+    const activeVariantIds = (
+      await tx.productVariant.findMany({
+        where: {
+          productId: id,
+          isArchived: false,
+        },
+        select: {
+          id: true,
+        },
+      })
+    ).map((variant) => variant.id);
+
+    if (activeVariantIds.length > 0) {
+      await tx.stock.deleteMany({
+        where: {
+          variantId: {
+            in: activeVariantIds,
+          },
+        },
+      });
+
+      await tx.productVariantImage.deleteMany({
+        where: {
+          variantId: {
+            in: activeVariantIds,
+          },
+        },
+      });
+
+      await tx.productVariant.updateMany({
+        where: {
+          productId: id,
+          id: {
+            in: activeVariantIds,
+          },
+        },
+        data: {
+          isArchived: true,
+        },
+      });
+    }
+
+    await tx.productImage.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    return tx.product.update({
+      where: {
+        id,
+      },
+      data: {
+        isArchived: true,
+        isPublished: false,
+      },
+    });
+  });
+}
+
 export async function updateProduct(
   id: string,
   command: UpdateProductCommandData,
@@ -191,12 +264,15 @@ export async function updateProduct(
         },
       });
 
-      await tx.productVariant.deleteMany({
+      await tx.productVariant.updateMany({
         where: {
           productId: id,
           id: {
             in: removedVariantIds,
           },
+        },
+        data: {
+          isArchived: true,
         },
       });
     }
@@ -387,23 +463,12 @@ export async function updateProduct(
       }
     }
 
-    const updatedProduct = await tx.product.findUnique({
+    const updatedProduct = await tx.product.findFirst({
       where: {
         id,
+        isArchived: false,
       },
-      include: {
-        variants: {
-          include: {
-            image: true,
-            stocks: {
-              include: {
-                warehouse: true,
-              },
-            },
-          },
-        },
-        productImages: true,
-      },
+      include: activeProductRelations,
     });
 
     if (!updatedProduct) {
@@ -429,24 +494,11 @@ export async function findProductById(
   id: string,
   hasRelations: boolean,
 ): Promise<ProductWithRelations | ProductRecord> {
-  return await prisma.product.findUnique({
+  return await prisma.product.findFirst({
     where: {
       id,
+      isArchived: false,
     },
-    include: hasRelations
-      ? {
-          productImages: true,
-          variants: {
-            include: {
-              image: true,
-              stocks: {
-                include: {
-                  warehouse: true,
-                },
-              },
-            },
-          },
-        }
-      : {},
+    include: hasRelations ? activeProductRelations : undefined,
   });
 }

@@ -12,7 +12,8 @@ const prismaMock = vi.hoisted(() => ({
   },
   product: {
     create: vi.fn(),
-    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
   },
   $transaction: vi.fn(),
 }));
@@ -21,7 +22,13 @@ vi.mock("@/lib/infrastructure/database/prisma", () => ({
   default: prismaMock,
 }));
 
-import { createProduct, updateProduct } from "./product.repository";
+import {
+  archiveProduct,
+  createProduct,
+  findProductById,
+  findProducts,
+  updateProduct,
+} from "./product.repository";
 
 const createProductCommand = (
   overrides: Partial<CreateProductCommandData> = {},
@@ -107,6 +114,7 @@ const createExistingProduct = (): ProductWithRelations =>
     supplierCountry: SupplierCountry.JAPAN,
     isPublished: false,
     hasVariation: true,
+    isArchived: false,
     productImages: [
       {
         id: "image_1",
@@ -128,6 +136,7 @@ const createExistingProduct = (): ProductWithRelations =>
         costPrice: 120,
         sellingPrice: 180,
         position: 0,
+        isArchived: false,
         image: {
           id: "variant_image_1",
           variantId: "variant_1",
@@ -155,6 +164,69 @@ describe("product.repository", () => {
     vi.clearAllMocks();
     prismaMock.warehouse.findUnique.mockResolvedValue({
       id: "ckwarehouse1234567890abcde1",
+    });
+  });
+
+  it("filters archived products and variants from list queries", async () => {
+    prismaMock.product.findMany.mockResolvedValue([]);
+
+    await findProducts();
+
+    expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+      where: {
+        isArchived: false,
+      },
+      include: {
+        productImages: true,
+        variants: {
+          where: {
+            isArchived: false,
+          },
+          orderBy: {
+            position: "asc",
+          },
+          include: {
+            image: true,
+            stocks: {
+              include: {
+                warehouse: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it("filters archived products and variants from detail queries", async () => {
+    prismaMock.product.findFirst.mockResolvedValue(null);
+
+    await findProductById("product_123", true);
+
+    expect(prismaMock.product.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "product_123",
+        isArchived: false,
+      },
+      include: {
+        productImages: true,
+        variants: {
+          where: {
+            isArchived: false,
+          },
+          orderBy: {
+            position: "asc",
+          },
+          include: {
+            image: true,
+            stocks: {
+              include: {
+                warehouse: true,
+              },
+            },
+          },
+        },
+      },
     });
   });
 
@@ -195,6 +267,190 @@ describe("product.repository", () => {
     );
   });
 
+  it("archives the product and related active variants instead of deleting them", async () => {
+    const txMock = {
+      stock: {
+        deleteMany: vi.fn(),
+      },
+      productImage: {
+        deleteMany: vi.fn(),
+      },
+      productVariant: {
+        findMany: vi.fn().mockResolvedValue([{ id: "variant_1" }, { id: "variant_2" }]),
+        updateMany: vi.fn(),
+      },
+      productVariantImage: {
+        deleteMany: vi.fn(),
+      },
+      product: {
+        update: vi.fn().mockResolvedValue({
+          id: "product_123",
+          isArchived: true,
+        }),
+      },
+    };
+    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+
+    const result = await archiveProduct("product_123");
+
+    expect(txMock.productVariant.findMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product_123",
+        isArchived: false,
+      },
+      select: {
+        id: true,
+      },
+    });
+    expect(txMock.stock.deleteMany).toHaveBeenCalledWith({
+      where: {
+        variantId: {
+          in: ["variant_1", "variant_2"],
+        },
+      },
+    });
+    expect(txMock.productVariantImage.deleteMany).toHaveBeenCalledWith({
+      where: {
+        variantId: {
+          in: ["variant_1", "variant_2"],
+        },
+      },
+    });
+    expect(txMock.productVariant.updateMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product_123",
+        id: {
+          in: ["variant_1", "variant_2"],
+        },
+      },
+      data: {
+        isArchived: true,
+      },
+    });
+    expect(txMock.productImage.deleteMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product_123",
+      },
+    });
+    expect(txMock.product.update).toHaveBeenCalledWith({
+      where: {
+        id: "product_123",
+      },
+      data: {
+        isArchived: true,
+        isPublished: false,
+      },
+    });
+    expect(result).toEqual({
+      id: "product_123",
+      isArchived: true,
+    });
+  });
+
+  it("archives removed variants during update instead of deleting them", async () => {
+    const txMock = {
+      stock: {
+        deleteMany: vi.fn(),
+        upsert: vi.fn(),
+      },
+      productVariantImage: {
+        deleteMany: vi.fn(),
+      },
+      productVariant: {
+        updateMany: vi.fn(),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+      product: {
+        update: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({
+          id: "product_123",
+        }),
+      },
+      stockMovement: {
+        create: vi.fn(),
+        createMany: vi.fn(),
+      },
+    };
+    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+
+    await updateProduct(
+      "product_123",
+      createUpdateCommand({
+        variants: [],
+        hasVariation: false,
+      }),
+      {
+        ...createExistingProduct(),
+        hasVariation: false,
+      },
+    );
+
+    expect(txMock.stock.deleteMany).toHaveBeenCalledWith({
+      where: {
+        variantId: {
+          in: ["variant_1"],
+        },
+        variant: {
+          productId: "product_123",
+        },
+      },
+    });
+    expect(txMock.productVariantImage.deleteMany).toHaveBeenCalledWith({
+      where: {
+        variantId: {
+          in: ["variant_1"],
+        },
+        variant: {
+          productId: "product_123",
+        },
+      },
+    });
+    expect(txMock.productVariant.updateMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product_123",
+        id: {
+          in: ["variant_1"],
+        },
+      },
+      data: {
+        isArchived: true,
+      },
+    });
+  });
+
+  it("rejects submitted variant ids that are no longer active on the product", async () => {
+    await expect(
+      updateProduct(
+        "product_123",
+        createUpdateCommand({
+          variants: [
+            {
+              id: "variant_archived",
+              name: "Archived",
+              sku: "POCKY-ARCHIVED",
+              costPrice: 100,
+              sellingPrice: 150,
+              stock: {
+                quantity: 1,
+              },
+              position: 0,
+              image: {
+                path: "products/variants/archived.png",
+                alt: "Archived",
+              },
+            },
+          ],
+        }),
+        createExistingProduct(),
+      ),
+    ).rejects.toMatchObject({
+      code: "UPDATE_PRODUCT_FAILED",
+      message: "Variant does not belong to product",
+      status: 400,
+    });
+  });
+
   it("writes an ADJUST movement when stock changes in the same warehouse", async () => {
     const txMock = {
       stock: {
@@ -205,13 +461,13 @@ describe("product.repository", () => {
         deleteMany: vi.fn(),
       },
       productVariant: {
-        deleteMany: vi.fn(),
+        updateMany: vi.fn(),
         update: vi.fn(),
         create: vi.fn(),
       },
       product: {
         update: vi.fn(),
-        findUnique: vi.fn().mockResolvedValue({
+        findFirst: vi.fn().mockResolvedValue({
           id: "product_123",
         }),
       },
@@ -258,13 +514,13 @@ describe("product.repository", () => {
         deleteMany: vi.fn(),
       },
       productVariant: {
-        deleteMany: vi.fn(),
+        updateMany: vi.fn(),
         update: vi.fn(),
         create: vi.fn(),
       },
       product: {
         update: vi.fn(),
-        findUnique: vi.fn().mockResolvedValue({
+        findFirst: vi.fn().mockResolvedValue({
           id: "product_123",
         }),
       },

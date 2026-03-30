@@ -3,21 +3,33 @@ import { removeProductImages } from "@/lib/infrastructure/storage/server";
 import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
 import { UpdateProductFormValidationResult } from "../validation/update-product-form-data-validation";
 
+export const findExistingProductImages = (product: ProductWithRelations) => {
+  const productImagesToDelete = new Set(
+    product.productImages.map((image) => image.path),
+  );
+  const variantImagesToDelete = new Set(
+    product.variants.flatMap((variant) =>
+      variant.image ? [variant.image.path] : [],
+    ),
+  );
+
+  // Single-variant products can reuse the first product image as the variant image.
+  for (const productImagePath of productImagesToDelete) {
+    variantImagesToDelete.delete(productImagePath);
+  }
+
+  return {
+    productImagesToDelete,
+    variantImagesToDelete,
+  };
+};
+
 export const findProductImagesToDelete = (
   product: ProductWithRelations,
   formValidation: Extract<UpdateProductFormValidationResult, { success: true }>,
 ) => {
-  let productImagesToDelete: Set<string> = new Set(
-    product.productImages.map((image) => image.path),
-  );
-
-  let variantImagesToDelete: Set<string> = new Set();
-
-  if (product.hasVariation) {
-    variantImagesToDelete = new Set(
-      product.variants.map((variant) => variant.image!.path),
-    );
-  }
+  const { productImagesToDelete, variantImagesToDelete } =
+    findExistingProductImages(product);
 
   for (const image of formValidation.data.existProductImages) {
     productImagesToDelete.delete(image.path);
@@ -55,7 +67,7 @@ export const removeProductImagesFromStorage = async (
     }
 
     await Promise.all(removals);
-  } catch (err) {
+  } catch {
     throw new AppError(
       "REMOVE_IMAGE_FAILED",
       "Failed to remove image from storage",

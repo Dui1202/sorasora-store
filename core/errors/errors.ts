@@ -9,6 +9,7 @@ export type AppErrorCode =
   | "REMOVE_IMAGE_FAILED"
   | "PRODUCT_NOT_FOUND"
   | "CLEANUP_PRODUCT_IMAGES_FAILED"
+  | "ARCHIVE_PRODUCT_IMAGE_CLEANUP_FAILED"
   | "UPDATE_PRODUCT_FAILED";
 
 export class AppError extends Error {

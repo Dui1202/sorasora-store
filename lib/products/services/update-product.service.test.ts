@@ -258,6 +258,83 @@ describe("updateProductService", () => {
     ]);
   });
 
+  it("cleans up archived variant images after a successful update", async () => {
+    uploadProductImagesMock.mockResolvedValueOnce({
+      path: "products/new-detail.png",
+    });
+    findProductByIdMock.mockResolvedValueOnce({
+      id: "product_123",
+      hasVariation: true,
+      variants: [
+        {
+          id: EXISTING_VARIANT_ID,
+          stocks: [
+            {
+              id: "stock_1",
+              variantId: EXISTING_VARIANT_ID,
+              warehouseId: "ckwarehouse1234567890abcde1",
+              quantity: 4,
+              warehouse: {
+                id: "ckwarehouse1234567890abcde1",
+                name: "Main Warehouse",
+              },
+            },
+          ],
+          image: {
+            path: "products/variants/existing-strawberry.png",
+            alt: "Existing strawberry",
+          },
+        },
+        {
+          id: "ck1234567890abcde1234568",
+          stocks: [
+            {
+              id: "stock_2",
+              variantId: "ck1234567890abcde1234568",
+              warehouseId: "ckwarehouse1234567890abcde1",
+              quantity: 3,
+              warehouse: {
+                id: "ckwarehouse1234567890abcde1",
+                name: "Main Warehouse",
+              },
+            },
+          ],
+          image: {
+            path: "products/variants/existing-chocolate.png",
+            alt: "Existing chocolate",
+          },
+        },
+      ],
+      productImages: [
+        {
+          path: "products/existing-main.png",
+          alt: "Existing main",
+          position: 0,
+        },
+      ],
+    });
+    updateProductMock.mockResolvedValueOnce({
+      id: "product_123",
+      name: "Pocky",
+    });
+
+    const payload = createBasePayload();
+    payload.variants = [payload.variants[0]];
+
+    await updateProductService(
+      "product_123",
+      createMultipartFormData({
+        payload,
+        productFiles: [createFile("product-1.png")],
+        variantFiles: [],
+      }),
+    );
+
+    expect(removeProductImagesMock).toHaveBeenCalledWith([
+      "products/variants/existing-chocolate.png",
+    ]);
+  });
+
   it("rejects invalid multipart form data before any upload or update work starts", async () => {
     const formData = new FormData();
 
