@@ -1,6 +1,8 @@
 import { UserRole } from "@/app/generated/prisma/enums";
+import { AppError } from "@/core/errors/errors";
 import { toErrorResponse } from "@/core/errors/http";
 import { requireApiRole } from "@/lib/auth/authorization";
+import { parseMultipartFormData } from "@/lib/http/parse-multipart-form-data";
 import {
   archiveProductService,
   getProductWithRelationsByIdService,
@@ -30,16 +32,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await requireApiRole(request, ADMIN_ROLES);
     const { id } = await params;
 
-    let formData: FormData;
-
-    try {
-      formData = await request.formData();
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid multipart form data" },
-        { status: 400 },
-      );
-    }
+    const formData = await parseMultipartFormData(request);
 
     const updatedProduct = await updateProductService(id, formData);
 
@@ -57,7 +50,11 @@ export async function GET(request: NextRequest, { params }: Params) {
     const product = await getProductWithRelationsByIdService(id);
 
     if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      throw new AppError(
+        "PRODUCT_NOT_FOUND",
+        `Product with ID ${id} not found`,
+        404,
+      );
     }
 
     return NextResponse.json(product, { status: 200 });

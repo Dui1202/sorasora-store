@@ -45,7 +45,11 @@ export async function requireRole(allowedRoles: UserRole[]) {
   const userRole = session.user.role as UserRole | undefined;
 
   if (!userRole || !allowedRoles.includes(userRole)) {
-    redirect(routes.root);
+    if (userRole === "CUSTOMER") {
+      redirect(routes.root);
+    } else if (userRole === "STAFF") {
+      redirect(routes.admin.root);
+    }
   }
 
   return session;
