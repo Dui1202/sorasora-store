@@ -126,6 +126,10 @@ export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
   },
 );
 
+export const updateProductPublishStateSchema = z.object({
+  isPublished: z.boolean(),
+});
+
 export type UpdateProductFormInputData = z.input<
   typeof updateProductFormBaseSchema
 >;

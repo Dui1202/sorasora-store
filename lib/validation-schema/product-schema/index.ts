@@ -28,7 +28,10 @@ export type {
   CreateProductFormValidationData,
   LocalProductImage,
 } from "./create-product-form";
-export { updateProductFormSchema } from "./update-product-form";
+export {
+  updateProductFormSchema,
+  updateProductPublishStateSchema,
+} from "./update-product-form";
 export type {
   UpdateProductFormData,
   UpdateProductFormInputData,

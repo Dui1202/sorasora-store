@@ -548,3 +548,17 @@ export async function findProductById(
     include: hasRelations ? activeProductRelations : undefined,
   });
 }
+
+export async function updateProductPublishState(
+  id: string,
+  isPublished: boolean,
+) {
+  return await prisma.product.update({
+    where: {
+      id,
+    },
+    data: {
+      isPublished,
+    },
+  });
+}

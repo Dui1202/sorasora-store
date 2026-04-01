@@ -66,7 +66,7 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
           {primaryVariant?.sellingPrice ?? "-"}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
-          <ProductActionButtons id={product.id} />
+          <ProductActionButtons product={product} />
         </TableCell>
       </TableRow>
 

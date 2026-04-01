@@ -2,11 +2,13 @@ import { AppError } from "@/core/errors/errors";
 import {
   ProductImage,
   ProductVariantImage,
+  updateProductPublishStateSchema,
 } from "@/lib/validation-schema/product-schema";
 import { toUpdateProductCommand } from "../mappers/product-command.mapper";
 import {
   findProductById,
   updateProduct,
+  updateProductPublishState,
 } from "../repositories/product.repository";
 import { getProductInventoryState } from "../inventory/product-inventory";
 import { validateUpdateProductFormData } from "../validation/update-product-form-data-validation";
@@ -92,6 +94,23 @@ export async function updateProductService(
       variantImagesToDelete: [...variantImagesToDelete],
     });
   });
+
+  return updatedProduct;
+}
+
+export async function updateProductPublishStateService(
+  productId: string,
+  isPublished: boolean,
+) {
+  const product = await findProductById(productId, true);
+  if (!product) {
+    throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+  }
+
+  const updatedProduct = await updateProductPublishState(
+    productId,
+    isPublished,
+  );
 
   return updatedProduct;
 }

@@ -1,83 +1,20 @@
-"use client";
+import UpdateProductFormClient from "@/feature/products/product-form/update-product-form-client";
+import { getProductWithRelationsByIdService } from "@/lib/products";
+import { notFound } from "next/navigation";
 
-import ProductForm from "@/feature/products/product-form/product-form";
-import { useProduct } from "@/hooks/use-products";
-import {
-  toUpdateProductCommandInput,
-  toUpdateProductMultipartFormData,
-} from "@/lib/products";
-import { UpdateProductFormData } from "@/lib/validation-schema/product-schema";
-import axios from "axios";
-import { useParams } from "next/navigation";
-import { useMemo } from "react";
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-const EditProductPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: product, error } = useProduct(id);
-  const productInputResult = useMemo(() => {
-    if (!product) {
-      return {
-        productInput: null,
-        errorMessage: null,
-      };
-    }
+const EditProductPage = async ({ params }: Props) => {
+  const { id } = await params;
+  const product = await getProductWithRelationsByIdService(id);
 
-    try {
-      return {
-        productInput: toUpdateProductCommandInput(product),
-        errorMessage: null,
-      };
-    } catch (mapperError) {
-      return {
-        productInput: null,
-        errorMessage:
-          mapperError instanceof Error
-            ? mapperError.message
-            : "Failed to load product inventory state.",
-      };
-    }
-  }, [product]);
-
-  const onSubmit = useMemo(() => {
-    return async (data: UpdateProductFormData) => {
-      const multipartFormData = toUpdateProductMultipartFormData(data);
-      await axios.patch(`/api/products/${id}`, multipartFormData);
-    };
-  }, [id]);
-
-  if (!id) {
-    return null;
+  if (!product) {
+    notFound();
   }
 
-  if (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? "Failed to load product."
-      : "Failed to load product.";
-
-    return (
-      <p className="p-5 text-sm text-destructive">{errorMessage}</p>
-    );
-  }
-
-  if (productInputResult.errorMessage) {
-    return (
-      <p className="p-5 text-sm text-destructive">
-        {productInputResult.errorMessage}
-      </p>
-    );
-  }
-
-  if (!productInputResult.productInput) {
-    return null;
-  }
-
-  return (
-    <ProductForm
-      mode="update"
-      product={productInputResult.productInput}
-      onSubmit={onSubmit}
-    />
-  );
+  return <UpdateProductFormClient product={product} />;
 };
 
 export default EditProductPage;
