@@ -7,7 +7,7 @@ import {
   UpdateProductFormData,
   ProductWithRelations,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { getProductInventoryState } from "../inventory/product-inventory";
 import z from "zod";
 

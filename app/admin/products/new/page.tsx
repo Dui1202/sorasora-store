@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { toCreateProductMultipartFormData } from "@/lib/products/mappers/product-command.mapper";
-import { CreateProductFormData } from "@/lib/validation-schema/product-schema";
+import { CreateProductFormData } from "@/lib/products/schema";
 import ProductForm from "@/feature/products/product-form/product-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";

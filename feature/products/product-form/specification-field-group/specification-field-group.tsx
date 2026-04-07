@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { Controller, useFormContext } from "react-hook-form";
 import type { FranchiseDto } from "../../dto/franchises-dto";
 import type { WarehouseDto } from "../../dto/warehouses-dto";

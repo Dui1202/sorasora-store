@@ -6,7 +6,7 @@ import { useFormContext } from "react-hook-form";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 
 type BasicInformationFieldGroupProps = {
   mode: "create" | "update";

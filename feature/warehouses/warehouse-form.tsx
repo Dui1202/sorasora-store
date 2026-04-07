@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { routes } from "@/lib/routes";
-import { Warehouse } from "@/lib/validation-schema/warehouse-schema";
+import { Warehouse } from "@/lib/warehouse/schema";
 import { Heading } from "@radix-ui/themes";
 import axios from "axios";
 import { useRouter } from "next/navigation";

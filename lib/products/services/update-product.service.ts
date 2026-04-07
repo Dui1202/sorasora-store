@@ -3,7 +3,7 @@ import {
   ProductImage,
   ProductVariantImage,
   updateProductPublishStateSchema,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { toUpdateProductCommand } from "../mappers/product-command.mapper";
 import {
   findProductById,

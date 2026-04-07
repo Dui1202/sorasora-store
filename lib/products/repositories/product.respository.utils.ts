@@ -1,6 +1,6 @@
 import { AppError } from "@/core/errors/errors";
 import { removeProductImages } from "@/lib/infrastructure/storage/server";
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 import { UpdateProductFormValidationResult } from "../validation/update-product-form-data-validation";
 
 export const findExistingProductImages = (product: ProductWithRelations) => {
@@ -48,10 +48,7 @@ export const removeProductImagesFromStorage = async (
   productImagesToDelete: Set<string>,
   variantImagesToDelete: Set<string>,
 ) => {
-  if (
-    productImagesToDelete.size === 0 &&
-    variantImagesToDelete.size === 0
-  ) {
+  if (productImagesToDelete.size === 0 && variantImagesToDelete.size === 0) {
     return;
   }
 

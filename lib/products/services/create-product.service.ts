@@ -1,7 +1,4 @@
-import {
-  ProductImage,
-  ProductVariantImage,
-} from "@/lib/validation-schema/product-schema";
+import { ProductImage, ProductVariantImage } from "@/lib/products/schema";
 import { toCreateProductCommand } from "../mappers/product-command.mapper";
 import { createProduct } from "../repositories/product.repository";
 import { validateCreateProductFormData } from "../validation/create-product-form-data-validation";

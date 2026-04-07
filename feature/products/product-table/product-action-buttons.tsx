@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { routes } from "@/lib/routes";
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";

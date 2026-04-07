@@ -18,7 +18,7 @@ import { routes } from "@/lib/routes";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";

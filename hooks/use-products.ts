@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 

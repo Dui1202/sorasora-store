@@ -1,7 +1,7 @@
 import { AppError } from "@/core/errors/errors";
 import z from "zod";
-import { updateProductFormSchema } from "../../validation-schema/product-schema";
-import { multipartPayloadUpdateProductSchema } from "../../validation-schema/product-schema/product-api";
+import { updateProductFormSchema } from "../schema";
+import { multipartPayloadUpdateProductSchema } from "../schema/product-api";
 import { createMultipartValidationError } from "./multipart-validation-error";
 
 export type UpdateProductFormValidationResult =

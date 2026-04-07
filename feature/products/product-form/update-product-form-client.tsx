@@ -7,7 +7,7 @@ import {
 import {
   ProductWithRelations,
   UpdateProductFormData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import axios from "axios";
 import { useMemo } from "react";
 import ProductForm from "./product-form";

@@ -5,7 +5,7 @@ import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/g
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { DragDropProvider } from "@dnd-kit/react";
 import { ImageUp } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
@@ -27,7 +27,8 @@ const EMPTY_UPLOADED_IMAGES: UploadedImagePreview[] = [];
 const ImageUploadButton = ({ mode }: ImageUploadButtonProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isInitializedRef = useRef(false);
-  const { control, setValue, register } = useFormContext<ProductFormInputData>();
+  const { control, setValue, register } =
+    useFormContext<ProductFormInputData>();
   const formValues = useWatch({ control });
 
   const existingProductImages = useMemo(() => {
@@ -50,26 +51,23 @@ const ImageUploadButton = ({ mode }: ImageUploadButtonProps) => {
     });
   }, [formValues, mode]);
 
-  const initialImages = useMemo<UploadedImagePreview[]>(
-    () => {
-      if (mode !== "update") {
-        return EMPTY_UPLOADED_IMAGES;
-      }
+  const initialImages = useMemo<UploadedImagePreview[]>(() => {
+    if (mode !== "update") {
+      return EMPTY_UPLOADED_IMAGES;
+    }
 
-      return (existingProductImages ?? [])
-        .map((image) => ({
-          id: image.path,
-          type: "uploaded" as const,
-          displayUrl: getProductImagePublicUrl(image.path),
-          fileName: image.alt || "",
-          path: image.path,
-          alt: image.alt,
-          position: image.position,
-        }))
-        .sort((a, b) => a.position - b.position);
-    },
-    [existingProductImages, mode],
-  );
+    return (existingProductImages ?? [])
+      .map((image) => ({
+        id: image.path,
+        type: "uploaded" as const,
+        displayUrl: getProductImagePublicUrl(image.path),
+        fileName: image.alt || "",
+        path: image.path,
+        alt: image.alt,
+        position: image.position,
+      }))
+      .sort((a, b) => a.position - b.position);
+  }, [existingProductImages, mode]);
 
   const { previewImages, addImages, reorder, remove } =
     usePreviewImage(initialImages);
@@ -123,8 +121,10 @@ const ImageUploadButton = ({ mode }: ImageUploadButtonProps) => {
         .filter(
           (
             image,
-          ): image is Extract<typeof image, { type: "uploaded"; path: string }> =>
-            image.type === "uploaded",
+          ): image is Extract<
+            typeof image,
+            { type: "uploaded"; path: string }
+          > => image.type === "uploaded",
         )
         .map((image) => ({
           path: image.path,

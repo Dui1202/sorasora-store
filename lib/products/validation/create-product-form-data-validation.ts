@@ -4,7 +4,7 @@ import {
   createProductFormSchema,
   CreateProductFormValidationData,
   multipartPayloadSchema,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { createMultipartValidationError } from "./multipart-validation-error";
 
 type CreateProductFormValidationResult =

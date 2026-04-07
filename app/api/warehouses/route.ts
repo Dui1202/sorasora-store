@@ -2,7 +2,7 @@ import { UserRole } from "@/app/generated/prisma/enums";
 import { toErrorResponse } from "@/core/errors/http";
 import prisma from "@/lib/infrastructure/database/prisma";
 import { requireApiRole } from "@/lib/auth/authorization";
-import { warehouseBaseSchema } from "@/lib/validation-schema/warehouse-schema";
+import { warehouseBaseSchema } from "@/lib/warehouse/schema";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 

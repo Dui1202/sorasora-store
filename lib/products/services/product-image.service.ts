@@ -9,7 +9,7 @@ import {
   ProductImage,
   ProductVariantImage,
   UpdateProductFormValidationData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 
 export async function uploadProductImagesService(
   productImages: LocalProductImage[],
@@ -30,8 +30,10 @@ export async function uploadProductImagesService(
   return uploadedProductImages;
 }
 
-type CreateProductVariantImagesInput = CreateProductFormValidationData["variants"];
-type UpdateProductVariantImagesInput = UpdateProductFormValidationData["variants"];
+type CreateProductVariantImagesInput =
+  CreateProductFormValidationData["variants"];
+type UpdateProductVariantImagesInput =
+  UpdateProductFormValidationData["variants"];
 
 const uploadSingleProductVariantImage = async (image: {
   file: File;

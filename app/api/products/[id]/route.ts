@@ -10,7 +10,7 @@ import {
   updateProductService,
 } from "@/lib/products";
 import { updateProductPublishStateService } from "@/lib/products/services/update-product.service";
-import { updateProductPublishStateSchema } from "@/lib/validation-schema/product-schema";
+import { updateProductPublishStateSchema } from "@/lib/products/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 type Params = {

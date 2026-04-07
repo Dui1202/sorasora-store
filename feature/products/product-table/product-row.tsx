@@ -3,7 +3,7 @@ import { TypographyH3 } from "@/components/typography/typographyh3";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 import ProductActionButtons from "./product-action-buttons";
@@ -30,17 +30,17 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
           {index + 1}
         </TableCell>
         <TableCell className={`align-top ${hasVariants && "pb-10 "}`}>
-            <div className="flex gap-4">
-              {coverProductImagePublicUrl ? (
-                <img
-                  src={coverProductImagePublicUrl}
-                  width="100"
-                  height="100"
-                  alt={primaryProductImage?.alt ?? product.name}
-                />
-              ) : (
-                <div className="flex h-[100px] w-[100px] items-center justify-center rounded-md border text-xs text-muted-foreground">
-                  No image
+          <div className="flex gap-4">
+            {coverProductImagePublicUrl ? (
+              <img
+                src={coverProductImagePublicUrl}
+                width="100"
+                height="100"
+                alt={primaryProductImage?.alt ?? product.name}
+              />
+            ) : (
+              <div className="flex h-[100px] w-[100px] items-center justify-center rounded-md border text-xs text-muted-foreground">
+                No image
               </div>
             )}
             <div>

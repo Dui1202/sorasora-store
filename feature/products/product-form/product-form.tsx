@@ -18,7 +18,7 @@ import {
   UpdateProductFormData,
   UpdateProductFormInputData,
   updateProductFormSchema,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 
 type CreateProductFormProps = {
   mode: "create";

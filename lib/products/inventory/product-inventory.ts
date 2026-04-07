@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/errors";
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 
 export type ProductInventoryState = {
   warehouseId?: string;

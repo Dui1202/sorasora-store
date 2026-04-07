@@ -2,7 +2,7 @@ import { SupplierCountry } from "@/app/generated/prisma/enums";
 import type {
   CreateProductFormValidationData,
   UpdateProductFormValidationData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { removeProductImagesMock, uploadProductImagesMock } = vi.hoisted(() => ({
@@ -246,12 +246,15 @@ describe("product-image.service", () => {
   });
 
   it("cleans up uploaded variant image paths even when no new product images were uploaded", async () => {
-    await cleanUpProductImagesService([], [
-      {
-        path: "products/variants/chocolate.png",
-        alt: "Variant front",
-      },
-    ]);
+    await cleanUpProductImagesService(
+      [],
+      [
+        {
+          path: "products/variants/chocolate.png",
+          alt: "Variant front",
+        },
+      ],
+    );
 
     expect(removeProductImagesMock).toHaveBeenCalledWith([
       "products/variants/chocolate.png",

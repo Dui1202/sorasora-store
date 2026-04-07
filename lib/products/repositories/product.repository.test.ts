@@ -4,7 +4,7 @@ import type {
   CreateProductCommandData,
   UpdateProductCommandData,
 } from "../mappers/product-command.mapper";
-import type { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import type { ProductWithRelations } from "@/lib/products/schema";
 
 const prismaMock = vi.hoisted(() => ({
   warehouse: {
@@ -276,7 +276,9 @@ describe("product.repository", () => {
         deleteMany: vi.fn(),
       },
       productVariant: {
-        findMany: vi.fn().mockResolvedValue([{ id: "variant_1" }, { id: "variant_2" }]),
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ id: "variant_1" }, { id: "variant_2" }]),
         updateMany: vi.fn(),
       },
       productVariantImage: {
@@ -289,7 +291,9 @@ describe("product.repository", () => {
         }),
       },
     };
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback(txMock),
+    );
 
     const result = await archiveProduct("product_123");
 
@@ -372,7 +376,9 @@ describe("product.repository", () => {
         createMany: vi.fn(),
       },
     };
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback(txMock),
+    );
 
     await updateProduct(
       "product_123",
@@ -476,7 +482,9 @@ describe("product.repository", () => {
         createMany: vi.fn(),
       },
     };
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback(txMock),
+    );
 
     await updateProduct(
       "product_123",
@@ -532,7 +540,9 @@ describe("product.repository", () => {
     prismaMock.warehouse.findUnique.mockResolvedValue({
       id: "ckwarehouse9876543210abcde1",
     });
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(txMock));
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback(txMock),
+    );
 
     await updateProduct(
       "product_123",

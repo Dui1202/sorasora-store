@@ -1,7 +1,7 @@
 import { MovementType } from "@/app/generated/prisma/client";
 import { AppError } from "@/core/errors/errors";
 import prisma from "@/lib/infrastructure/database/prisma";
-import { ProductWithRelations } from "@/lib/validation-schema/product-schema";
+import { ProductWithRelations } from "@/lib/products/schema";
 import { getProductInventoryState } from "../inventory/product-inventory";
 import {
   CreateProductCommandData,

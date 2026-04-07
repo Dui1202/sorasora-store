@@ -2,7 +2,7 @@ import { SupplierCountry } from "@/app/generated/prisma/enums";
 import type {
   CreateProductFormData,
   ProductWithRelations,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 import { describe, expect, it } from "vitest";
 import {
   toCreateProductCommand,

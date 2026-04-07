@@ -1,7 +1,7 @@
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
-} from "@/lib/validation-schema/product-schema";
+} from "@/lib/products/schema";
 
 export type PriceFormMode = "create" | "update";
 export type PriceFormInputData =
