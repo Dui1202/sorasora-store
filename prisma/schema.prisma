@@ -165,6 +165,63 @@ model ShippingInfo {
   @@index([userId, isDefault])
 }
 
+model Cart {
+  id String @id @default(cuid())
+
+  userId         String? @unique
+  guestCartToken String? @unique
+
+  currencyCode String @default("VND")
+
+  itemCount      Int @default(0)
+  subtotalAmount Int @default(0)
+
+  expiresAt      DateTime?
+  lastActivityAt DateTime  @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items CartItem[]
+
+  @@index([userId])
+  @@index([guestCartToken])
+}
+
+model CartItem {
+  id String @id @default(cuid())
+
+  cartId    String
+  productId String
+  variantId String
+
+  quantity Int
+
+  productNamePreview String?
+  variantNamePreview String?
+  skuPreview         String?
+  imagePathPreview   String?
+
+  unitPricePreviewAmount Int?
+  lineTotalPreviewAmount Int?
+
+  sellModePreview SellMode?
+  isSelected      Boolean   @default(true)
+
+  preorderReleaseDatePreview DateTime?
+  preorderEtaNotePreview     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
+}
+
 model Order {
   id          String @id @default(cuid())
   orderNumber String @unique
