@@ -1,7 +1,11 @@
-import React from "react";
+import ProductGallery from "./product-gallery";
 
-const StorePage = () => {
-  return <div>StorePage</div>;
+const StorePage = async () => {
+  return (
+    <div>
+      <ProductGallery />
+    </div>
+  );
 };
 
 export default StorePage;

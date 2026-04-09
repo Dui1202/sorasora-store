@@ -1,19 +1,5 @@
-import { Prisma } from "@/app/generated/prisma/client";
 import { cartItemSchema, type CartItem } from "../schema/cart-item.schema";
-
-export type ProductVariantForCartItem = Prisma.ProductVariantGetPayload<{
-  include: {
-    image: true;
-    product: {
-      select: {
-        id: true;
-        name: true;
-        sellMode: true;
-        preorderReleaseAt: true;
-      };
-    };
-  };
-}>;
+import { ProductVariantForCartItem } from "../type";
 
 /**
  * Maps a product variant and its related product snapshot into the cart item
