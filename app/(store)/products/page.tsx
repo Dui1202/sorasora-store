@@ -1,35 +1,15 @@
-import { Card } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
-import { getProductWithRelationsByIdService } from "@/lib/products";
-import { notFound } from "next/navigation";
-import React from "react";
+import ProductCard from "../product-card";
+import { BreadcrumbSection } from "./components/breadcrumb-section";
+import MainProductSection from "./components/main-product-section/main-product-section";
+import ProductDescriptionSection from "./components/product-description-section";
 
 const ProductDetailPage = async () => {
-  const imagesPublicURL = "https://dummyjson.com/image/150";
-  const imageProduct = [1, 2, 3, 4, 5];
   return (
-    <Card>
-      <div className="grid grid-cols-2">
-        <div className="flex flex-col">
-          <img src={imagesPublicURL} className="aspect-square" />
-          <Carousel>
-            {imageProduct.map((item) => (
-              <CarouselItem key={item}>
-                <img src={imagesPublicURL} className="aspect-square" />
-              </CarouselItem>
-            ))}
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-        </div>
-      </div>
-    </Card>
+    <div className="flex flex-col gap-3 mx-10 my-2">
+      <BreadcrumbSection />
+      <MainProductSection />
+      <ProductDescriptionSection />
+    </div>
   );
 };
 

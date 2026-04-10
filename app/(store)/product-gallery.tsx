@@ -4,7 +4,7 @@ import ProductCard from "./product-card";
 const ProductGallery = async () => {
   const products = await getProductListForProductCard();
   return (
-    <div className="grid-cols-6 gap-2 grid mx-10 max-w-m">
+    <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-[repeat(auto-fit,minmax(16rem,16rem))] justify-center gap-4 px-4">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

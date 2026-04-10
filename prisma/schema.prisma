@@ -33,6 +33,7 @@ model Product {
   preorderReleaseAt DateTime?
   franchise         Franchise?       @relation(fields: [franchiseId], references: [id])
   variants          ProductVariant[]
+  variations        Variation[]
   productImages     ProductImage[]
   isPublished       Boolean          @default(false)
   hasVariation      Boolean          @default(false)
@@ -55,12 +56,59 @@ model ProductVariant {
   stocks           Stock[]
   position         Int                  @default(0)
   stockMovements   StockMovement[]
+  variationOptions ProductVariantOption[]
   isArchived       Boolean              @default(false)
   allowFullPayment Boolean              @default(true)
   allowDeposit     Boolean              @default(false)
   depositPrice     Int?
 
   @@index([productId])
+}
+
+model Variation {
+  id                    String                 @id @default(cuid())
+  productId             String
+  name                  String
+  position              Int                    @default(0)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options               VariationOption[]
+  productVariantOptions ProductVariantOption[]
+
+  @@unique([productId, name])
+  @@index([productId])
+  @@index([productId, position])
+}
+
+model VariationOption {
+  id                    String                 @id @default(cuid())
+  variationId           String
+  value                 String
+  position              Int                    @default(0)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  variation             Variation              @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  productVariantOptions ProductVariantOption[]
+
+  @@unique([variationId, value])
+  @@unique([id, variationId])
+  @@index([variationId])
+  @@index([variationId, position])
+}
+
+model ProductVariantOption {
+  productVariantId String
+  variationId      String
+  variationOptionId String
+  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  variation        Variation       @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  variationOption  VariationOption @relation(fields: [variationOptionId, variationId], references: [id, variationId], onDelete: Cascade)
+
+  @@id([productVariantId, variationId])
+  @@unique([productVariantId, variationOptionId])
+  @@index([variationId])
+  @@index([variationOptionId])
 }
 
 model ProductVariantImage {

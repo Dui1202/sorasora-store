@@ -32,23 +32,23 @@ const ProductCard = ({ product }: Props) => {
   const primaryVariant = product.variants[0];
 
   return (
-    <Card className="relative w-64 pt-0">
-      {/* Fallback to an empty image block when the product has no images yet. */}
+    <Card className="relative w-64 gap-4 pt-3 pb-6 px-3">
       {primaryImage ? (
         <img
           src={publicCoverImageURL}
-          className="relative z-20 aspect-square object-cover w-full rounded-lg"
+          className="aspect-square w-full rounded-lg object-cover"
           alt={product.name}
         />
       ) : (
-        <div className="rounded-2xl bg-muted aspect-square" />
+        <div className="aspect-square w-full rounded-2xl bg-muted" />
       )}
-      <CardHeader className="p-2">
+
+      <CardHeader className="p-0">
         <p>{product.sellMode === "PREORDER" ? "Preorder" : "In Stock"}</p>
         <CardTitle className="truncate">{product.name}</CardTitle>
       </CardHeader>
-      <CardContent className="p-2">
-        {/* Price falls back gracefully when an active variant is missing. */}
+
+      <CardContent className="p-0">
         <p>{primaryVariant ? primaryVariant.sellingPrice : "Unavailable"}</p>
       </CardContent>
     </Card>
