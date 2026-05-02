@@ -5,82 +5,56 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
 import {
-  formatDigitsWithPeriodSeparator,
-  handleDigitOnlyKeyDown,
-  handleDigitOnlyPaste,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
+import {
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
+import {
   toDigitsOnly,
 } from "./number-guard";
-import VariationFieldGroup from "./variation-field-group/variation-field-group";
 import {
   calculateBreakEvenPrice,
-  getFormattedPrice,
 } from "./pricing/calculate-break-even-price";
 import { COUNTRY_CONFIG } from "./pricing/config";
-import {
-  createEmptyVariation,
-  useVariation,
-} from "./variation-field-group/use-variation";
-import VariationPriceTableField from "./variation-price-table-field/variation-price-table-field";
-import { parseExistingVariantsForEditor } from "./variation-price-table-field/variation-price-table-field-utils";
-import { VariantDraftSeed } from "./variation-price-table-field/use-variant-draft-rows";
 import {
   PriceFormInputData,
   PriceFormMode,
   PriceFormVariantInput,
 } from "./types";
+import VariationFieldGroup from "./variation-field-group/variation-field-group";
+import VariationPriceTableField from "./variation-price-table-field/variation-price-table-field";
+import { VariantDraftSeed } from "./variation-price-table-field/use-variant-draft-rows";
+import { useVariation } from "./variation-field-group/use-variation";
+import SingleVariantFields from "./single-variant-fields";
+import {
+  FORM_VALUE_UPDATE_OPTIONS,
+  InitialVariationEditorState,
+  mapEditorVariationsToFormInput,
+  parseOptionalNonNegativeNumber,
+  toInitialVariationState,
+} from "./price-field-group.helpers";
 
 type PriceFieldGroupProps = {
   mode: PriceFormMode;
 };
 
-type InitialVariationEditorState = {
-  initialVariations: ReturnType<typeof useVariation>["variations"];
-  initialDraftSeeds: VariantDraftSeed[];
-  parseError: string | null;
-};
-
-const DEFAULT_EDITOR_STATE: InitialVariationEditorState = {
-  initialVariations: [],
-  initialDraftSeeds: [],
-  parseError: null,
-};
-
-const toInitialVariationState = (
-  mode: PriceFormMode,
-  hasVariation: boolean,
-  variants: PriceFormVariantInput[],
-): InitialVariationEditorState => {
-  if (mode !== "update" || !hasVariation) {
-    return DEFAULT_EDITOR_STATE;
-  }
-
-  const parsed = parseExistingVariantsForEditor(variants);
-
-  if (!parsed.success) {
-    return {
-      initialVariations: [createEmptyVariation()],
-      initialDraftSeeds: [],
-      parseError: parsed.error,
-    };
-  }
-
-  return {
-    initialVariations: parsed.data.variations,
-    initialDraftSeeds: parsed.data.seeds,
-    parseError: null,
-  };
-};
-
+/**
+ * Orchestrates the product pricing section for both supported product modes:
+ * - single variant products with one shared price/SKU/stock set
+ * - variation products whose rows are generated from variation combinations
+ *
+ * This component owns the switching logic between those two modes and keeps the
+ * local variation editor synchronized with React Hook Form.
+ */
 const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
   const {
     control,
@@ -95,16 +69,28 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
 
   const initialVariationState = useMemo<InitialVariationEditorState>(() => {
     const hasVariation = getValues("hasVariation") ?? false;
+    const formVariations = getValues("variations") ?? [];
     const variants = getValues("variants") ?? [];
-    return toInitialVariationState(mode, hasVariation, variants);
+
+    return toInitialVariationState(
+      mode,
+      hasVariation,
+      formVariations,
+      variants,
+    );
   }, [getValues, mode]);
 
+  // `useVariation` is the client-side source of truth for the variation editor.
+  // React Hook Form still stores the payload that will be submitted, so later
+  // effects mirror this local state back into the form.
   const variationState = useVariation(initialVariationState.initialVariations);
   const { addVariation, isVariationEnable, variations } = variationState;
   const [initialDraftSeeds, setInitialDraftSeeds] = useState<
     VariantDraftSeed[]
   >(initialVariationState.initialDraftSeeds);
+  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
   const previousIsVariationEnableRef = useRef(isVariationEnable);
+  const hasSyncedVariationsRef = useRef(false);
 
   const supplierCountry = useWatch({
     control,
@@ -115,27 +101,93 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
     name: "baseSellingPrice",
   });
 
-  const baseCostPriceField = register("baseCostPrice", {
-    setValueAs: (value) => {
-      const digits = toDigitsOnly(String(value ?? ""));
-      return digits === "" ? undefined : Number(digits);
-    },
-  });
+  /**
+   * Clears the single-variant-only fields.
+   *
+   * We do this whenever variation mode becomes active because the generated
+   * variant table becomes the new source of truth for price/SKU/stock.
+   */
+  const clearSingleVariantFields = useCallback(() => {
+    setValue("baseSku", undefined, FORM_VALUE_UPDATE_OPTIONS);
+    setValue("baseCostPrice", undefined, FORM_VALUE_UPDATE_OPTIONS);
+    setValue("baseSellingPrice", undefined, FORM_VALUE_UPDATE_OPTIONS);
+    setValue("baseStock", undefined, FORM_VALUE_UPDATE_OPTIONS);
+  }, [setValue]);
 
+  /**
+   * Clears variation-specific form fields when the user switches back to a
+   * single-variant product.
+   */
+  const resetVariationFields = useCallback(() => {
+    setValue("variations", [], FORM_VALUE_UPDATE_OPTIONS);
+    setValue("variants", [], FORM_VALUE_UPDATE_OPTIONS);
+  }, [setValue]);
+
+  const baseCostPriceField = register("baseCostPrice", {
+    setValueAs: parseOptionalNonNegativeNumber,
+  });
   const baseSellingPriceField = register("baseSellingPrice", {
-    setValueAs: (value) => {
-      const digits = toDigitsOnly(String(value ?? ""));
-      return digits === "" ? undefined : Number(digits);
-    },
+    setValueAs: parseOptionalNonNegativeNumber,
   });
   const baseStockField = register("baseStock.quantity", {
-    setValueAs: (value) => {
-      const digits = toDigitsOnly(String(value ?? ""));
-      return digits === "" ? undefined : Number(digits);
-    },
+    setValueAs: parseOptionalNonNegativeNumber,
   });
+  const baseSkuField = register("baseSku");
+
+  const handleBaseCostPriceChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      // Let RHF keep the raw field value in sync first, then derive the
+      // break-even preview from the same numeric input.
+      baseCostPriceField.onChange(event);
+
+      const nextBreakEvenPrice = supplierCountry
+        ? (calculateBreakEvenPrice(
+            supplierCountry,
+            "NONE",
+            parseInt(toDigitsOnly(event.target.value) || "0", 10),
+          ) ?? 0)
+        : 0;
+
+      setBreakEvenPrice(nextBreakEvenPrice);
+    },
+    [baseCostPriceField, supplierCountry],
+  );
+
+  const handleBaseSellingPriceChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setValue(
+        "baseSellingPrice",
+        parseOptionalNonNegativeNumber(event.target.value),
+        FORM_VALUE_UPDATE_OPTIONS,
+      );
+    },
+    [setValue],
+  );
+
+  const handleVariantsChange = useCallback(
+    (nextVariants: PriceFormVariantInput[]) => {
+      // The generated variation table owns the `variants` form payload.
+      // Every row edit writes the full current variant list back into RHF.
+      setValue("variants", nextVariants, FORM_VALUE_UPDATE_OPTIONS);
+
+      if (nextVariants.length > 0) {
+        clearErrors("variants");
+      }
+    },
+    [clearErrors, setValue],
+  );
+
+  const handleEnableVariation = useCallback(() => {
+    // Reset hydration seeds so a fresh variation flow starts from empty editor
+    // state rather than reusing rows from a previous configuration.
+    setInitialDraftSeeds([]);
+    clearErrors("variants");
+    addVariation();
+  }, [addVariation, clearErrors]);
 
   useEffect(() => {
+    // If we cannot hydrate the variation editor from stored data, expose that
+    // problem as a form-level validation error instead of failing silently.
     if (!initialVariationState.parseError) {
       return;
     }
@@ -147,6 +199,9 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
   }, [initialVariationState.parseError, setError]);
 
   useEffect(() => {
+    // When variation mode toggles, keep the form payload consistent:
+    // - enabling variations removes single-variant pricing fields
+    // - disabling variations removes generated variation structures/rows
     const wasVariationEnabled = previousIsVariationEnableRef.current;
     previousIsVariationEnableRef.current = isVariationEnable;
 
@@ -155,76 +210,34 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
     }
 
     if (isVariationEnable) {
-      setValue("hasVariation", true, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      setValue("baseSku", undefined, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      setValue("baseCostPrice", undefined, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      setValue("baseSellingPrice", undefined, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      setValue("baseStock", undefined, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue("hasVariation", true, FORM_VALUE_UPDATE_OPTIONS);
+      clearSingleVariantFields();
       return;
     }
 
-    setValue("hasVariation", false, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue("variants", [], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue("baseSku", undefined, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue("baseCostPrice", undefined, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue("baseSellingPrice", undefined, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue("baseStock", undefined, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  }, [isVariationEnable, setValue]);
+    setValue("hasVariation", false, FORM_VALUE_UPDATE_OPTIONS);
+    resetVariationFields();
+    clearSingleVariantFields();
+  }, [
+    clearSingleVariantFields,
+    isVariationEnable,
+    resetVariationFields,
+    setValue,
+  ]);
 
-  const handleVariantsChange = useCallback(
-    (variants: PriceFormVariantInput[]) => {
-      setValue("variants", variants, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+  useEffect(() => {
+    // The first sync is initial hydration, so it should not mark the form as
+    // dirty. Every later sync represents a real user edit in the variation
+    // editor and should therefore become dirty and revalidate.
+    const shouldDirty = hasSyncedVariationsRef.current;
+    hasSyncedVariationsRef.current = true;
 
-      if (variants.length > 0) {
-        clearErrors("variants");
-      }
-    },
-    [clearErrors, setValue],
-  );
+    setValue("variations", mapEditorVariationsToFormInput(variations), {
+      shouldDirty,
+      shouldValidate: isVariationEnable,
+    });
+  }, [isVariationEnable, setValue, variations]);
 
-  const handleEnableVariation = useCallback(() => {
-    setInitialDraftSeeds([]);
-    clearErrors("variants");
-    addVariation();
-  }, [addVariation, clearErrors]);
-
-  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
   const costCurrencyCode = supplierCountry
     ? COUNTRY_CONFIG[supplierCountry].currencyCode
     : "Local";
@@ -253,103 +266,19 @@ const PriceFieldGroup = ({ mode }: PriceFieldGroupProps) => {
           )}
         </Field>
       </FieldGroup>
-      {!isVariationEnable && (
-        <>
-          <FieldGroup className="flex flex-row">
-            <Field>
-              <FieldLabel>Original Price</FieldLabel>
-              <FieldDescription>
-                Orginal price in the supplier country&apos;s currency
-              </FieldDescription>
-              <InputGroup>
-                <InputGroupAddon>{costCurrencyCode}</InputGroupAddon>
-                <InputGroupInput
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Orginal price..."
-                  {...baseCostPriceField}
-                  onKeyDown={handleDigitOnlyKeyDown}
-                  onPaste={handleDigitOnlyPaste}
-                  onChange={(event) => {
-                    baseCostPriceField.onChange(event);
 
-                    setBreakEvenPrice(
-                      supplierCountry
-                        ? (calculateBreakEvenPrice(
-                            supplierCountry,
-                            "NONE",
-                            parseInt(
-                              toDigitsOnly(event.target.value) || "0",
-                              10,
-                            ),
-                          ) ?? 0)
-                        : 0,
-                    );
-                  }}
-                />
-              </InputGroup>
-              <FieldDescription>
-                Break-even Price:
-                {" " + getFormattedPrice(breakEvenPrice)}
-              </FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel>Sale Price</FieldLabel>
-              <FieldDescription>Price you want to sale for</FieldDescription>
-              <InputGroup>
-                <InputGroupAddon>VND</InputGroupAddon>
-                <InputGroupInput
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Sale price..."
-                  {...baseSellingPriceField}
-                  value={formatDigitsWithPeriodSeparator(
-                    String(baseSellingPrice ?? ""),
-                  )}
-                  onKeyDown={handleDigitOnlyKeyDown}
-                  onPaste={handleDigitOnlyPaste}
-                  onChange={(event) => {
-                    const digits = toDigitsOnly(event.target.value);
-                    setValue(
-                      "baseSellingPrice",
-                      digits === "" ? undefined : Number(digits),
-                      {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      },
-                    );
-                  }}
-                />
-              </InputGroup>
-            </Field>
-            <Field>
-              <FieldLabel>SKU</FieldLabel>
-              <FieldDescription>
-                SKU for single-variant products
-              </FieldDescription>
-              <Input placeholder="SKU..." {...register("baseSku")} />
-            </Field>
-          </FieldGroup>
-          <FieldGroup className="grid grid-cols-2">
-            <Field className="col-span-1">
-              <FieldLabel>Stock</FieldLabel>
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Stock..."
-                {...baseStockField}
-                onKeyDown={handleDigitOnlyKeyDown}
-                onPaste={handleDigitOnlyPaste}
-                onChange={(event) => {
-                  baseStockField.onChange(event);
-                }}
-              />
-            </Field>
-          </FieldGroup>
-        </>
+      {!isVariationEnable && (
+        <SingleVariantFields
+          baseCostPriceField={baseCostPriceField}
+          baseSellingPriceField={baseSellingPriceField}
+          baseSkuField={baseSkuField}
+          baseStockField={baseStockField}
+          baseSellingPrice={baseSellingPrice}
+          breakEvenPrice={breakEvenPrice}
+          costCurrencyCode={costCurrencyCode}
+          onBaseCostPriceChange={handleBaseCostPriceChange}
+          onBaseSellingPriceChange={handleBaseSellingPriceChange}
+        />
       )}
 
       {isVariationEnable && (

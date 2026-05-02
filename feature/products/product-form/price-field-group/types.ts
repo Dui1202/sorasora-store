@@ -7,6 +7,9 @@ export type PriceFormMode = "create" | "update";
 export type PriceFormInputData =
   | CreateProductFormInputData
   | UpdateProductFormInputData;
+export type PriceFormVariationInput = NonNullable<
+  PriceFormInputData["variations"]
+>[number];
 export type CreatePriceFormVariantInput = NonNullable<
   CreateProductFormInputData["variants"]
 >[number];

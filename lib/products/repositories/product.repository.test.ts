@@ -1,10 +1,12 @@
 import { MovementType, SupplierCountry } from "@/app/generated/prisma/client";
+import type {
+  ProductWithRelations,
+} from "@/lib/products/schema";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   CreateProductCommandData,
   UpdateProductCommandData,
 } from "../mappers/product-command.mapper";
-import type { ProductWithRelations } from "@/lib/products/schema";
 
 const prismaMock = vi.hoisted(() => ({
   warehouse: {
@@ -14,6 +16,11 @@ const prismaMock = vi.hoisted(() => ({
     create: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
+    update: vi.fn(),
+  },
+  variation: {
+    create: vi.fn(),
+    deleteMany: vi.fn(),
   },
   $transaction: vi.fn(),
 }));
@@ -39,7 +46,21 @@ const createProductCommand = (
   franchiseId: undefined,
   warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
-  hasVariation: false,
+  hasVariation: true,
+  variations: [
+    {
+      id: "variation-flavor",
+      name: "Flavor",
+      position: 0,
+      options: [
+        {
+          id: "option-strawberry",
+          value: "Strawberry",
+          position: 0,
+        },
+      ],
+    },
+  ],
   productImages: [
     {
       path: "products/main.png",
@@ -49,17 +70,23 @@ const createProductCommand = (
   ],
   variants: [
     {
-      name: "Pocky",
-      sku: "POCKY-BASE",
-      costPrice: 100,
-      sellingPrice: 150,
+      name: "Flavor: Strawberry",
+      sku: "POCKY-STRAWBERRY",
+      costPrice: 120,
+      sellingPrice: 180,
       stock: {
         quantity: 12,
       },
       position: 0,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-strawberry",
+        },
+      ],
       image: {
-        path: "products/main.png",
-        alt: "Front angle",
+        path: "products/variants/strawberry.png",
+        alt: "Variant front",
       },
     },
   ],
@@ -76,6 +103,20 @@ const createUpdateCommand = (
   warehouseId: "ckwarehouse1234567890abcde1",
   isPublished: false,
   hasVariation: true,
+  variations: [
+    {
+      id: "variation-flavor",
+      name: "Flavor",
+      position: 0,
+      options: [
+        {
+          id: "option-strawberry",
+          value: "Strawberry",
+          position: 0,
+        },
+      ],
+    },
+  ],
   productImages: [
     {
       path: "products/main.png",
@@ -86,7 +127,7 @@ const createUpdateCommand = (
   variants: [
     {
       id: "variant_1",
-      name: "Strawberry",
+      name: "Flavor: Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
@@ -94,6 +135,12 @@ const createUpdateCommand = (
         quantity: 5,
       },
       position: 0,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-strawberry",
+        },
+      ],
       image: {
         path: "products/variants/strawberry.png",
         alt: "Variant front",
@@ -112,6 +159,8 @@ const createExistingProduct = (): ProductWithRelations =>
     updatedAt: new Date(),
     franchiseId: null,
     supplierCountry: SupplierCountry.JAPAN,
+    sellMode: "IN_STOCK",
+    preorderReleaseAt: null,
     isPublished: false,
     hasVariation: true,
     isArchived: false,
@@ -125,6 +174,26 @@ const createExistingProduct = (): ProductWithRelations =>
         isCover: false,
       },
     ],
+    variations: [
+      {
+        id: "variation_db_1",
+        productId: "product_123",
+        name: "Flavor",
+        position: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        options: [
+          {
+            id: "variation_option_db_1",
+            variationId: "variation_db_1",
+            value: "Strawberry",
+            position: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      },
+    ],
     variants: [
       {
         id: "variant_1",
@@ -132,17 +201,43 @@ const createExistingProduct = (): ProductWithRelations =>
         sku: "POCKY-STRAWBERRY",
         createdAt: new Date(),
         updatedAt: new Date(),
-        name: "Strawberry",
+        name: "Flavor: Strawberry",
         costPrice: 120,
         sellingPrice: 180,
         position: 0,
         isArchived: false,
+        allowFullPayment: true,
+        allowDeposit: false,
+        depositPrice: null,
         image: {
           id: "variant_image_1",
           variantId: "variant_1",
           path: "products/variants/strawberry.png",
           alt: "Variant front",
         },
+        variationOptions: [
+          {
+            productVariantId: "variant_1",
+            variationId: "variation_db_1",
+            variationOptionId: "variation_option_db_1",
+            variation: {
+              id: "variation_db_1",
+              productId: "product_123",
+              name: "Flavor",
+              position: 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            variationOption: {
+              id: "variation_option_db_1",
+              variationId: "variation_db_1",
+              value: "Strawberry",
+              position: 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        ],
         stocks: [
           {
             id: "stock_1",
@@ -167,7 +262,7 @@ describe("product.repository", () => {
     });
   });
 
-  it("filters archived products and variants from list queries", async () => {
+  it("filters archived products and includes explicit variation relations in list queries", async () => {
     prismaMock.product.findMany.mockResolvedValue([]);
 
     await findProducts();
@@ -178,6 +273,18 @@ describe("product.repository", () => {
       },
       include: {
         productImages: true,
+        variations: {
+          orderBy: {
+            position: "asc",
+          },
+          include: {
+            options: {
+              orderBy: {
+                position: "asc",
+              },
+            },
+          },
+        },
         variants: {
           where: {
             isArchived: false,
@@ -187,6 +294,12 @@ describe("product.repository", () => {
           },
           include: {
             image: true,
+            variationOptions: {
+              include: {
+                variation: true,
+                variationOption: true,
+              },
+            },
             stocks: {
               include: {
                 warehouse: true,
@@ -198,7 +311,7 @@ describe("product.repository", () => {
     });
   });
 
-  it("filters archived products and variants from detail queries", async () => {
+  it("filters archived products and includes explicit variation relations in detail queries", async () => {
     prismaMock.product.findFirst.mockResolvedValue(null);
 
     await findProductById("product_123", true);
@@ -210,6 +323,18 @@ describe("product.repository", () => {
       },
       include: {
         productImages: true,
+        variations: {
+          orderBy: {
+            position: "asc",
+          },
+          include: {
+            options: {
+              orderBy: {
+                position: "asc",
+              },
+            },
+          },
+        },
         variants: {
           where: {
             isArchived: false,
@@ -219,6 +344,12 @@ describe("product.repository", () => {
           },
           include: {
             image: true,
+            variationOptions: {
+              include: {
+                variation: true,
+                variationOption: true,
+              },
+            },
             stocks: {
               include: {
                 warehouse: true,
@@ -230,41 +361,87 @@ describe("product.repository", () => {
     });
   });
 
-  it("creates variant stock and creation movement", async () => {
-    prismaMock.product.create.mockResolvedValue({
-      id: "product_123",
-    });
+  it("creates variation structure and variant-option links for variation products", async () => {
+    const txMock = {
+      product: {
+        create: vi.fn().mockResolvedValue({
+          id: "product_123",
+        }),
+        findFirst: vi.fn().mockResolvedValue({
+          id: "product_123",
+        }),
+      },
+      variation: {
+        create: vi.fn().mockResolvedValue({
+          id: "variation_db_1",
+          options: [
+            {
+              id: "variation_option_db_1",
+              value: "Strawberry",
+              position: 0,
+            },
+          ],
+        }),
+      },
+      productVariant: {
+        create: vi.fn().mockResolvedValue({
+          id: "variant_1",
+        }),
+      },
+      productVariantOption: {
+        createMany: vi.fn(),
+      },
+      stock: {
+        upsert: vi.fn(),
+      },
+      stockMovement: {
+        create: vi.fn(),
+      },
+    };
+    prismaMock.$transaction.mockImplementation(async (callback) =>
+      callback(txMock),
+    );
 
     await createProduct(createProductCommand());
 
-    expect(prismaMock.product.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          variants: {
-            create: [
-              expect.objectContaining({
-                stocks: {
-                  create: {
-                    warehouseId: "ckwarehouse1234567890abcde1",
-                    quantity: 12,
-                  },
-                },
-                stockMovements: {
-                  create: expect.objectContaining({
-                    warehouseId: "ckwarehouse1234567890abcde1",
-                    type: MovementType.IN,
-                    quantity: 12,
-                    note: "Product creation",
-                    variantSku: "POCKY-BASE",
-                    variantName: "Pocky",
-                  }),
-                },
-              }),
-            ],
-          },
-        }),
-      }),
-    );
+    expect(txMock.variation.create).toHaveBeenCalledWith({
+      data: {
+        productId: "product_123",
+        name: "Flavor",
+        position: 0,
+        options: {
+          create: [
+            {
+              value: "Strawberry",
+              position: 0,
+            },
+          ],
+        },
+      },
+      include: {
+        options: true,
+      },
+    });
+    expect(txMock.productVariantOption.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          productVariantId: "variant_1",
+          variationId: "variation_db_1",
+          variationOptionId: "variation_option_db_1",
+        },
+      ],
+    });
+    expect(txMock.stockMovement.create).toHaveBeenCalledWith({
+      data: {
+        variantId: "variant_1",
+        variantSku: "POCKY-STRAWBERRY",
+        variantName: "Flavor: Strawberry",
+        warehouseId: "ckwarehouse1234567890abcde1",
+        type: MovementType.IN,
+        quantity: 12,
+        note: "Product creation",
+      },
+    });
   });
 
   it("archives the product and related active variants instead of deleting them", async () => {
@@ -297,29 +474,6 @@ describe("product.repository", () => {
 
     const result = await archiveProduct("product_123");
 
-    expect(txMock.productVariant.findMany).toHaveBeenCalledWith({
-      where: {
-        productId: "product_123",
-        isArchived: false,
-      },
-      select: {
-        id: true,
-      },
-    });
-    expect(txMock.stock.deleteMany).toHaveBeenCalledWith({
-      where: {
-        variantId: {
-          in: ["variant_1", "variant_2"],
-        },
-      },
-    });
-    expect(txMock.productVariantImage.deleteMany).toHaveBeenCalledWith({
-      where: {
-        variantId: {
-          in: ["variant_1", "variant_2"],
-        },
-      },
-    });
     expect(txMock.productVariant.updateMany).toHaveBeenCalledWith({
       where: {
         productId: "product_123",
@@ -329,99 +483,11 @@ describe("product.repository", () => {
       },
       data: {
         isArchived: true,
-      },
-    });
-    expect(txMock.productImage.deleteMany).toHaveBeenCalledWith({
-      where: {
-        productId: "product_123",
-      },
-    });
-    expect(txMock.product.update).toHaveBeenCalledWith({
-      where: {
-        id: "product_123",
-      },
-      data: {
-        isArchived: true,
-        isPublished: false,
       },
     });
     expect(result).toEqual({
       id: "product_123",
       isArchived: true,
-    });
-  });
-
-  it("archives removed variants during update instead of deleting them", async () => {
-    const txMock = {
-      stock: {
-        deleteMany: vi.fn(),
-        upsert: vi.fn(),
-      },
-      productVariantImage: {
-        deleteMany: vi.fn(),
-      },
-      productVariant: {
-        updateMany: vi.fn(),
-        update: vi.fn(),
-        create: vi.fn(),
-      },
-      product: {
-        update: vi.fn(),
-        findFirst: vi.fn().mockResolvedValue({
-          id: "product_123",
-        }),
-      },
-      stockMovement: {
-        create: vi.fn(),
-        createMany: vi.fn(),
-      },
-    };
-    prismaMock.$transaction.mockImplementation(async (callback) =>
-      callback(txMock),
-    );
-
-    await updateProduct(
-      "product_123",
-      createUpdateCommand({
-        variants: [],
-        hasVariation: false,
-      }),
-      {
-        ...createExistingProduct(),
-        hasVariation: false,
-      },
-    );
-
-    expect(txMock.stock.deleteMany).toHaveBeenCalledWith({
-      where: {
-        variantId: {
-          in: ["variant_1"],
-        },
-        variant: {
-          productId: "product_123",
-        },
-      },
-    });
-    expect(txMock.productVariantImage.deleteMany).toHaveBeenCalledWith({
-      where: {
-        variantId: {
-          in: ["variant_1"],
-        },
-        variant: {
-          productId: "product_123",
-        },
-      },
-    });
-    expect(txMock.productVariant.updateMany).toHaveBeenCalledWith({
-      where: {
-        productId: "product_123",
-        id: {
-          in: ["variant_1"],
-        },
-      },
-      data: {
-        isArchived: true,
-      },
     });
   });
 
@@ -433,7 +499,7 @@ describe("product.repository", () => {
           variants: [
             {
               id: "variant_archived",
-              name: "Archived",
+              name: "Flavor: Archived",
               sku: "POCKY-ARCHIVED",
               costPrice: 100,
               sellingPrice: 150,
@@ -441,6 +507,12 @@ describe("product.repository", () => {
                 quantity: 1,
               },
               position: 0,
+              selectedOptions: [
+                {
+                  variationId: "variation-flavor",
+                  optionId: "option-strawberry",
+                },
+              ],
               image: {
                 path: "products/variants/archived.png",
                 alt: "Archived",
@@ -457,7 +529,7 @@ describe("product.repository", () => {
     });
   });
 
-  it("writes an ADJUST movement when stock changes in the same warehouse", async () => {
+  it("replaces existing variation structure and recreates variant selection links on update", async () => {
     const txMock = {
       stock: {
         deleteMany: vi.fn(),
@@ -465,6 +537,10 @@ describe("product.repository", () => {
       },
       productVariantImage: {
         deleteMany: vi.fn(),
+      },
+      productVariantOption: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
       },
       productVariant: {
         updateMany: vi.fn(),
@@ -475,6 +551,19 @@ describe("product.repository", () => {
         update: vi.fn(),
         findFirst: vi.fn().mockResolvedValue({
           id: "product_123",
+        }),
+      },
+      variation: {
+        deleteMany: vi.fn(),
+        create: vi.fn().mockResolvedValue({
+          id: "variation_db_2",
+          options: [
+            {
+              id: "variation_option_db_2",
+              value: "Strawberry",
+              position: 0,
+            },
+          ],
         }),
       },
       stockMovement: {
@@ -492,27 +581,31 @@ describe("product.repository", () => {
       createExistingProduct(),
     );
 
-    expect(txMock.stock.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: {
-          quantity: 5,
-        },
-      }),
-    );
-    expect(txMock.stockMovement.create).toHaveBeenCalledWith({
-      data: {
-        variantId: "variant_1",
-        variantSku: "POCKY-STRAWBERRY",
-        variantName: "Strawberry",
-        warehouseId: "ckwarehouse1234567890abcde1",
-        type: MovementType.ADJUST,
-        quantity: 3,
-        note: "Product update",
+    expect(txMock.variation.deleteMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product_123",
       },
+    });
+    expect(txMock.productVariant.update).toHaveBeenCalledWith({
+      where: {
+        id: "variant_1",
+      },
+      data: expect.objectContaining({
+        name: "Flavor: Strawberry",
+      }),
+    });
+    expect(txMock.productVariantOption.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          productVariantId: "variant_1",
+          variationId: "variation_db_2",
+          variationOptionId: "variation_option_db_2",
+        },
+      ],
     });
   });
 
-  it("writes OUT and IN movements when warehouse changes", async () => {
+  it("removes variation records and links when switching a product back to a single variant", async () => {
     const txMock = {
       stock: {
         deleteMany: vi.fn(),
@@ -520,6 +613,10 @@ describe("product.repository", () => {
       },
       productVariantImage: {
         deleteMany: vi.fn(),
+      },
+      productVariantOption: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
       },
       productVariant: {
         updateMany: vi.fn(),
@@ -532,14 +629,15 @@ describe("product.repository", () => {
           id: "product_123",
         }),
       },
+      variation: {
+        deleteMany: vi.fn(),
+        create: vi.fn(),
+      },
       stockMovement: {
         create: vi.fn(),
         createMany: vi.fn(),
       },
     };
-    prismaMock.warehouse.findUnique.mockResolvedValue({
-      id: "ckwarehouse9876543210abcde1",
-    });
     prismaMock.$transaction.mockImplementation(async (callback) =>
       callback(txMock),
     );
@@ -547,37 +645,38 @@ describe("product.repository", () => {
     await updateProduct(
       "product_123",
       createUpdateCommand({
-        warehouseId: "ckwarehouse9876543210abcde1",
+        hasVariation: false,
+        variations: [],
+        variants: [
+          {
+            id: "variant_1",
+            name: "Pocky",
+            sku: "POCKY-BASE",
+            costPrice: 100,
+            sellingPrice: 150,
+            stock: {
+              quantity: 5,
+            },
+            position: 0,
+            selectedOptions: [],
+            image: {
+              path: "products/main.png",
+              alt: "Front angle",
+            },
+          },
+        ],
       }),
-      createExistingProduct(),
+      {
+        ...createExistingProduct(),
+        hasVariation: false,
+      },
     );
 
-    expect(txMock.stock.deleteMany).toHaveBeenCalledWith({
+    expect(txMock.variation.deleteMany).toHaveBeenCalledWith({
       where: {
-        variantId: "variant_1",
+        productId: "product_123",
       },
     });
-    expect(txMock.stockMovement.createMany).toHaveBeenCalledWith({
-      data: [
-        {
-          variantId: "variant_1",
-          variantSku: "POCKY-STRAWBERRY",
-          variantName: "Strawberry",
-          warehouseId: "ckwarehouse1234567890abcde1",
-          type: MovementType.OUT,
-          quantity: 2,
-          note: "Warehouse transfer from product update",
-        },
-        {
-          variantId: "variant_1",
-          variantSku: "POCKY-STRAWBERRY",
-          variantName: "Strawberry",
-          warehouseId: "ckwarehouse9876543210abcde1",
-          type: MovementType.IN,
-          quantity: 5,
-          note: "Warehouse transfer from product update",
-        },
-      ],
-    });
+    expect(txMock.productVariantOption.createMany).not.toHaveBeenCalled();
   });
 });

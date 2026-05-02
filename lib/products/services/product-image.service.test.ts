@@ -38,6 +38,20 @@ const createValidationData = (
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
   baseStock: undefined,
+  variations: [
+    {
+      id: "variation-flavor",
+      name: "Flavor",
+      position: 0,
+      options: [
+        {
+          id: "option-strawberry",
+          value: "Strawberry",
+          position: 0,
+        },
+      ],
+    },
+  ],
   productImages: [
     {
       file: createFile("product-1.png"),
@@ -53,7 +67,7 @@ const createValidationData = (
   variants: [
     {
       clientKey: "variant-strawberry",
-      name: "Strawberry",
+      name: "Flavor: Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
@@ -61,6 +75,12 @@ const createValidationData = (
         quantity: 5,
       },
       position: 0,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-strawberry",
+        },
+      ],
       image: {
         file: createFile("variant-1.png"),
         alt: "Variant front",
@@ -84,6 +104,25 @@ const createUpdateValidationData = (
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
   baseStock: undefined,
+  variations: [
+    {
+      id: "variation-flavor",
+      name: "Flavor",
+      position: 0,
+      options: [
+        {
+          id: "option-strawberry",
+          value: "Strawberry",
+          position: 0,
+        },
+        {
+          id: "option-chocolate",
+          value: "Chocolate",
+          position: 1,
+        },
+      ],
+    },
+  ],
   existProductImages: [
     {
       path: "products/existing-main.png",
@@ -94,7 +133,7 @@ const createUpdateValidationData = (
   newProductImages: [],
   variants: [
     {
-      name: "Strawberry",
+      name: "Flavor: Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
@@ -102,6 +141,12 @@ const createUpdateValidationData = (
         quantity: 5,
       },
       position: 0,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-strawberry",
+        },
+      ],
       existImage: {
         path: "products/variants/existing-strawberry.png",
         alt: "Existing strawberry",
@@ -109,7 +154,7 @@ const createUpdateValidationData = (
       newImage: undefined,
     },
     {
-      name: "Chocolate",
+      name: "Flavor: Chocolate",
       sku: "POCKY-CHOCOLATE",
       costPrice: 110,
       sellingPrice: 170,
@@ -117,6 +162,12 @@ const createUpdateValidationData = (
         quantity: 7,
       },
       position: 1,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-chocolate",
+        },
+      ],
       existImage: undefined,
       newImage: {
         file: createFile("variant-2.png"),
@@ -206,7 +257,7 @@ describe("product-image.service", () => {
       variants: [
         {
           clientKey: "variant-strawberry",
-          name: "Strawberry",
+          name: "Flavor: Strawberry",
           sku: "POCKY-STRAWBERRY",
           costPrice: 120,
           sellingPrice: 180,
@@ -214,6 +265,12 @@ describe("product-image.service", () => {
             quantity: 5,
           },
           position: 0,
+          selectedOptions: [
+            {
+              variationId: "variation-flavor",
+              optionId: "option-strawberry",
+            },
+          ],
           image: undefined,
         },
       ],

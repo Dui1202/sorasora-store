@@ -1,13 +1,15 @@
 import {
   CreateProductFormData,
   ProductImage,
+  ProductVariation,
   ProductVariantImage,
   productBaseSchema,
   productVariantBaseSchema,
-  UpdateProductFormData,
   ProductWithRelations,
+  UpdateProductFormData,
   UpdateProductFormInputData,
 } from "@/lib/products/schema";
+import { buildVariationDisplayName } from "@/lib/products/schema/variation-contract";
 import { getProductInventoryState } from "../inventory/product-inventory";
 import z from "zod";
 
@@ -18,6 +20,126 @@ const updateProductCommandSchema = productBaseSchema.extend({
     }),
   ),
 });
+
+type VariationAwareFormData = Pick<
+  CreateProductFormData | UpdateProductFormData,
+  "hasVariation" | "variations"
+>;
+
+type VariationAwareVariant = {
+  selectedOptions: Array<{
+    variationId: string;
+    optionId: string;
+  }>;
+};
+
+function sortVariations(variations: ProductVariation[]) {
+  return [...variations]
+    .sort((a, b) => a.position - b.position)
+    .map((variation) => ({
+      ...variation,
+      options: [...variation.options].sort((a, b) => a.position - b.position),
+    }));
+}
+
+function sortSelectedOptions(
+  variations: ProductVariation[],
+  selectedOptions: VariationAwareVariant["selectedOptions"],
+) {
+  const positionsByVariationId = new Map(
+    variations.map((variation) => [variation.id, variation.position]),
+  );
+
+  return [...selectedOptions].sort((left, right) => {
+    return (
+      (positionsByVariationId.get(left.variationId) ?? 0) -
+      (positionsByVariationId.get(right.variationId) ?? 0)
+    );
+  });
+}
+
+function getCommandVariations(data: VariationAwareFormData) {
+  if (!data.hasVariation) {
+    return [] as ProductVariation[];
+  }
+
+  return sortVariations(data.variations);
+}
+
+function buildVariationVariantName(
+  variations: ProductVariation[],
+  selectedOptions: VariationAwareVariant["selectedOptions"],
+) {
+  return buildVariationDisplayName(
+    variations,
+    sortSelectedOptions(variations, selectedOptions),
+  );
+}
+
+function mapCreateVariationVariants(
+  data: CreateProductFormData,
+  variations: ProductVariation[],
+  uploadedVariantImages: Map<string, ProductVariantImage>,
+) {
+  if (uploadedVariantImages.size !== data.variants.length) {
+    throw new Error("Variant images are required for every variant.");
+  }
+
+  return data.variants.map((variant, index) => {
+    const uploadedVariantImage = uploadedVariantImages.get(variant.clientKey);
+
+    if (!uploadedVariantImage) {
+      throw new Error("Variant image is required for every variant.");
+    }
+
+    return {
+      name: buildVariationVariantName(variations, variant.selectedOptions),
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      sellingPrice: variant.sellingPrice,
+      stock: variant.stock,
+      position: variant.position ?? index,
+      image: uploadedVariantImage,
+      selectedOptions: sortSelectedOptions(variations, variant.selectedOptions),
+    };
+  });
+}
+
+function mapUpdateVariationVariants(
+  data: UpdateProductFormData,
+  variations: ProductVariation[],
+  uploadedVariantImages: ProductVariantImage[],
+) {
+  let uploadedVariantImageIndex = 0;
+
+  return data.variants.map((variant, index) => {
+    const image =
+      variant.existImage ??
+      (() => {
+        const uploadedVariantImage = uploadedVariantImages[uploadedVariantImageIndex];
+
+        if (!uploadedVariantImage) {
+          throw new Error("Variant image is required for every variant.");
+        }
+
+        uploadedVariantImageIndex += 1;
+
+        return uploadedVariantImage;
+      })();
+
+    return {
+      id: variant.id,
+      name: buildVariationVariantName(variations, variant.selectedOptions),
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      sellingPrice: variant.sellingPrice,
+      stock: variant.stock,
+      position: variant.position ?? index,
+      image,
+      selectedOptions: sortSelectedOptions(variations, variant.selectedOptions),
+    };
+  });
+}
 
 export const toCreateProductCommand = (
   data: CreateProductFormData,
@@ -35,32 +157,10 @@ export const toCreateProductCommand = (
     );
   }
 
+  const variations = getCommandVariations(data);
+
   const variants = data.hasVariation
-    ? (() => {
-        if (uploadedVariantImages.size !== data.variants.length) {
-          throw new Error("Variant images are required for every variant.");
-        }
-
-        return data.variants.map((variant, index) => {
-          const uploadedVariantImage = uploadedVariantImages.get(
-            variant.clientKey,
-          );
-
-          if (!uploadedVariantImage) {
-            throw new Error("Variant image is required for every variant.");
-          }
-
-          return {
-            name: variant.name,
-            sku: variant.sku,
-            costPrice: variant.costPrice,
-            sellingPrice: variant.sellingPrice,
-            stock: variant.stock,
-            position: variant.position ?? index,
-            image: uploadedVariantImage,
-          };
-        });
-      })()
+    ? mapCreateVariationVariants(data, variations, uploadedVariantImages)
     : (() => {
         if (
           !data.baseSku ||
@@ -81,6 +181,7 @@ export const toCreateProductCommand = (
             stock: data.baseStock,
             position: 0,
             image: fallbackVariantImage,
+            selectedOptions: [],
           },
         ];
       })();
@@ -91,6 +192,7 @@ export const toCreateProductCommand = (
     supplierCountry: data.supplierCountry,
     franchiseId: data.franchiseId,
     warehouseId: data.warehouseId,
+    variations,
     variants,
     productImages,
     isPublished: data.isPublished,
@@ -106,6 +208,12 @@ export const toCreateProductMultipartFormData = (
     "payload",
     JSON.stringify({
       ...data,
+      variations: data.variations.map((variation) => ({
+        ...variation,
+        options: variation.options.map((option) => ({
+          ...option,
+        })),
+      })),
       variants: data.variants.map((variant) => ({
         ...variant,
         image: variant.image
@@ -136,6 +244,7 @@ export const toCreateProductMultipartFormData = (
 
   return multipartFormData;
 };
+
 export const toUpdateProductMultipartFormData = (
   data: UpdateProductFormData,
 ) => {
@@ -145,6 +254,12 @@ export const toUpdateProductMultipartFormData = (
     "payload",
     JSON.stringify({
       ...data,
+      variations: data.variations.map((variation) => ({
+        ...variation,
+        options: variation.options.map((option) => ({
+          ...option,
+        })),
+      })),
       variants: data.variants.map((variant) => ({
         ...variant,
         existImage: variant.existImage
@@ -183,6 +298,7 @@ export const toUpdateProductMultipartFormData = (
 
   return multipartFormData;
 };
+
 export const toUpdateProductCommand = (
   data: UpdateProductFormData,
   uploadedProductImages: ProductImage[] = [],
@@ -215,36 +331,10 @@ export const toUpdateProductCommand = (
     );
   }
 
-  let uploadedVariantImageIndex = 0;
+  const variations = getCommandVariations(data);
 
   const variants = data.hasVariation
-    ? data.variants.map((variant, index) => {
-        const image =
-          variant.existImage ??
-          (() => {
-            const uploadedVariantImage =
-              uploadedVariantImages[uploadedVariantImageIndex];
-
-            if (!uploadedVariantImage) {
-              throw new Error("Variant image is required for every variant.");
-            }
-
-            uploadedVariantImageIndex += 1;
-
-            return uploadedVariantImage;
-          })();
-
-        return {
-          id: variant.id,
-          name: variant.name,
-          sku: variant.sku,
-          costPrice: variant.costPrice,
-          sellingPrice: variant.sellingPrice,
-          stock: variant.stock,
-          position: variant.position ?? index,
-          image,
-        };
-      })
+    ? mapUpdateVariationVariants(data, variations, uploadedVariantImages)
     : (() => {
         if (
           !data.baseSku ||
@@ -266,6 +356,7 @@ export const toUpdateProductCommand = (
             stock: data.baseStock,
             position: 0,
             image: fallbackVariantImage,
+            selectedOptions: [],
           },
         ];
       })();
@@ -276,6 +367,7 @@ export const toUpdateProductCommand = (
     supplierCountry: data.supplierCountry,
     franchiseId: data.franchiseId,
     warehouseId: data.warehouseId,
+    variations,
     variants,
     productImages,
     isPublished: data.isPublished,
@@ -283,7 +375,44 @@ export const toUpdateProductCommand = (
   });
 };
 
-// Turn existing product to update input
+function mapProductVariationsToFormInput(product: ProductWithRelations) {
+  return [...product.variations]
+    .sort((a, b) => a.position - b.position)
+    .map((variation) => ({
+      id: variation.id,
+      name: variation.name,
+      position: variation.position,
+      options: [...variation.options]
+        .sort((a, b) => a.position - b.position)
+        .map((option) => ({
+          id: option.id,
+          value: option.value,
+          position: option.position,
+        })),
+    }));
+}
+
+function mapVariantSelectedOptionsToFormInput(
+  product: ProductWithRelations,
+  variant: ProductWithRelations["variants"][number],
+) {
+  const positionsByVariationId = new Map(
+    product.variations.map((variation) => [variation.id, variation.position]),
+  );
+
+  return [...variant.variationOptions]
+    .sort((left, right) => {
+      return (
+        (positionsByVariationId.get(left.variationId) ?? 0) -
+        (positionsByVariationId.get(right.variationId) ?? 0)
+      );
+    })
+    .map((selection) => ({
+      variationId: selection.variationId,
+      optionId: selection.variationOptionId,
+    }));
+}
+
 export const toUpdateProductCommandInput = (
   product: ProductWithRelations,
 ): UpdateProductFormInputData => {
@@ -293,6 +422,8 @@ export const toUpdateProductCommandInput = (
   const hasVariation = product.hasVariation;
   const baseVariant = variants[0];
   const inventoryState = getProductInventoryState(product);
+  const variations = hasVariation ? mapProductVariationsToFormInput(product) : [];
+  const hasExplicitVariationRelations = variations.length > 0;
 
   return {
     name: product.name,
@@ -310,6 +441,7 @@ export const toUpdateProductCommandInput = (
       : {
           quantity: inventoryState.variantQuantityById.get(baseVariant.id) ?? 0,
         },
+    variations,
     variants: hasVariation
       ? variants.map((variant) => ({
           id: variant.id,
@@ -321,6 +453,9 @@ export const toUpdateProductCommandInput = (
             quantity: inventoryState.variantQuantityById.get(variant.id) ?? 0,
           },
           position: variant.position,
+          selectedOptions: hasExplicitVariationRelations
+            ? mapVariantSelectedOptionsToFormInput(product, variant)
+            : [],
           newImage: undefined,
           existImage: {
             path: variant.image!.path,

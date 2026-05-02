@@ -9,6 +9,9 @@ import {
 } from "../mappers/product-command.mapper";
 
 type ProductRecord = Awaited<ReturnType<typeof prisma.product.findFirst>>;
+type PrismaTransaction = Parameters<
+  Parameters<typeof prisma.$transaction>[0]
+>[0];
 
 const PRODUCT_CREATION_NOTE = "Product creation";
 const PRODUCT_UPDATE_NOTE = "Product update";
@@ -16,6 +19,18 @@ const PRODUCT_TRANSFER_NOTE = "Warehouse transfer from product update";
 
 const activeProductRelations = {
   productImages: true,
+  variations: {
+    orderBy: {
+      position: "asc" as const,
+    },
+    include: {
+      options: {
+        orderBy: {
+          position: "asc" as const,
+        },
+      },
+    },
+  },
   variants: {
     where: {
       isArchived: false,
@@ -25,6 +40,12 @@ const activeProductRelations = {
     },
     include: {
       image: true,
+      variationOptions: {
+        include: {
+          variation: true,
+          variationOption: true,
+        },
+      },
       stocks: {
         include: {
           warehouse: true,
@@ -34,12 +55,10 @@ const activeProductRelations = {
   },
 };
 
-/**
- * Ensures a warehouse with the given id exists.
- * If the warehouse does not exist, it will throw an AppError with code 404.
- * @param warehouseId - The id of the warehouse to check.
- * @throws If the warehouse does not exist.
- */
+function getSelectionKey(variationId: string, optionId: string) {
+  return `${variationId}:${optionId}`;
+}
+
 async function ensureWarehouseExists(warehouseId: string): Promise<void> {
   const warehouse = await prisma.warehouse.findUnique({
     where: {
@@ -57,11 +76,293 @@ async function ensureWarehouseExists(warehouseId: string): Promise<void> {
   }
 }
 
-/**
- * Finds all active products.
- * The products are returned with their active variants and images.
- * @returns A promise that resolves to an array of active products.
- */
+async function getProductWithRelationsOrThrow(
+  db: PrismaTransaction,
+  productId: string,
+): Promise<ProductWithRelations> {
+  const product = await db.product.findFirst({
+    where: {
+      id: productId,
+      isArchived: false,
+    },
+    include: activeProductRelations,
+  });
+
+  if (!product) {
+    throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+  }
+
+  return product;
+}
+
+async function createVariationStructure(
+  db: PrismaTransaction,
+  productId: string,
+  variations:
+    | CreateProductCommandData["variations"]
+    | UpdateProductCommandData["variations"],
+) {
+  const persistedVariationIdByInputId = new Map<string, string>();
+  const persistedOptionIdByInputKey = new Map<string, string>();
+
+  for (const variation of variations) {
+    const createdVariation = await db.variation.create({
+      data: {
+        productId,
+        name: variation.name,
+        position: variation.position,
+        options: {
+          create: variation.options.map((option) => ({
+            value: option.value,
+            position: option.position,
+          })),
+        },
+      },
+      include: {
+        options: true,
+      },
+    });
+
+    persistedVariationIdByInputId.set(variation.id, createdVariation.id);
+
+    for (const option of variation.options) {
+      const persistedOption = createdVariation.options.find((createdOption) => {
+        return (
+          createdOption.value === option.value &&
+          createdOption.position === option.position
+        );
+      });
+
+      if (!persistedOption) {
+        throw new AppError(
+          "UPDATE_PRODUCT_FAILED",
+          "Variation option could not be persisted",
+          500,
+        );
+      }
+
+      persistedOptionIdByInputKey.set(
+        getSelectionKey(variation.id, option.id),
+        persistedOption.id,
+      );
+    }
+  }
+
+  return {
+    persistedVariationIdByInputId,
+    persistedOptionIdByInputKey,
+  };
+}
+
+async function createVariantSelectionLinks(
+  db: PrismaTransaction,
+  persistedVariantId: string,
+  selectedOptions: Array<{
+    variationId: string;
+    optionId: string;
+  }>,
+  variationStructure: Awaited<ReturnType<typeof createVariationStructure>>,
+) {
+  if (selectedOptions.length === 0) {
+    return;
+  }
+
+  await db.productVariantOption.createMany({
+    data: selectedOptions.map((selection) => {
+      const persistedVariationId =
+        variationStructure.persistedVariationIdByInputId.get(
+          selection.variationId,
+        );
+      const persistedOptionId =
+        variationStructure.persistedOptionIdByInputKey.get(
+          getSelectionKey(selection.variationId, selection.optionId),
+        );
+
+      if (!persistedVariationId || !persistedOptionId) {
+        throw new AppError(
+          "UPDATE_PRODUCT_FAILED",
+          "Variant selection does not match persisted variations",
+          400,
+        );
+      }
+
+      return {
+        productVariantId: persistedVariantId,
+        variationId: persistedVariationId,
+        variationOptionId: persistedOptionId,
+      };
+    }),
+  });
+}
+
+async function persistVariant(
+  db: PrismaTransaction,
+  productId: string,
+  warehouseId: string,
+  variant:
+    | CreateProductCommandData["variants"][number]
+    | UpdateProductCommandData["variants"][number],
+  previousWarehouseId: string | undefined,
+  previousQuantity: number,
+  movementNoteWhenNoPreviousStock = PRODUCT_UPDATE_NOTE,
+) {
+  let persistedVariantId: string;
+
+  if ("id" in variant && variant.id) {
+    await db.productVariant.update({
+      where: {
+        id: variant.id,
+      },
+      data: {
+        name: variant.name,
+        sku: variant.sku,
+        costPrice: variant.costPrice,
+        sellingPrice: variant.sellingPrice,
+        position: variant.position,
+        image: {
+          upsert: {
+            create: {
+              path: variant.image.path,
+              alt: variant.image.alt,
+            },
+            update: {
+              path: variant.image.path,
+              alt: variant.image.alt,
+            },
+          },
+        },
+      },
+    });
+
+    persistedVariantId = variant.id;
+  } else {
+    const createdVariant = await db.productVariant.create({
+      data: {
+        productId,
+        name: variant.name,
+        sku: variant.sku,
+        costPrice: variant.costPrice,
+        sellingPrice: variant.sellingPrice,
+        position: variant.position,
+        image: {
+          create: {
+            path: variant.image.path,
+            alt: variant.image.alt,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    persistedVariantId = createdVariant.id;
+  }
+
+  if (previousWarehouseId && previousWarehouseId !== warehouseId) {
+    await db.stock.deleteMany({
+      where: {
+        variantId: persistedVariantId,
+      },
+    });
+
+    await db.stock.upsert({
+      where: {
+        variantId_warehouseId: {
+          variantId: persistedVariantId,
+          warehouseId,
+        },
+      },
+      create: {
+        variantId: persistedVariantId,
+        warehouseId,
+        quantity: variant.stock.quantity,
+      },
+      update: {
+        quantity: variant.stock.quantity,
+      },
+    });
+
+    await db.stockMovement.createMany({
+      data: [
+        {
+          variantId: persistedVariantId,
+          variantSku: variant.sku,
+          variantName: variant.name,
+          warehouseId: previousWarehouseId,
+          type: MovementType.OUT,
+          quantity: previousQuantity,
+          note: PRODUCT_TRANSFER_NOTE,
+        },
+        {
+          variantId: persistedVariantId,
+          variantSku: variant.sku,
+          variantName: variant.name,
+          warehouseId,
+          type: MovementType.IN,
+          quantity: variant.stock.quantity,
+          note: PRODUCT_TRANSFER_NOTE,
+        },
+      ],
+    });
+
+    return persistedVariantId;
+  }
+
+  await db.stock.upsert({
+    where: {
+      variantId_warehouseId: {
+        variantId: persistedVariantId,
+        warehouseId,
+      },
+    },
+    create: {
+      variantId: persistedVariantId,
+      warehouseId,
+      quantity: variant.stock.quantity,
+    },
+    update: {
+      quantity: variant.stock.quantity,
+    },
+  });
+
+  if (!previousWarehouseId) {
+    if (variant.stock.quantity !== 0) {
+      await db.stockMovement.create({
+        data: {
+          variantId: persistedVariantId,
+          variantSku: variant.sku,
+          variantName: variant.name,
+          warehouseId,
+          type: MovementType.IN,
+          quantity: variant.stock.quantity,
+          note: movementNoteWhenNoPreviousStock,
+        },
+      });
+    }
+
+    return persistedVariantId;
+  }
+
+  const delta = variant.stock.quantity - previousQuantity;
+
+  if (delta !== 0) {
+    await db.stockMovement.create({
+      data: {
+        variantId: persistedVariantId,
+        variantSku: variant.sku,
+        variantName: variant.name,
+        warehouseId,
+        type: MovementType.ADJUST,
+        quantity: delta,
+        note: PRODUCT_UPDATE_NOTE,
+      },
+    });
+  }
+
+  return persistedVariantId;
+}
+
 export async function findProducts(): Promise<ProductWithRelations[]> {
   return prisma.product.findMany({
     where: {
@@ -71,100 +372,75 @@ export async function findProducts(): Promise<ProductWithRelations[]> {
   });
 }
 
-/**
- * Creates a new product with the given data.
- * The product will be created with its variants and images.
- * The product's variants will also have their stocks created.
- * A product creation note will be added to the product's variants' stock movements.
- * @param command - The data of the product to create.
- * @return A promise that resolves to the created product.
- */
 export async function createProduct(
   command: CreateProductCommandData,
 ): Promise<ProductWithRelations> {
   const {
     name,
     description,
-    variants,
     supplierCountry,
     franchiseId,
     warehouseId,
-    productImages,
     isPublished,
     hasVariation,
+    productImages,
+    variations,
+    variants,
   } = command;
 
   await ensureWarehouseExists(warehouseId);
 
-  return prisma.product.create({
-    data: {
-      name,
-      description: description || undefined,
-      supplierCountry,
-      franchiseId,
-      isPublished,
-      hasVariation,
-      variants: {
-        create: variants.map((variant) => ({
-          name: variant.name,
-          sku: variant.sku,
-          costPrice: variant.costPrice,
-          sellingPrice: variant.sellingPrice,
-          position: variant.position,
-          image: {
-            create: {
-              path: variant.image.path,
-              alt: variant.image.alt,
-            },
-          },
-          stocks: {
-            create: {
-              warehouseId,
-              quantity: variant.stock.quantity,
-            },
-          },
-          stockMovements: {
-            create: {
-              warehouseId,
-              type: MovementType.IN,
-              quantity: variant.stock.quantity,
-              note: PRODUCT_CREATION_NOTE,
-              variantSku: variant.sku,
-              variantName: variant.name,
-            },
-          },
-        })),
-      },
-      productImages: {
-        create: productImages.map((productImage) => ({
-          path: productImage.path,
-          alt: productImage.alt,
-          position: productImage.position,
-        })),
-      },
-    },
-    include: {
-      variants: {
-        include: {
-          image: true,
-          stocks: {
-            include: {
-              warehouse: true,
-            },
-          },
+  return prisma.$transaction(async (tx) => {
+    const createdProduct = await tx.product.create({
+      data: {
+        name,
+        description: description || undefined,
+        supplierCountry,
+        franchiseId,
+        isPublished,
+        hasVariation,
+        productImages: {
+          create: productImages.map((productImage) => ({
+            path: productImage.path,
+            alt: productImage.alt,
+            position: productImage.position,
+          })),
         },
       },
-      productImages: true,
-    },
+      select: {
+        id: true,
+      },
+    });
+
+    const variationStructure = hasVariation
+      ? await createVariationStructure(tx, createdProduct.id, variations)
+      : null;
+
+    for (const variant of variants) {
+      const persistedVariantId = await persistVariant(
+        tx,
+        createdProduct.id,
+        warehouseId,
+        variant,
+        undefined,
+        0,
+        PRODUCT_CREATION_NOTE,
+      );
+
+      if (variationStructure) {
+        await createVariantSelectionLinks(
+          tx,
+          persistedVariantId,
+          variant.selectedOptions,
+          variationStructure,
+        );
+      }
+    }
+
+    return getProductWithRelationsOrThrow(tx, createdProduct.id);
   });
 }
 
-/**
- * Archives a product and its variants. This will set the isArchived field to true on the product and all its variants.
- * Additionally, it will delete all stock records associated with the product's active variants and delete all product images associated with the product.
- * @param id The id of the product to be archived
- * @returns The archived product
- */
 export async function archiveProduct(id: string) {
   return prisma.$transaction(async (tx) => {
     const activeVariantIds = (
@@ -227,17 +503,6 @@ export async function archiveProduct(id: string) {
   });
 }
 
-/**
- * Updates a product with the given command data.
- * The product's variants will also be updated based on the command data.
- * If a variant does not exist in the command data, it will be removed from the product.
- * If a variant's stock quantity is changed, a stock movement will be created to record the change.
- * If a variant's warehouse is changed, a stock movement will be created to record the change.
- * @param id - The id of the product to update.
- * @param command - The data of the product to update.
- * @param product - The existing product data.
- * @returns A promise that resolves to the updated product.
- */
 export async function updateProduct(
   id: string,
   command: UpdateProductCommandData,
@@ -252,6 +517,7 @@ export async function updateProduct(
     isPublished,
     hasVariation,
     productImages,
+    variations,
     variants,
   } = command;
 
@@ -302,6 +568,14 @@ export async function updateProduct(
         },
       });
 
+      await tx.productVariantOption.deleteMany({
+        where: {
+          productVariantId: {
+            in: removedVariantIds,
+          },
+        },
+      });
+
       await tx.productVariant.updateMany({
         where: {
           productId: id,
@@ -337,6 +611,16 @@ export async function updateProduct(
       },
     });
 
+    await tx.variation.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    const variationStructure = hasVariation
+      ? await createVariationStructure(tx, id, variations)
+      : null;
+
     for (const variant of variants) {
       const existingVariant = variant.id
         ? product.variants.find(
@@ -348,176 +632,29 @@ export async function updateProduct(
       const previousWarehouseId =
         previousStock?.warehouseId ?? inventoryState.warehouseId;
 
-      let persistedVariantId: string;
-
-      if (variant.id) {
-        await tx.productVariant.update({
-          where: {
-            id: variant.id,
-          },
-          data: {
-            name: variant.name,
-            sku: variant.sku,
-            costPrice: variant.costPrice,
-            sellingPrice: variant.sellingPrice,
-            position: variant.position,
-            image: {
-              upsert: {
-                create: {
-                  path: variant.image.path,
-                  alt: variant.image.alt,
-                },
-                update: {
-                  path: variant.image.path,
-                  alt: variant.image.alt,
-                },
-              },
-            },
-          },
-        });
-
-        persistedVariantId = variant.id;
-      } else {
-        const createdVariant = await tx.productVariant.create({
-          data: {
-            productId: id,
-            name: variant.name,
-            sku: variant.sku,
-            costPrice: variant.costPrice,
-            sellingPrice: variant.sellingPrice,
-            position: variant.position,
-            image: {
-              create: {
-                path: variant.image.path,
-                alt: variant.image.alt,
-              },
-            },
-          },
-          select: {
-            id: true,
-          },
-        });
-
-        persistedVariantId = createdVariant.id;
-      }
-
-      if (previousWarehouseId && previousWarehouseId !== warehouseId) {
-        await tx.stock.deleteMany({
-          where: {
-            variantId: persistedVariantId,
-          },
-        });
-
-        await tx.stock.upsert({
-          where: {
-            variantId_warehouseId: {
-              variantId: persistedVariantId,
-              warehouseId,
-            },
-          },
-          create: {
-            variantId: persistedVariantId,
-            warehouseId,
-            quantity: variant.stock.quantity,
-          },
-          update: {
-            quantity: variant.stock.quantity,
-          },
-        });
-
-        await tx.stockMovement.createMany({
-          data: [
-            {
-              variantId: persistedVariantId,
-              variantSku: variant.sku,
-              variantName: variant.name,
-              warehouseId: previousWarehouseId,
-              type: MovementType.OUT,
-              quantity: previousQuantity,
-              note: PRODUCT_TRANSFER_NOTE,
-            },
-            {
-              variantId: persistedVariantId,
-              variantSku: variant.sku,
-              variantName: variant.name,
-              warehouseId,
-              type: MovementType.IN,
-              quantity: variant.stock.quantity,
-              note: PRODUCT_TRANSFER_NOTE,
-            },
-          ],
-        });
-
-        continue;
-      }
-
-      await tx.stock.upsert({
-        where: {
-          variantId_warehouseId: {
-            variantId: persistedVariantId,
-            warehouseId,
-          },
-        },
-        create: {
-          variantId: persistedVariantId,
-          warehouseId,
-          quantity: variant.stock.quantity,
-        },
-        update: {
-          quantity: variant.stock.quantity,
-        },
-      });
-
-      if (!previousWarehouseId) {
-        if (variant.stock.quantity !== 0) {
-          await tx.stockMovement.create({
-            data: {
-              variantId: persistedVariantId,
-              variantSku: variant.sku,
-              variantName: variant.name,
-              warehouseId,
-              type: MovementType.IN,
-              quantity: variant.stock.quantity,
-              note: PRODUCT_UPDATE_NOTE,
-            },
-          });
-        }
-
-        continue;
-      }
-
-      const delta = variant.stock.quantity - previousQuantity;
-
-      if (delta !== 0) {
-        await tx.stockMovement.create({
-          data: {
-            variantId: persistedVariantId,
-            variantSku: variant.sku,
-            variantName: variant.name,
-            warehouseId,
-            type: MovementType.ADJUST,
-            quantity: delta,
-            note: PRODUCT_UPDATE_NOTE,
-          },
-        });
-      }
-    }
-
-    const updatedProduct = await tx.product.findFirst({
-      where: {
+      const persistedVariantId = await persistVariant(
+        tx,
         id,
-        isArchived: false,
-      },
-      include: activeProductRelations,
-    });
+        warehouseId,
+        variant,
+        previousWarehouseId,
+        previousQuantity,
+      );
 
-    if (!updatedProduct) {
-      throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+      if (variationStructure) {
+        await createVariantSelectionLinks(
+          tx,
+          persistedVariantId,
+          variant.selectedOptions,
+          variationStructure,
+        );
+      }
     }
 
-    return updatedProduct;
+    return getProductWithRelationsOrThrow(tx, id);
   });
 }
+
 export async function findProductById(
   id: string,
   hasRelations: true,
@@ -530,12 +667,6 @@ export async function findProductById(
   id: string,
   hasRelations: boolean,
 ): Promise<ProductWithRelations | ProductRecord>;
-/**
- * Finds a product by its id.
- * @param id - The id of the product to find.
- * @param hasRelations - Whether to include the product's active variants and images in the response.
- * @returns A promise that resolves to the found product, or null if it does not exist.
- */
 export async function findProductById(
   id: string,
   hasRelations: boolean,

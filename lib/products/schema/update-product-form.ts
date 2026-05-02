@@ -9,6 +9,10 @@ import {
   productVariantBaseSchema,
   productVariantImageBaseSchema,
 } from "./product-base";
+import {
+  productVariationBaseSchema,
+  validateVariationConfiguration,
+} from "./variation-contract";
 
 export const updateProductVariantBaseSchema = productVariantBaseSchema
   .omit({
@@ -47,11 +51,13 @@ export const updateProductFormBaseSchema = createProductFormBaseSchema
   .omit({
     productImages: true,
     variants: true,
+    variations: true,
   })
   .extend({
     baseVariantId: z.cuid("Invalid variant id").optional(),
     newProductImages: z.array(localProductImageSchema).default([]),
     existProductImages: z.array(productImageBaseSchema).default([]),
+    variations: z.array(productVariationBaseSchema).default([]),
     variants: z.array(updateProductVariantSchema).default([]),
   });
 
@@ -59,13 +65,7 @@ export const updateProductFormBaseSchema = createProductFormBaseSchema
 export const updateProductFormSchema = updateProductFormBaseSchema.superRefine(
   (data, ctx) => {
     if (data.hasVariation) {
-      if (data.variants.length < 1) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Add at least 1 variant when variations are enabled.",
-          path: ["variants"],
-        });
-      }
+      validateVariationConfiguration(data, ctx);
 
       return;
     }

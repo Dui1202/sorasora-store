@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/SoraSora.Api/SoraSora.Api.csproj" />
+    <Project Path="backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj" />
+    <Project Path="backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj" />
+  </Folder>
+</Solution>

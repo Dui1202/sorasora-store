@@ -11,8 +11,14 @@ export {
   productBaseSchema,
   supplierCountrySchema,
 } from "./product-base";
+export {
+  productVariationBaseSchema,
+  productVariationOptionBaseSchema,
+} from "./variation-contract";
 export type {
   ProductImage,
+  ProductVariation,
+  ProductVariationOption,
   ProductVariantImage,
   ProductWithRelations,
 } from "./product-base";

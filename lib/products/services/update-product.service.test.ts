@@ -44,6 +44,25 @@ const createBasePayload = () => ({
   baseCostPrice: undefined,
   baseSellingPrice: undefined,
   baseStock: undefined,
+  variations: [
+    {
+      id: "variation-flavor",
+      name: "Flavor",
+      position: 0,
+      options: [
+        {
+          id: "option-strawberry",
+          value: "Strawberry",
+          position: 0,
+        },
+        {
+          id: "option-chocolate",
+          value: "Chocolate",
+          position: 1,
+        },
+      ],
+    },
+  ],
   existProductImages: [
     {
       path: "products/existing-main.png",
@@ -60,7 +79,7 @@ const createBasePayload = () => ({
   variants: [
     {
       id: EXISTING_VARIANT_ID,
-      name: "Strawberry",
+      name: "Flavor: Strawberry",
       sku: "POCKY-STRAWBERRY",
       costPrice: 120,
       sellingPrice: 180,
@@ -68,6 +87,12 @@ const createBasePayload = () => ({
         quantity: 5,
       },
       position: 0,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-strawberry",
+        },
+      ],
       existImage: {
         path: "products/variants/existing-strawberry.png",
         alt: "Existing strawberry",
@@ -76,7 +101,7 @@ const createBasePayload = () => ({
     },
     {
       id: undefined,
-      name: "Chocolate",
+      name: "Flavor: Chocolate",
       sku: "POCKY-CHOCOLATE",
       costPrice: 110,
       sellingPrice: 170,
@@ -84,6 +109,12 @@ const createBasePayload = () => ({
         quantity: 7,
       },
       position: 1,
+      selectedOptions: [
+        {
+          variationId: "variation-flavor",
+          optionId: "option-chocolate",
+        },
+      ],
       existImage: undefined,
       newImage: {
         alt: "New chocolate",
@@ -122,6 +153,7 @@ describe("updateProductService", () => {
     findProductByIdMock.mockResolvedValue({
       id: "product_123",
       hasVariation: true,
+      variations: [],
       variants: [
         {
           id: EXISTING_VARIANT_ID,
@@ -141,6 +173,7 @@ describe("updateProductService", () => {
             path: "products/variants/existing-strawberry.png",
             alt: "Existing strawberry",
           },
+          variationOptions: [],
         },
       ],
       productImages: [
@@ -186,6 +219,25 @@ describe("updateProductService", () => {
         warehouseId: "ckwarehouse1234567890abcde1",
         isPublished: false,
         hasVariation: true,
+        variations: [
+          {
+            id: "variation-flavor",
+            name: "Flavor",
+            position: 0,
+            options: [
+              {
+                id: "option-strawberry",
+                value: "Strawberry",
+                position: 0,
+              },
+              {
+                id: "option-chocolate",
+                value: "Chocolate",
+                position: 1,
+              },
+            ],
+          },
+        ],
         productImages: [
           {
             path: "products/existing-main.png",
@@ -201,7 +253,7 @@ describe("updateProductService", () => {
         variants: [
           {
             id: EXISTING_VARIANT_ID,
-            name: "Strawberry",
+            name: "Flavor: Strawberry",
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
             sellingPrice: 180,
@@ -209,6 +261,12 @@ describe("updateProductService", () => {
               quantity: 5,
             },
             position: 0,
+            selectedOptions: [
+              {
+                variationId: "variation-flavor",
+                optionId: "option-strawberry",
+              },
+            ],
             image: {
               path: "products/variants/existing-strawberry.png",
               alt: "Existing strawberry",
@@ -216,7 +274,7 @@ describe("updateProductService", () => {
           },
           {
             id: undefined,
-            name: "Chocolate",
+            name: "Flavor: Chocolate",
             sku: "POCKY-CHOCOLATE",
             costPrice: 110,
             sellingPrice: 170,
@@ -224,6 +282,12 @@ describe("updateProductService", () => {
               quantity: 7,
             },
             position: 1,
+            selectedOptions: [
+              {
+                variationId: "variation-flavor",
+                optionId: "option-chocolate",
+              },
+            ],
             image: {
               path: "products/variants/new-chocolate.png",
               alt: "New chocolate",
@@ -265,6 +329,7 @@ describe("updateProductService", () => {
     findProductByIdMock.mockResolvedValueOnce({
       id: "product_123",
       hasVariation: true,
+      variations: [],
       variants: [
         {
           id: EXISTING_VARIANT_ID,
@@ -284,6 +349,7 @@ describe("updateProductService", () => {
             path: "products/variants/existing-strawberry.png",
             alt: "Existing strawberry",
           },
+          variationOptions: [],
         },
         {
           id: "ck1234567890abcde1234568",
@@ -303,6 +369,7 @@ describe("updateProductService", () => {
             path: "products/variants/existing-chocolate.png",
             alt: "Existing chocolate",
           },
+          variationOptions: [],
         },
       ],
       productImages: [

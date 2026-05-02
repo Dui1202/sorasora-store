@@ -5,6 +5,10 @@ import {
   stockBaseSchema,
   supplierCountrySchema,
 } from "./product-base";
+import {
+  productVariationBaseSchema,
+  validateVariationConfiguration,
+} from "./variation-contract";
 
 // For image preview before upload, we use a local schema that includes the File object.
 export const localProductImageSchema = z.object({
@@ -57,6 +61,7 @@ export const createProductFormBaseSchema = productBaseSchema
       .min(0, "Sale price must be 0 or greater")
       .optional(),
     baseStock: stockBaseSchema.optional(),
+    variations: z.array(productVariationBaseSchema).default([]),
     variants: z.array(createProductVariantFormSchema).default([]),
     productImages: z.array(localProductImageSchema).default([]),
   });
@@ -81,13 +86,7 @@ export const createProductFormSchema = createProductFormBaseSchema.superRefine(
     }
 
     if (data.hasVariation) {
-      if (data.variants.length < 1) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Add at least 1 variant when variations are enabled.",
-          path: ["variants"],
-        });
-      }
+      validateVariationConfiguration(data, ctx);
 
       data.variants.forEach((variant, index) => {
         if (!variant.image) {
@@ -100,6 +99,14 @@ export const createProductFormSchema = createProductFormBaseSchema.superRefine(
       });
 
       return;
+    }
+
+    if (data.variants.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Variants must be empty when variations are disabled.",
+        path: ["variants"],
+      });
     }
 
     if (!data.baseSku) {

@@ -1,5 +1,6 @@
 import { OptionInputObject } from "../option-input-group";
 import {
+  PriceFormVariationInput,
   CreatePriceFormVariantInput,
   PriceFormVariantImageInput,
   PriceFormVariantInput,
@@ -11,6 +12,7 @@ import {
   normalizeSignatureValue,
   VariantDraftRow,
   VariantOptionSelection,
+  VariantSignaturePart,
 } from "./use-variant-combinations";
 import { VariantDraftSeed } from "./use-variant-draft-rows";
 
@@ -329,6 +331,108 @@ export function parseExistingVariantsForEditor(
   };
 }
 
+export function parseExplicitVariationsForEditor(
+  variations: PriceFormVariationInput[],
+  variants: PriceFormVariantInput[],
+): ParsedVariantEditorResult {
+  if (variations.length < 1) {
+    return {
+      success: false,
+      error: "Existing variations are required to initialize variation editor.",
+    };
+  }
+
+  const normalizedVariations: Variation[] = variations.map((variation) => ({
+    id: variation.id,
+    name: variation.name,
+    optionsList: variation.options.map((option) => ({
+      id: option.id,
+      value: option.value,
+    })),
+  }));
+
+  const variationLookup = new Map(
+    variations.map((variation) => [
+      variation.id,
+      {
+        name: variation.name,
+        optionsById: new Map(
+          variation.options.map((option) => [option.id, option.value]),
+        ),
+      },
+    ]),
+  );
+
+  const seeds: VariantDraftSeed[] = [];
+  const seenSignatures = new Set<string>();
+
+  for (const variant of variants) {
+    const selectedOptions = variant.selectedOptions ?? [];
+
+    if (selectedOptions.length !== variations.length) {
+      return {
+        success: false,
+        error:
+          "Existing variant selections do not match the configured variations.",
+      };
+    }
+
+    const signatureParts: VariantSignaturePart[] = [];
+
+    for (const selection of selectedOptions) {
+      const variation = variationLookup.get(selection.variationId);
+      const optionValue = variation?.optionsById.get(selection.optionId);
+
+      if (!variation || !optionValue) {
+        return {
+          success: false,
+          error:
+            "Existing variant selections do not match the configured variations.",
+        };
+      }
+
+      signatureParts.push({
+        variationName: variation.name,
+        optionValue,
+      });
+    }
+
+    const signature = createVariantSignature(signatureParts);
+
+    if (seenSignatures.has(signature)) {
+      return {
+        success: false,
+        error:
+          "Duplicate variant combinations detected. Each variation combination must be unique.",
+      };
+    }
+
+    seenSignatures.add(signature);
+
+    const image = toSeedImage(getVariantImageForSeed(variant));
+
+    seeds.push({
+      variantId: "id" in variant ? variant.id : undefined,
+      signature,
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      sellingPrice: variant.sellingPrice,
+      stock: variant.stock.quantity,
+      imageFile: image.imageFile,
+      imagePath: image.imagePath,
+      imageAlt: image.imageAlt,
+    });
+  }
+
+  return {
+    success: true,
+    data: {
+      variations: normalizedVariations,
+      seeds,
+    },
+  };
+}
+
 export function buildVariantName(selectedOptions: VariantOptionSelection[]) {
   return selectedOptions
     .map((selectedOption) => {
@@ -355,6 +459,10 @@ export function mapDraftRowsToFormVariants(
         quantity: row.stock,
       },
       position: index,
+      selectedOptions: row.selectedOptions.map((selectedOption) => ({
+        variationId: selectedOption.variationId,
+        optionId: selectedOption.optionId,
+      })),
     };
 
     if (mode === "create") {

@@ -36,6 +36,7 @@ const createBasePayload = () => ({
   baseStock: {
     quantity: 12,
   },
+  variations: [],
   variants: [],
   productImages: [
     {
@@ -101,6 +102,7 @@ describe("createProductService", () => {
       warehouseId: "ckwarehouse1234567890abcde1",
       isPublished: false,
       hasVariation: false,
+      variations: [],
       productImages: [
         {
           path: "products/main.png",
@@ -118,6 +120,7 @@ describe("createProductService", () => {
             quantity: 12,
           },
           position: 0,
+          selectedOptions: [],
           image: {
             path: "products/main.png",
             alt: "Front angle",
@@ -158,10 +161,24 @@ describe("createProductService", () => {
         baseCostPrice: undefined,
         baseSellingPrice: undefined,
         baseStock: undefined,
+        variations: [
+          {
+            id: "variation-flavor",
+            name: "Flavor",
+            position: 0,
+            options: [
+              {
+                id: "option-strawberry",
+                value: "Strawberry",
+                position: 0,
+              },
+            ],
+          },
+        ],
         variants: [
           {
             clientKey: "variant-strawberry",
-            name: "Strawberry",
+            name: "ignored",
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
             sellingPrice: 180,
@@ -169,6 +186,12 @@ describe("createProductService", () => {
               quantity: 5,
             },
             position: 0,
+            selectedOptions: [
+              {
+                variationId: "variation-flavor",
+                optionId: "option-strawberry",
+              },
+            ],
             image: {
               alt: "Variant front",
             },

@@ -28,6 +28,7 @@ const createFormData = (
   baseStock: {
     quantity: 12,
   },
+  variations: [],
   variants: [],
   productImages: [
     {
@@ -57,6 +58,7 @@ describe("product-command.mapper", () => {
       warehouseId: "ckwarehouse1234567890abcde1",
       isPublished: false,
       hasVariation: false,
+      variations: [],
       productImages: [
         {
           path: "products/main.png",
@@ -78,29 +80,51 @@ describe("product-command.mapper", () => {
             path: "products/main.png",
             alt: "Front angle",
           },
+          selectedOptions: [],
         },
       ],
     });
   });
 
-  it("maps uploaded variant images by order when variations are enabled", () => {
+  it("maps explicit variations and generated variant names when variations are enabled", () => {
     const command = toCreateProductCommand(
       createFormData({
         hasVariation: true,
         baseSku: undefined,
         baseCostPrice: undefined,
         baseSellingPrice: undefined,
+        baseStock: undefined,
+        variations: [
+          {
+            id: "variation-color",
+            name: "Color",
+            position: 0,
+            options: [
+              {
+                id: "option-red",
+                value: "Red",
+                position: 0,
+              },
+            ],
+          },
+        ],
         variants: [
           {
-            clientKey: "variant-strawberry",
-            name: "Strawberry",
-            sku: "POCKY-STRAWBERRY",
+            clientKey: "variant-red",
+            name: "ignored",
+            sku: "POCKY-RED",
             costPrice: 120,
             sellingPrice: 180,
             stock: {
               quantity: 5,
             },
             position: 3,
+            selectedOptions: [
+              {
+                variationId: "variation-color",
+                optionId: "option-red",
+              },
+            ],
             image: {
               file: createFile("variant-1.png"),
               alt: "Variant front",
@@ -117,27 +141,47 @@ describe("product-command.mapper", () => {
       ],
       new Map([
         [
-          "variant-strawberry",
+          "variant-red",
           {
-            path: "products/variants/strawberry.png",
+            path: "products/variants/red.png",
             alt: "Variant front",
           },
         ],
       ]),
     );
 
+    expect(command.variations).toEqual([
+      {
+        id: "variation-color",
+        name: "Color",
+        position: 0,
+        options: [
+          {
+            id: "option-red",
+            value: "Red",
+            position: 0,
+          },
+        ],
+      },
+    ]);
     expect(command.variants).toEqual([
       {
-        name: "Strawberry",
-        sku: "POCKY-STRAWBERRY",
+        name: "Color: Red",
+        sku: "POCKY-RED",
         costPrice: 120,
         sellingPrice: 180,
         stock: {
           quantity: 5,
         },
         position: 3,
+        selectedOptions: [
+          {
+            variationId: "variation-color",
+            optionId: "option-red",
+          },
+        ],
         image: {
-          path: "products/variants/strawberry.png",
+          path: "products/variants/red.png",
           alt: "Variant front",
         },
       },
@@ -151,10 +195,30 @@ describe("product-command.mapper", () => {
         baseSku: undefined,
         baseCostPrice: undefined,
         baseSellingPrice: undefined,
+        baseStock: undefined,
+        variations: [
+          {
+            id: "variation-flavor",
+            name: "Flavor",
+            position: 0,
+            options: [
+              {
+                id: "option-strawberry",
+                value: "Strawberry",
+                position: 0,
+              },
+              {
+                id: "option-matcha",
+                value: "Matcha",
+                position: 1,
+              },
+            ],
+          },
+        ],
         variants: [
           {
             clientKey: "variant-strawberry",
-            name: "Strawberry",
+            name: "ignored",
             sku: "POCKY-STRAWBERRY",
             costPrice: 120,
             sellingPrice: 180,
@@ -162,6 +226,12 @@ describe("product-command.mapper", () => {
               quantity: 5,
             },
             position: 0,
+            selectedOptions: [
+              {
+                variationId: "variation-flavor",
+                optionId: "option-strawberry",
+              },
+            ],
             image: {
               file: createFile("variant-1.png"),
               alt: "Strawberry front",
@@ -169,7 +239,7 @@ describe("product-command.mapper", () => {
           },
           {
             clientKey: "variant-matcha",
-            name: "Matcha",
+            name: "ignored",
             sku: "POCKY-MATCHA",
             costPrice: 130,
             sellingPrice: 190,
@@ -177,6 +247,12 @@ describe("product-command.mapper", () => {
               quantity: 7,
             },
             position: 1,
+            selectedOptions: [
+              {
+                variationId: "variation-flavor",
+                optionId: "option-matcha",
+              },
+            ],
             image: {
               file: createFile("variant-2.png"),
               alt: "Matcha front",
@@ -211,7 +287,7 @@ describe("product-command.mapper", () => {
 
     expect(command.variants).toEqual([
       {
-        name: "Strawberry",
+        name: "Flavor: Strawberry",
         sku: "POCKY-STRAWBERRY",
         costPrice: 120,
         sellingPrice: 180,
@@ -219,13 +295,19 @@ describe("product-command.mapper", () => {
           quantity: 5,
         },
         position: 0,
+        selectedOptions: [
+          {
+            variationId: "variation-flavor",
+            optionId: "option-strawberry",
+          },
+        ],
         image: {
           path: "products/variants/strawberry.png",
           alt: "Strawberry front",
         },
       },
       {
-        name: "Matcha",
+        name: "Flavor: Matcha",
         sku: "POCKY-MATCHA",
         costPrice: 130,
         sellingPrice: 190,
@@ -233,6 +315,12 @@ describe("product-command.mapper", () => {
           quantity: 7,
         },
         position: 1,
+        selectedOptions: [
+          {
+            variationId: "variation-flavor",
+            optionId: "option-matcha",
+          },
+        ],
         image: {
           path: "products/variants/matcha.png",
           alt: "Matcha front",
@@ -249,10 +337,25 @@ describe("product-command.mapper", () => {
           baseSku: undefined,
           baseCostPrice: undefined,
           baseSellingPrice: undefined,
+          baseStock: undefined,
+          variations: [
+            {
+              id: "variation-flavor",
+              name: "Flavor",
+              position: 0,
+              options: [
+                {
+                  id: "option-strawberry",
+                  value: "Strawberry",
+                  position: 0,
+                },
+              ],
+            },
+          ],
           variants: [
             {
               clientKey: "variant-strawberry",
-              name: "Strawberry",
+              name: "ignored",
               sku: "POCKY-STRAWBERRY",
               costPrice: 120,
               sellingPrice: 180,
@@ -260,6 +363,12 @@ describe("product-command.mapper", () => {
                 quantity: 5,
               },
               position: 0,
+              selectedOptions: [
+                {
+                  variationId: "variation-flavor",
+                  optionId: "option-strawberry",
+                },
+              ],
               image: {
                 file: createFile("variant-1.png"),
                 alt: "Variant front",
@@ -279,7 +388,7 @@ describe("product-command.mapper", () => {
     ).toThrow("Variant images are required for every variant.");
   });
 
-  it("hydrates update form input with shared warehouse and stock quantities", () => {
+  it("hydrates update form input with explicit variation relations", () => {
     const product = {
       id: "product_123",
       name: "Pocky",
@@ -290,6 +399,9 @@ describe("product-command.mapper", () => {
       hasVariation: true,
       createdAt: new Date(),
       updatedAt: new Date(),
+      sellMode: "IN_STOCK",
+      preorderReleaseAt: null,
+      isArchived: false,
       productImages: [
         {
           id: "image_1",
@@ -300,23 +412,70 @@ describe("product-command.mapper", () => {
           isCover: false,
         },
       ],
+      variations: [
+        {
+          id: "variation-color-db",
+          productId: "product_123",
+          name: "Color",
+          position: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          options: [
+            {
+              id: "option-red-db",
+              variationId: "variation-color-db",
+              value: "Red",
+              position: 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
       variants: [
         {
           id: "variant_1",
           productId: "product_123",
-          sku: "POCKY-STRAWBERRY",
+          sku: "POCKY-RED",
           createdAt: new Date(),
           updatedAt: new Date(),
-          name: "Flavor: Strawberry",
+          name: "Color: Red",
           costPrice: 120,
           sellingPrice: 180,
           position: 0,
+          isArchived: false,
+          allowFullPayment: true,
+          allowDeposit: false,
+          depositPrice: null,
           image: {
             id: "variant_image_1",
             variantId: "variant_1",
-            path: "products/variants/strawberry.png",
-            alt: "Strawberry front",
+            path: "products/variants/red.png",
+            alt: "Red front",
           },
+          variationOptions: [
+            {
+              productVariantId: "variant_1",
+              variationId: "variation-color-db",
+              variationOptionId: "option-red-db",
+              variation: {
+                id: "variation-color-db",
+                productId: "product_123",
+                name: "Color",
+                position: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              variationOption: {
+                id: "option-red-db",
+                variationId: "variation-color-db",
+                value: "Red",
+                position: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            },
+          ],
           stocks: [
             {
               id: "stock_1",
@@ -345,21 +504,41 @@ describe("product-command.mapper", () => {
       baseCostPrice: undefined,
       baseSellingPrice: undefined,
       baseStock: undefined,
+      variations: [
+        {
+          id: "variation-color-db",
+          name: "Color",
+          position: 0,
+          options: [
+            {
+              id: "option-red-db",
+              value: "Red",
+              position: 0,
+            },
+          ],
+        },
+      ],
       variants: [
         {
           id: "variant_1",
-          name: "Flavor: Strawberry",
-          sku: "POCKY-STRAWBERRY",
+          name: "Color: Red",
+          sku: "POCKY-RED",
           costPrice: 120,
           sellingPrice: 180,
           stock: {
             quantity: 5,
           },
           position: 0,
+          selectedOptions: [
+            {
+              variationId: "variation-color-db",
+              optionId: "option-red-db",
+            },
+          ],
           newImage: undefined,
           existImage: {
-            path: "products/variants/strawberry.png",
-            alt: "Strawberry front",
+            path: "products/variants/red.png",
+            alt: "Red front",
           },
         },
       ],
@@ -369,6 +548,82 @@ describe("product-command.mapper", () => {
           path: "products/main.png",
           alt: "Front angle",
           position: 0,
+        },
+      ],
+    });
+  });
+
+  it("keeps legacy variation products editable by leaving explicit variations empty when relations do not exist", () => {
+    const product = {
+      id: "product_legacy",
+      name: "Pocky",
+      description: "Chocolate biscuit sticks",
+      supplierCountry: SupplierCountry.JAPAN,
+      franchiseId: null,
+      isPublished: false,
+      hasVariation: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sellMode: "IN_STOCK",
+      preorderReleaseAt: null,
+      isArchived: false,
+      productImages: [
+        {
+          id: "image_1",
+          productId: "product_legacy",
+          path: "products/main.png",
+          alt: "Front angle",
+          position: 0,
+          isCover: false,
+        },
+      ],
+      variations: [],
+      variants: [
+        {
+          id: "variant_1",
+          productId: "product_legacy",
+          sku: "POCKY-STRAWBERRY",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          name: "Flavor: Strawberry",
+          costPrice: 120,
+          sellingPrice: 180,
+          position: 0,
+          isArchived: false,
+          allowFullPayment: true,
+          allowDeposit: false,
+          depositPrice: null,
+          image: {
+            id: "variant_image_1",
+            variantId: "variant_1",
+            path: "products/variants/strawberry.png",
+            alt: "Strawberry front",
+          },
+          variationOptions: [],
+          stocks: [
+            {
+              id: "stock_1",
+              variantId: "variant_1",
+              warehouseId: "ckwarehouse1234567890abcde1",
+              quantity: 5,
+              warehouse: {
+                id: "ckwarehouse1234567890abcde1",
+                name: "Main Warehouse",
+              },
+            },
+          ],
+        },
+      ],
+    } as ProductWithRelations;
+
+    expect(toUpdateProductCommandInput(product)).toMatchObject({
+      hasVariation: true,
+      variations: [],
+      variants: [
+        {
+          id: "variant_1",
+          name: "Flavor: Strawberry",
+          selectedOptions: [],
         },
       ],
     });

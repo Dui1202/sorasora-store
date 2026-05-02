@@ -1,6 +1,11 @@
 import { Prisma, SupplierCountry } from "@/app/generated/prisma/browser";
 
 import { z } from "zod";
+import {
+  productVariationBaseSchema,
+  productVariationOptionBaseSchema,
+  variationSelectionSchema,
+} from "./variation-contract";
 
 export const supplierCountrySchema = z.enum(SupplierCountry);
 export const stockBaseSchema = z.object({
@@ -29,6 +34,7 @@ export const productVariantBaseSchema = z.object({
   stock: stockBaseSchema,
   position: z.coerce.number().int().min(0).default(0),
   image: productVariantImageBaseSchema,
+  selectedOptions: z.array(variationSelectionSchema).default([]),
 });
 
 //Product base validation schema (shared properties)
@@ -40,6 +46,7 @@ export const productBaseSchema = z.object({
   warehouseId: z.cuid("Invalid warehouse Id"),
   isPublished: z.boolean().default(false),
   hasVariation: z.boolean().default(false),
+  variations: z.array(productVariationBaseSchema).default([]),
   variants: z.array(productVariantBaseSchema).min(1),
   productImages: z
     .array(productImageBaseSchema)
@@ -47,12 +54,27 @@ export const productBaseSchema = z.object({
 });
 
 export type ProductImage = z.infer<typeof productImageBaseSchema>;
+export type ProductVariation = z.infer<typeof productVariationBaseSchema>;
+export type ProductVariationOption = z.infer<
+  typeof productVariationOptionBaseSchema
+>;
 export type ProductVariantImage = z.infer<typeof productVariantImageBaseSchema>;
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
+    variations: {
+      include: {
+        options: true;
+      };
+    };
     variants: {
       include: {
         image: true;
+        variationOptions: {
+          include: {
+            variation: true;
+            variationOption: true;
+          };
+        };
         stocks: {
           include: {
             warehouse: true;
