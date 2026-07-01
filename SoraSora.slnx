@@ -2,6 +2,8 @@
   <Folder Name="/backend/">
     <Project Path="backend/SoraSora.Api/SoraSora.Api.csproj" />
     <Project Path="backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj" />
+    <Project Path="backend/SoraSora.Modules.Inventory/SoraSora.Modules.Inventory.csproj" />
     <Project Path="backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj" />
+    <Project Path="backend/SoraSora.Shared/SoraSora.Shared.csproj" />
   </Folder>
 </Solution>

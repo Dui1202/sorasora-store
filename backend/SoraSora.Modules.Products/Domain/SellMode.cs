@@ -1,7 +1,8 @@
-namespace SoraSora.Modules.Products.Domain;
-
-public enum SellMode
+namespace SoraSora.Modules.Products.Domain
 {
-    IN_STOCK,
-    PREORDER,
+    public enum SellMode
+    {
+        IN_STOCK,
+        PREORDER,
+    }
 }

@@ -1,7 +1,9 @@
-namespace SoraSora.Modules.Products.Domain;
-
-public enum SupplierCountry
+namespace SoraSora.Modules.Products.Domain
 {
-    CHINA,
-    JAPAN,
+    public enum SupplierCountry
+    {
+        NONE,
+        CHINA,
+        JAPAN,
+    }
 }

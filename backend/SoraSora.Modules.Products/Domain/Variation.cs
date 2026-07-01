@@ -1,10 +1,19 @@
-namespace SoraSora.Modules.Products.Domain;
+using SoraSora.Shared.Interface;
 
-public sealed class Variation
+namespace SoraSora.Modules.Products.Domain
 {
-    public string Id { get; set; } = null!;
+    public sealed class Variation : IAuditable
+    {
+        public required string Id { get; set; } = null!;
 
-    public string ProductId { get; set; } = null!;
+        public required string ProductId { get; set; }
 
-    public Product Product { get; set; } = null!;
+        public required Product Product { get; set; }
+        public required string Name { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset UpdatedAt { get; set; }
+        public required int Position { get; set; }
+        public required ICollection<VariationOption> VariationOptions { get; set; } = [];
+        public required ICollection<ProductVariantOption> ProductVariantOptions { get; set; } = [];
+    }
 }

@@ -1,17 +1,17 @@
-namespace SoraSora.Modules.Products.Domain;
-
-public sealed class ProductImage
+namespace SoraSora.Modules.Products.Domain
 {
-    public string Id { get; set; } = null!;
+    public sealed class ProductImage
+    {
+        public required string Id { get; set; }
 
-    public string ProductId { get; set; } = null!;
+        public required string ProductId { get; set; }
 
-    public Product Product { get; set; } = null!;
+        public required string Path { get; set; }
 
-    public string? Alt { get; set; }
+        public required Product Product { get; set; }
 
-    public int Position { get; set; } = 0;
+        public string? Alt { get; set; }
 
-    public Boolean IsCover { get; set; } = false;
-
+        public required int Position { get; set; } = 0;
+    }
 }
