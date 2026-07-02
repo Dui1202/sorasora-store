@@ -22,12 +22,6 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.Property(x => x.ProductVariantId).IsRequired();
             builder.Property(x => x.Path).IsRequired();
             builder.Property(x => x.Alt).IsRequired(false);
-
-            builder
-                .HasOne(x => x.ProductVariant)
-                .WithOne(x => x.Image)
-                .HasForeignKey<ProductVariantImage>(x => x.ProductVariantId)
-                .IsRequired();
         }
     }
 }

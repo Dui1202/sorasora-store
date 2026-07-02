@@ -8,7 +8,6 @@ namespace SoraSora.Modules.Products.Contracts.Requests.Create
         public int CostPrice { get; init; }
         public int SellingPrice { get; init; }
         public int Position { get; init; }
-        public CreateProductVariantImageRequest? Image { get; init; }
         public IReadOnlyList<CreateProductVariantSelectedOptionRequest> SelectedOptions { get; init; } =
         [];
     }

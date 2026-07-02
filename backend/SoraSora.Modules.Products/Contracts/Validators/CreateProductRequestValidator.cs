@@ -1,9 +1,9 @@
 using FluentValidation;
-using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Contracts.Requests.Create;
 
 namespace SoraSora.Modules.Products.Contracts.Validators
 {
-    public class CreateProductRequestValidator : AbstractValidator<Product>
+    public class CreateProductRequestValidator : AbstractValidator<CreateProductRequest>
     {
         public CreateProductRequestValidator()
         {

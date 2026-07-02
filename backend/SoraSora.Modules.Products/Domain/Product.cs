@@ -9,14 +9,11 @@ namespace SoraSora.Modules.Products.Domain
         public string? Description { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
-        public string? FranchiseId { get; set; }
         public SupplierCountry SupplierCountry { get; set; }
         public SellMode SellMode { get; set; }
         public DateTime? PreorderReleaseAt { get; set; }
-        public Franchise? Franchise { get; set; }
         public ICollection<ProductVariant> ProductVariants { get; set; } = [];
         public ICollection<Variation> Variations { get; set; } = [];
-        public ICollection<ProductImage> ProductImages { get; set; } = [];
         public bool IsPublished { get; set; }
         public bool HasVariation { get; set; }
         public bool IsArchived { get; set; }

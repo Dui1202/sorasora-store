@@ -13,9 +13,7 @@ namespace SoraSora.Modules.Products.Domain
         public required int CostPrice { get; set; }
         public required int SellingPrice { get; set; }
         public required Product Product { get; set; }
-        public required ProductVariantImage Image { get; set; }
         public required int Position { get; set; } = 0;
-        public ICollection<ProductVariantOption> ProductVariantOptions { get; set; } = [];
         public required bool IsArchived { get; set; } = false;
         public required bool IsFullPaymentAllowed { get; set; } = true;
         public required bool IsDepositRequired { get; set; } = false;

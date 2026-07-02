@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Configurations;
@@ -18,7 +17,7 @@ namespace SoraSora.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            ModelBuilderExtension.ApplyAuditConfiguration(modelBuilder);
+            modelBuilder.ApplyAuditConfiguration();
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoraSoraDbContext).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductConfiguration).Assembly);
         }

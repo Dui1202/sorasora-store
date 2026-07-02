@@ -19,7 +19,6 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
 
             builder.Property(x => x.Name).IsRequired();
             builder.Property(x => x.Description).IsRequired(false);
-            builder.Property(x => x.FranchiseId).IsRequired(false);
             builder
                 .Property(x => x.SupplierCountry)
                 .HasConversion<string>()
@@ -30,14 +29,8 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.Property(x => x.HasVariation).HasDefaultValue(false);
             builder.Property(x => x.IsArchived).HasDefaultValue(false);
 
-            builder
-                .HasOne(x => x.Franchise)
-                .WithMany(x => x.Products)
-                .HasForeignKey(x => x.FranchiseId)
-                .IsRequired(false);
             builder.HasMany(x => x.ProductVariants).WithOne(x => x.Product);
             builder.HasMany(x => x.Variations).WithOne(x => x.Product);
-            builder.HasMany(x => x.ProductImages).WithOne(x => x.Product);
         }
     }
 }

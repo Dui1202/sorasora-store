@@ -1,7 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>7329d247-98da-4817-8b1e-6ac7ad68620b</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
+    <ProjectReference Include="..\SoraSora.Modules.Products\SoraSora.Modules.Products.csproj" />
+  </ItemGroup>
 </Project>

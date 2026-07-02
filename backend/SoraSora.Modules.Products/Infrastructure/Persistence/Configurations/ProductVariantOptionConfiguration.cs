@@ -29,12 +29,6 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
                 .WithMany(x => x.ProductVariantOptions)
                 .HasForeignKey(x => new { x.VariationOptionId, x.VariationId })
                 .HasPrincipalKey(x => new { x.Id, x.VariationId });
-
-            builder
-                .HasOne(x => x.ProductVariant)
-                .WithMany(x => x.ProductVariantOptions)
-                .HasForeignKey(x => x.ProductVariantId)
-                .IsRequired();
         }
     }
 }
