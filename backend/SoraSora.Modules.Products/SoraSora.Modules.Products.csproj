@@ -16,4 +16,8 @@
     <ProjectReference Include="..\SoraSora.Shared\SoraSora.Shared.csproj" />
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>
