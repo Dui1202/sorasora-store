@@ -1,25 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Persistence.Extensions;
-using SoraSora.Modules.Products.Domain;
-using SoraSora.Modules.Products.Infrastructure.Persistence.Configurations;
+using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Shared.Interface;
 
 namespace SoraSora.Infrastructure.Persistence
 {
-    public sealed class SoraSoraDbContext(DbContextOptions<SoraSoraDbContext> options)
-        : DbContext(options)
+    public sealed class SoraSoraDbContext(
+        DbContextOptions<SoraSoraDbContext> options,
+        IEnumerable<IModelBuilderContributor> modelBuilderContributors
+    ) : DbContext(options)
     {
-        public DbSet<Product> Products => Set<Product>();
-        public DbSet<Franchise> Franchises => Set<Franchise>();
-        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
-        public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
-        public DbSet<Variation> Variations => Set<Variation>();
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyAuditConfiguration();
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoraSoraDbContext).Assembly);
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductConfiguration).Assembly);
+            foreach (var contributor in modelBuilderContributors)
+            {
+                contributor.Configure(modelBuilder);
+            }
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

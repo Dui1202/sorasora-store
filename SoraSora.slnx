@@ -6,4 +6,7 @@
     <Project Path="backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj" />
     <Project Path="backend/SoraSora.Shared/SoraSora.Shared.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UnitTests/UnitTests.csproj" />
+  </Folder>
 </Solution>

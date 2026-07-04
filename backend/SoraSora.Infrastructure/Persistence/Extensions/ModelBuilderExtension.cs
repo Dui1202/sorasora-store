@@ -7,14 +7,23 @@ namespace SoraSora.Infrastructure.Persistence.Extensions
     {
         public static void ApplyAuditConfiguration(this ModelBuilder modelBuilder)
         {
-            modelBuilder
-                .Entity<IAuditable>()
-                .Property(e => e.CreatedAt)
-                .HasDefaultValueSql("NOW()");
-            modelBuilder
-                .Entity<IAuditable>()
-                .Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("NOW()");
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (!typeof(IAuditable).IsAssignableFrom(entityType.ClrType))
+                {
+                    continue;
+                }
+
+                modelBuilder
+                    .Entity(entityType.ClrType)
+                    .Property(nameof(IAuditable.CreatedAt))
+                    .HasDefaultValueSql("NOW()");
+
+                modelBuilder
+                    .Entity(entityType.ClrType)
+                    .Property(nameof(IAuditable.UpdatedAt))
+                    .HasDefaultValueSql("NOW()");
+            }
         }
     }
 }

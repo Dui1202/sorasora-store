@@ -9,4 +9,7 @@
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Products\SoraSora.Modules.Products.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
+  </ItemGroup>
 </Project>

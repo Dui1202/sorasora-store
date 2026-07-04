@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Contracts.Validators;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 
 namespace SoraSora.Modules.Products.Application
 {
@@ -33,15 +35,10 @@ namespace SoraSora.Modules.Products.Application
             {
                 Name = command.Name,
                 Description = command.Description,
-                SupplierCountry = command.SupplierCountry,
-                SellMode = command.SellMode,
-                PreorderReleaseAt = command.PreorderReleaseAt,
                 IsPublished = command.IsPublished,
-                HasVariation = command.HasVariation,
-                IsArchived = false,
             };
 
-            _dbContext.Products.Add(product);
+            _dbContext.Products().Add(product);
             await _dbContext.SaveChangesAsync();
 
             return new ProductDto
@@ -53,9 +50,41 @@ namespace SoraSora.Modules.Products.Application
             };
         }
 
-        public Task<ProductDto?> GetProductByIdAsync(string id)
+        public async Task<List<ProductDto>?> GetAllProductsAsync()
         {
-            throw new NotImplementedException();
+            return await _dbContext
+                .Products()
+                .AsNoTracking()
+                .OrderBy(x => x.Name)
+                .Select(product => new ProductDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Description = product.Description,
+                    IsPublished = product.IsPublished,
+                })
+                .ToListAsync();
+        }
+
+        public async Task<ProductDto?> GetProductByIdAsync(string id)
+        {
+            var product = await _dbContext
+                .Products()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (product is null)
+            {
+                return null;
+            }
+
+            return new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                IsPublished = true,
+            };
         }
 
         public Task<ProductDto> UpdateProductAsync(UpdateProductRequest command)

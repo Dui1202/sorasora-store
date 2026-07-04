@@ -9,5 +9,6 @@ namespace SoraSora.Modules.Products.Application
         Task<ProductDto> CreateProductAsync(CreateProductRequest command);
         Task<ProductDto> UpdateProductAsync(UpdateProductRequest command);
         Task<ProductDto?> GetProductByIdAsync(string id);
+        Task<List<ProductDto>?> GetAllProductsAsync();
     }
 }
