@@ -5,14 +5,9 @@ namespace SoraSora.Modules.Products.Application.Controllers
 {
     [ApiController]
     [Route("api/products")]
-    public class ProductsController : ControllerBase
+    public class ProductsController(IProductService productService) : ControllerBase
     {
-        private readonly IProductService _productService;
-
-        public ProductsController(IProductService productService)
-        {
-            _productService = productService;
-        }
+        private readonly IProductService _productService = productService;
 
         [HttpPost]
         public async Task<IActionResult> Create(CreateProductRequest request)

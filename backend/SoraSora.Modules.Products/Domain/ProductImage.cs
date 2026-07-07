@@ -1,17 +1,29 @@
+using Amazon.S3.Model;
+
 namespace SoraSora.Modules.Products.Domain
 {
     public sealed class ProductImage
     {
-        public required string Id { get; set; }
+        public string Id { get; private set; } = null!;
+        public string ProductId { get; private set; } = null!;
+        public string Path { get; private set; } = null!;
+        public Product Product { get; private set; } = null!;
+        public string? Alt { get; private set; }
+        public int Position { get; private set; } = 0;
 
-        public required string ProductId { get; set; }
+        internal static ProductImage Create(string path, string? alt, int position)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException("Image path is required!", nameof(path));
+            }
 
-        public required string Path { get; set; }
-
-        public required Product Product { get; set; }
-
-        public string? Alt { get; set; }
-
-        public required int Position { get; set; } = 0;
+            return new ProductImage
+            {
+                Path = path,
+                Alt = alt,
+                Position = position,
+            };
+        }
     }
 }

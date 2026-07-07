@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
@@ -9,20 +10,22 @@ using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 
 namespace SoraSora.Modules.Products.Application
 {
-    public sealed class ProductService : IProductService
+    public sealed class ProductService(
+        SoraSoraDbContext dbContext,
+        IFileStorageService fileStorageService
+    ) : IProductService
     {
-        private readonly SoraSoraDbContext _dbContext;
-
-        public ProductService(SoraSoraDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
+        private readonly SoraSoraDbContext _dbContext = dbContext;
+        private readonly IFileStorageService _fileStorageService = fileStorageService;
 
         public async Task<ProductDto> CreateProductAsync(CreateProductRequest command)
         {
             var validator = new CreateProductRequestValidator();
+
+            //Validate request
             var result = validator.Validate(command);
 
+            //Request not valid
             if (!result.IsValid)
             {
                 throw new Exception(
@@ -31,12 +34,15 @@ namespace SoraSora.Modules.Products.Application
                 );
             }
 
-            var product = new Product
-            {
-                Name = command.Name,
-                Description = command.Description,
-                IsPublished = command.IsPublished,
-            };
+            //Request is valid, create product
+            var product = Product.Create(
+                name: command.Name,
+                description: command.Description,
+                supplierCountry: command.SupplierCountry,
+                isPublished: command.IsPublished
+            );
+
+            foreach (var imageRequest in command.ProductImages) { }
 
             _dbContext.Products().Add(product);
             await _dbContext.SaveChangesAsync();
