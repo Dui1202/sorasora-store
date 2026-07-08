@@ -1,5 +1,9 @@
+using System.Runtime.CompilerServices;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Modules.Products.Contracts.Validators;
+using SoraSora.Modules.Products.Mappers;
 
 namespace SoraSora.Modules.Products.Application.Controllers
 {
@@ -10,9 +14,21 @@ namespace SoraSora.Modules.Products.Application.Controllers
         private readonly IProductService _productService = productService;
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateProductRequest request)
+        public async Task<IActionResult> Create(
+            [FromForm] CreateProductRequest request,
+            [FromServices] IValidator<CreateProductRequest> validator,
+            CancellationToken cancellationToken
+        )
         {
-            var product = await _productService.CreateProductAsync(request);
+            var validationResult = await validator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                return ValidationProblem(
+                    new ValidationProblemDetails(validationResult.ToDictionary())
+                );
+            }
+            var command = CreateProductDtoMapper.ToCreateProductCommand(request);
+            var product = await _productService.CreateProductAsync(command, cancellationToken);
 
             return Created($"/api/products/{product.Id}", product);
         }

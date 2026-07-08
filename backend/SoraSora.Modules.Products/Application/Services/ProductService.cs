@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence;
+using SoraSora.Modules.Products.Contracts.Commands;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Contracts.Validators;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
+using SoraSora.Modules.Products.Infrastructure.Storage;
 
-namespace SoraSora.Modules.Products.Application
+namespace SoraSora.Modules.Products.Application.Services
 {
     public sealed class ProductService(
         SoraSoraDbContext dbContext,
@@ -18,22 +20,11 @@ namespace SoraSora.Modules.Products.Application
         private readonly SoraSoraDbContext _dbContext = dbContext;
         private readonly IFileStorageService _fileStorageService = fileStorageService;
 
-        public async Task<ProductDto> CreateProductAsync(CreateProductRequest command)
+        public async Task<ProductDto> CreateProductAsync(
+            CreateProductCommand command,
+            CancellationToken cancellationToken
+        )
         {
-            var validator = new CreateProductRequestValidator();
-
-            //Validate request
-            var result = validator.Validate(command);
-
-            //Request not valid
-            if (!result.IsValid)
-            {
-                throw new Exception(
-                    "Validation failed: "
-                        + string.Join(", ", result.Errors.Select(e => e.ErrorMessage))
-                );
-            }
-
             //Request is valid, create product
             var product = Product.Create(
                 name: command.Name,
@@ -42,10 +33,27 @@ namespace SoraSora.Modules.Products.Application
                 isPublished: command.IsPublished
             );
 
-            foreach (var imageRequest in command.ProductImages) { }
+            foreach (var imageRequest in command.ProductImages)
+            {
+                var file = imageRequest.File;
+                var path = ProductImagePathBuilder.BuildProductImagePath(
+                    productId: product.Id,
+                    fileName: imageRequest.File.FileName
+                );
+                var alt = imageRequest.Alt;
+                var position = imageRequest.Position;
+
+                await _fileStorageService.UploadFileAsync(
+                    file: imageRequest.File,
+                    path,
+                    cancellationToken
+                );
+
+                product.AddImage(path, alt, position);
+            }
 
             _dbContext.Products().Add(product);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return new ProductDto
             {

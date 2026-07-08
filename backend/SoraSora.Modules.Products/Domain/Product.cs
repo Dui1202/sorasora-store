@@ -1,3 +1,5 @@
+using NUlid;
+using SoraSora.Shared.Helper;
 using SoraSora.Shared.Interface;
 
 namespace SoraSora.Modules.Products.Domain
@@ -6,7 +8,7 @@ namespace SoraSora.Modules.Products.Domain
     {
         private readonly List<ProductImage> _productImages = [];
         public IReadOnlyCollection<ProductImage> ProductImages => _productImages;
-        public string Id { get; private set; } = null!;
+        public string Id { get; private set; } = Ulid.NewUlid().ToString();
         public string Name { get; private set; } = null!;
         public string? Description { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
@@ -47,6 +49,11 @@ namespace SoraSora.Modules.Products.Domain
         public void AddImage(string path, string? alt, int position)
         {
             _productImages.Add(ProductImage.Create(path, alt, position));
+        }
+
+        public void AddImage(ProductImage productImage)
+        {
+            _productImages.Add(productImage);
         }
     }
 }

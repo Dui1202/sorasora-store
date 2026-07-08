@@ -12,10 +12,7 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.ToTable("Product");
 
             builder.HasKey(x => x.Id);
-            builder
-                .Property(x => x.Id)
-                .ValueGeneratedOnAdd()
-                .HasValueGenerator<UlidStringValueGenerator>();
+            builder.Property(x => x.Id).ValueGeneratedNever();
 
             builder.Property(x => x.Name).IsRequired();
             builder.Property(x => x.Description).IsRequired(false);
