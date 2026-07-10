@@ -1,12 +1,15 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using SoraSora.Infrastructure.Abstractions;
 
 namespace SoraSora.Infrastructure.Storage
 {
-    public class SupabaseFileStorageService(IAmazonS3 s3Client, SupabaseStorageOptions options)
-        : IFileStorageService
+    public class SupabaseFileStorageService(
+        IAmazonS3 s3Client,
+        IOptions<SupabaseStorageOptions> options
+    ) : IFileStorageService
     {
         private const long MaxImageSize = 5 * 1024 * 1024;
         private static readonly HashSet<string> AllowedImageContentTypes =
@@ -17,7 +20,7 @@ namespace SoraSora.Infrastructure.Storage
         ];
 
         private readonly IAmazonS3 _s3Client = s3Client;
-        private readonly SupabaseStorageOptions _options = options;
+        private readonly SupabaseStorageOptions _options = options.Value;
 
         public async Task<string> UploadFileAsync(
             IFormFile file,

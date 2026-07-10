@@ -1,10 +1,11 @@
 using Amazon.S3.Model;
+using NUlid;
 
 namespace SoraSora.Modules.Products.Domain
 {
     public sealed class ProductImage
     {
-        public string Id { get; private set; } = null!;
+        public string Id { get; private set; } = Ulid.NewUlid().ToString();
         public string ProductId { get; private set; } = null!;
         public string Path { get; private set; } = null!;
         public Product Product { get; private set; } = null!;

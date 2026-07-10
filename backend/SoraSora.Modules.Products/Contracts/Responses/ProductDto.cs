@@ -1,3 +1,5 @@
+using SoraSora.Modules.Products.Domain;
+
 namespace SoraSora.Modules.Products.Contracts.Responses
 {
     public sealed record ProductDto
@@ -6,5 +8,7 @@ namespace SoraSora.Modules.Products.Contracts.Responses
         public required string Name { get; init; }
         public string? Description { get; init; }
         public bool IsPublished { get; init; }
+        public SupplierCountry SupplierCountry { get; init; }
+        public bool IsArchived { get; init; }
     }
 }

@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Products.Contracts.Commands;
-using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
-using SoraSora.Modules.Products.Contracts.Validators;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Infrastructure.Storage;
@@ -14,54 +13,83 @@ namespace SoraSora.Modules.Products.Application.Services
 {
     public sealed class ProductService(
         SoraSoraDbContext dbContext,
-        IFileStorageService fileStorageService
+        IFileStorageService fileStorageService,
+        ILogger<ProductService> logger
     ) : IProductService
     {
         private readonly SoraSoraDbContext _dbContext = dbContext;
         private readonly IFileStorageService _fileStorageService = fileStorageService;
+        private readonly ILogger<ProductService> _logger = logger;
 
         public async Task<ProductDto> CreateProductAsync(
             CreateProductCommand command,
             CancellationToken cancellationToken
         )
         {
-            //Request is valid, create product
-            var product = Product.Create(
-                name: command.Name,
-                description: command.Description,
-                supplierCountry: command.SupplierCountry,
-                isPublished: command.IsPublished
-            );
+            var uploadedProductImagePaths = new List<string>();
 
-            foreach (var imageRequest in command.ProductImages)
+            try
             {
-                var file = imageRequest.File;
-                var path = ProductImagePathBuilder.BuildProductImagePath(
-                    productId: product.Id,
-                    fileName: imageRequest.File.FileName
-                );
-                var alt = imageRequest.Alt;
-                var position = imageRequest.Position;
-
-                await _fileStorageService.UploadFileAsync(
-                    file: imageRequest.File,
-                    path,
-                    cancellationToken
+                var product = Product.Create(
+                    name: command.Name,
+                    description: command.Description,
+                    supplierCountry: command.SupplierCountry,
+                    isPublished: command.IsPublished
                 );
 
-                product.AddImage(path, alt, position);
+                foreach (var imageRequest in command.ProductImages)
+                {
+                    var file = imageRequest.File;
+                    var path = ProductImagePathBuilder.BuildProductImagePath(
+                        productId: product.Id,
+                        fileName: file.FileName
+                    );
+                    var alt = imageRequest.Alt;
+                    var position = imageRequest.Position;
+
+                    uploadedProductImagePaths.Add(path);
+                    await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
+
+                    product.AddImage(path, alt, position);
+                }
+
+                _dbContext.Products().Add(product);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Created product {ProductName} - {ProductId}!",
+                    product.Name,
+                    product.Id
+                );
+
+                return new ProductDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Description = product.Description,
+                    IsPublished = product.IsPublished,
+                };
             }
-
-            _dbContext.Products().Add(product);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            return new ProductDto
+            catch
             {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                IsPublished = product.IsPublished,
-            };
+                foreach (var path in uploadedProductImagePaths)
+                {
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(path, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "Failed to delete uploaded product image {ImagePath} during cleanup",
+                            path
+                        );
+                    }
+                }
+
+                throw;
+            }
         }
 
         public async Task<List<ProductDto>?> GetAllProductsAsync()
