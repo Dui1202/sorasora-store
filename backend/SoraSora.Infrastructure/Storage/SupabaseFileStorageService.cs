@@ -11,14 +11,6 @@ namespace SoraSora.Infrastructure.Storage
         IOptions<SupabaseStorageOptions> options
     ) : IFileStorageService
     {
-        private const long MaxImageSize = 5 * 1024 * 1024;
-        private static readonly HashSet<string> AllowedImageContentTypes =
-        [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-        ];
-
         private readonly IAmazonS3 _s3Client = s3Client;
         private readonly SupabaseStorageOptions _options = options.Value;
 
@@ -28,7 +20,6 @@ namespace SoraSora.Infrastructure.Storage
             CancellationToken cancellationToken = default
         )
         {
-            ValidateImage(file);
             await using var stream = file.OpenReadStream();
 
             var request = new PutObjectRequest
@@ -50,24 +41,6 @@ namespace SoraSora.Infrastructure.Storage
             var request = new DeleteObjectRequest { BucketName = _options.Bucket, Key = path };
 
             await _s3Client.DeleteObjectAsync(request, cancellationToken);
-        }
-
-        private static void ValidateImage(IFormFile file)
-        {
-            if (file.Length == 0)
-            {
-                throw new ArgumentException("Image file is empty.");
-            }
-
-            if (file.Length > MaxImageSize)
-            {
-                throw new ArgumentException("Image size must be smaller than 5MB.");
-            }
-
-            if (!AllowedImageContentTypes.Contains(file.ContentType))
-            {
-                throw new ArgumentException("Only jpeg, png and webq images are allowed.");
-            }
         }
     }
 }

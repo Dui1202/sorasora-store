@@ -7,12 +7,12 @@ namespace SoraSora.Modules.Products.Application
 {
     public interface IProductService
     {
-        Task<ProductDto> CreateProductAsync(
+        Task<ProductResponse> CreateProductAsync(
             CreateProductCommand command,
             CancellationToken cancellationToken
         );
-        Task<ProductDto> UpdateProductAsync(UpdateProductRequest command);
-        Task<ProductDto?> GetProductByIdAsync(string id);
-        Task<List<ProductDto>?> GetAllProductsAsync();
+        Task<ProductResponse> UpdateProductAsync(UpdateProductRequest command);
+        Task<ProductResponse?> GetProductByIdAsync(string id);
+        Task<List<ProductResponse>?> GetAllProductsAsync();
     }
 }

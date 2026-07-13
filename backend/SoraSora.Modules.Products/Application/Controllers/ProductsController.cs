@@ -1,8 +1,6 @@
-using System.Runtime.CompilerServices;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
-using SoraSora.Modules.Products.Contracts.Validators;
 using SoraSora.Modules.Products.Mappers;
 
 namespace SoraSora.Modules.Products.Application.Controllers

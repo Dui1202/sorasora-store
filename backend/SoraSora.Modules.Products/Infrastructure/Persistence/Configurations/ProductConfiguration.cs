@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Products.Domain;
-using SoraSora.Shared.Helper;
 
 namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
 {
@@ -14,24 +13,19 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedNever();
 
-            builder.Property(x => x.Name).IsRequired();
-            builder.Property(x => x.Description).IsRequired(false);
+            builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            builder.Property(x => x.Description).HasMaxLength(1000).IsRequired(false);
             builder
                 .Property(x => x.SupplierCountry)
                 .HasConversion<string>()
                 .HasDefaultValue(SupplierCountry.NONE);
             builder.Property(x => x.IsPublished).HasDefaultValue(false);
             builder.Property(x => x.IsArchived).HasDefaultValue(false);
-
-            // builder
-            //     .Property(x => x.SellMode)
-            //     .HasConversion<string>()
-            //     .HasDefaultValue(SellMode.IN_STOCK);
-            // builder.Property(x => x.PreorderReleaseAt).IsRequired(false);
-            // builder.Property(x => x.HasVariation).HasDefaultValue(false);
-
-            // builder.HasMany(x => x.ProductVariants).WithOne(x => x.Product);
-            // builder.HasMany(x => x.Variations).WithOne(x => x.Product);
+            builder
+                .Property(x => x.SellMode)
+                .HasConversion<string>()
+                .HasDefaultValue(SellMode.IN_STOCK);
+            builder.Property(x => x.HasVariation).IsRequired().HasDefaultValue(false);
         }
     }
 }

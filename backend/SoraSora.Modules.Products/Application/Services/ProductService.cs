@@ -8,6 +8,7 @@ using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Infrastructure.Storage;
+using SoraSora.Modules.Products.Mappers;
 
 namespace SoraSora.Modules.Products.Application.Services
 {
@@ -21,7 +22,7 @@ namespace SoraSora.Modules.Products.Application.Services
         private readonly IFileStorageService _fileStorageService = fileStorageService;
         private readonly ILogger<ProductService> _logger = logger;
 
-        public async Task<ProductDto> CreateProductAsync(
+        public async Task<ProductResponse> CreateProductAsync(
             CreateProductCommand command,
             CancellationToken cancellationToken
         )
@@ -62,13 +63,7 @@ namespace SoraSora.Modules.Products.Application.Services
                     product.Id
                 );
 
-                return new ProductDto
-                {
-                    Id = product.Id,
-                    Name = product.Name,
-                    Description = product.Description,
-                    IsPublished = product.IsPublished,
-                };
+                return ProductDtoMapper.ToProductResponse(product);
             }
             catch
             {
@@ -92,23 +87,17 @@ namespace SoraSora.Modules.Products.Application.Services
             }
         }
 
-        public async Task<List<ProductDto>?> GetAllProductsAsync()
+        public async Task<List<ProductResponse>?> GetAllProductsAsync()
         {
             return await _dbContext
                 .Products()
                 .AsNoTracking()
                 .OrderBy(x => x.Name)
-                .Select(product => new ProductDto
-                {
-                    Id = product.Id,
-                    Name = product.Name,
-                    Description = product.Description,
-                    IsPublished = product.IsPublished,
-                })
+                .Select(product => ProductDtoMapper.ToProductResponse(product))
                 .ToListAsync();
         }
 
-        public async Task<ProductDto?> GetProductByIdAsync(string id)
+        public async Task<ProductResponse?> GetProductByIdAsync(string id)
         {
             var product = await _dbContext
                 .Products()
@@ -120,16 +109,10 @@ namespace SoraSora.Modules.Products.Application.Services
                 return null;
             }
 
-            return new ProductDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                IsPublished = true,
-            };
+            return ProductDtoMapper.ToProductResponse(product);
         }
 
-        public Task<ProductDto> UpdateProductAsync(UpdateProductRequest command)
+        public Task<ProductResponse> UpdateProductAsync(UpdateProductRequest command)
         {
             throw new NotImplementedException();
         }

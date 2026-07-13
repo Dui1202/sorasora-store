@@ -16,5 +16,6 @@ namespace SoraSora.Modules.Products.Contracts.Requests.Create
         public required string BaseSku { get; init; }
         public int BaseCostPrice { get; init; }
         public int BaseSellingPrice { get; init; }
+        public required IReadOnlyCollection<CreateProductVariantRequest> ProductVariants { get; init; }
     }
 }

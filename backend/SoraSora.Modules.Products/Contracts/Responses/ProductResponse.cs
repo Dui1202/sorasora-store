@@ -2,7 +2,7 @@ using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Contracts.Responses
 {
-    public sealed record ProductDto
+    public sealed record ProductResponse
     {
         public required string Id { get; init; }
         public required string Name { get; init; }

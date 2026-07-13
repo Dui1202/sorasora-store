@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Products.Domain;
-using SoraSora.Shared.Helper;
 
 namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
 {
@@ -14,14 +13,15 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
 
             builder.HasKey(x => x.Id);
 
-            builder
-                .Property(x => x.Id)
-                .HasValueGenerator<UlidStringValueGenerator>()
-                .ValueGeneratedOnAdd();
+            builder.Property(x => x.Id).ValueGeneratedNever();
 
             builder.Property(x => x.ProductVariantId).IsRequired();
-            builder.Property(x => x.Path).IsRequired();
-            builder.Property(x => x.Alt).IsRequired(false);
+            builder.Property(x => x.Path).HasMaxLength(1024).IsRequired();
+            builder.Property(x => x.Alt).HasMaxLength(255).IsRequired(false);
+            builder
+                .HasOne(x => x.ProductVariant)
+                .WithOne(x => x.ProductVariantImage)
+                .HasForeignKey<ProductVariantImage>(x => x.ProductVariantId);
         }
     }
 }

@@ -8,8 +8,8 @@ namespace SoraSora.Modules.Products.Domain
         public required string VariationId { get; set; }
         public required string Value { get; set; }
         public required int Position { get; set; } = 0;
-        public required DateTimeOffset CreatedAt { get; set; }
-        public required DateTimeOffset UpdatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset UpdatedAt { get; private set; }
         public required Variation Variation { get; set; }
     }
 }

@@ -27,11 +27,11 @@ namespace SoraSora.Infrastructure.Persistence
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedAt = DateTime.UtcNow;
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Property(x => x.CreatedAt).CurrentValue = DateTimeOffset.UtcNow;
+                        entry.Property(x => x.UpdatedAt).CurrentValue = DateTimeOffset.UtcNow;
                         break;
                     case EntityState.Modified:
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Property(x => x.UpdatedAt).CurrentValue = DateTimeOffset.UtcNow;
                         break;
                 }
             }

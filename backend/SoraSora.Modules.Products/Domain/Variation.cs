@@ -4,15 +4,15 @@ namespace SoraSora.Modules.Products.Domain
 {
     public sealed class Variation : IAuditable
     {
-        public required string Id { get; set; } = null!;
+        public string Id { get; private set; } = null!;
 
-        public required string ProductId { get; set; }
+        public string ProductId { get; private set; } = null!;
 
-        public required Product Product { get; set; }
-        public required string Name { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset UpdatedAt { get; set; }
-        public required int Position { get; set; }
-        public required ICollection<VariationOption> VariationOptions { get; set; } = [];
+        public Product Product { get; private set; } = null!;
+        public string Name { get; private set; } = null!;
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset UpdatedAt { get; private set; }
+        public int Position { get; private set; }
+        public ICollection<VariationOption> VariationOptions { get; private set; } = [];
     }
 }
