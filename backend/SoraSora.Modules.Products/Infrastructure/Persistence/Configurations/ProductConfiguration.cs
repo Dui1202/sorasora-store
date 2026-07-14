@@ -13,8 +13,11 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedNever();
 
-            builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
-            builder.Property(x => x.Description).HasMaxLength(1000).IsRequired(false);
+            builder.Property(x => x.Name).HasMaxLength(Product.MaxNameLength).IsRequired();
+            builder
+                .Property(x => x.Description)
+                .HasMaxLength(Product.MaxDescriptionLength)
+                .IsRequired(false);
             builder
                 .Property(x => x.SupplierCountry)
                 .HasConversion<string>()

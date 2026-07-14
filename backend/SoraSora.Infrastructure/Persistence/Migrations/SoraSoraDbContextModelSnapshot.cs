@@ -70,8 +70,8 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("FranchiseId")
                         .HasColumnType("text");
@@ -189,10 +189,17 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Sku")
+                        .IsUnique();
 
                     b.HasIndex("ProductId", "Position")
                         .IsUnique();

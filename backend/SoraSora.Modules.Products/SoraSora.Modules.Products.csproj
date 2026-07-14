@@ -12,6 +12,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0-preview.5.26302.115" />
     <PackageReference Include="NUlid" Version="1.7.3" />
     <ProjectReference Include="..\SoraSora.Shared\SoraSora.Shared.csproj" />
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />

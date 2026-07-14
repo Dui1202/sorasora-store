@@ -24,7 +24,8 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedNever();
             builder.Property(x => x.ProductId).IsRequired();
-            builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            builder.Property(x => x.Name).HasMaxLength(ProductVariant.MaxNameLength).IsRequired();
+            builder.Property(x => x.Sku).IsRequired();
             builder.Property(x => x.CostPrice).IsRequired().HasDefaultValue(0);
             builder.Property(x => x.SellingPrice).IsRequired().HasDefaultValue(0);
             builder.Property(x => x.IsArchived).IsRequired().HasDefaultValue(false);
@@ -37,8 +38,7 @@ namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
-            // builder.Property(x => x.Sku).IsRequired();
-            // builder.HasIndex(x => x.Sku).IsUnique();
+            builder.HasIndex(x => x.Sku).IsUnique();
         }
     }
 }

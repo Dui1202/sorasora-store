@@ -6,6 +6,9 @@ namespace SoraSora.Modules.Products.Domain
 {
     public sealed class Product : IAuditable
     {
+        public const int MaxNameLength = 100;
+        public const int MaxDescriptionLength = 2000;
+
         private readonly List<ProductImage> _productImages = [];
         private readonly List<ProductVariant> _productVariants = [];
         public IReadOnlyCollection<ProductImage> ProductImages => _productImages;
@@ -31,12 +34,29 @@ namespace SoraSora.Modules.Products.Domain
             string name,
             string? description,
             SupplierCountry supplierCountry,
-            bool isPublished
+            SellMode sellMode,
+            bool isPublished,
+            bool hasVariation,
+            bool isArchived
         )
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Product name is required!", nameof(name));
+            }
+            if (name.Length > MaxNameLength)
+            {
+                throw new ArgumentException(
+                    $"Product name cannot exceed {MaxNameLength} characters.",
+                    nameof(name)
+                );
+            }
+            if (description?.Length > MaxDescriptionLength)
+            {
+                throw new ArgumentException(
+                    $"Product description cannot exceed {MaxDescriptionLength} characters.",
+                    nameof(description)
+                );
             }
 
             return new Product
@@ -44,18 +64,10 @@ namespace SoraSora.Modules.Products.Domain
                 Name = name,
                 Description = description,
                 SupplierCountry = supplierCountry,
+                SellMode = sellMode,
                 IsPublished = isPublished,
-            };
-        }
-
-        public static Product Create(CreateProductCommand command)
-        {
-            return new Product
-            {
-                Name = command.Name,
-                Description = command.Description,
-                SupplierCountry = command.SupplierCountry,
-                IsPublished = command.IsPublished,
+                HasVariation = hasVariation,
+                IsArchived = isArchived,
             };
         }
 
@@ -69,6 +81,9 @@ namespace SoraSora.Modules.Products.Domain
             _productImages.Add(productImage);
         }
 
-        public void AddProductVariant(ProductVariant productVariant) { }
+        public void AddProductVariant(ProductVariant productVariant)
+        {
+            _productVariants.Add(productVariant);
+        }
     }
 }

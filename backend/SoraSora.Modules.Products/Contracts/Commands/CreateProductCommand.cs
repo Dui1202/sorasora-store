@@ -6,7 +6,11 @@ namespace SoraSora.Modules.Products.Contracts.Commands
         string Name,
         string? Description,
         SupplierCountry SupplierCountry,
+        SellMode SellMode,
         bool IsPublished,
-        IReadOnlyCollection<CreateProductImageCommand> ProductImages
+        bool IsArchived,
+        bool HasVariation,
+        IReadOnlyCollection<CreateProductImageCommand> ProductImages,
+        IReadOnlyCollection<CreateProductVariantCommand> ProductVariants
     );
 }

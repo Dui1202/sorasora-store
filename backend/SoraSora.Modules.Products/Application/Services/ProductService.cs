@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence;
+using SoraSora.Modules.Products.Application.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
@@ -27,16 +28,45 @@ namespace SoraSora.Modules.Products.Application.Services
             CancellationToken cancellationToken
         )
         {
-            var uploadedProductImagePaths = new List<string>();
+            var uploadedImagePaths = new List<string>();
+            var product = Product.Create(
+                name: command.Name,
+                description: command.Description,
+                supplierCountry: command.SupplierCountry,
+                sellMode: command.SellMode,
+                isPublished: command.IsPublished,
+                isArchived: command.IsArchived,
+                hasVariation: command.HasVariation
+            );
 
             try
             {
-                var product = Product.Create(
-                    name: command.Name,
-                    description: command.Description,
-                    supplierCountry: command.SupplierCountry,
-                    isPublished: command.IsPublished
-                );
+                foreach (var productVariantCommand in command.ProductVariants)
+                {
+                    var productVariant = ProductVariant.Create(
+                        name: productVariantCommand.Name,
+                        sku: productVariantCommand.Sku,
+                        costPrice: productVariantCommand.CostPrice,
+                        sellingPrice: productVariantCommand.SellingPrice,
+                        position: productVariantCommand.Position,
+                        isArchived: productVariantCommand.IsArchived
+                    );
+
+                    var file = productVariantCommand.ProductVariantImage.File;
+                    var alt = productVariantCommand.ProductVariantImage.Alt;
+                    var path = ProductImagePathBuilder.BuildProductVariantImagePath(
+                        productId: product.Id,
+                        productVariantId: productVariant.Id,
+                        fileName: file.FileName
+                    );
+
+                    uploadedImagePaths.Add(path);
+                    await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
+
+                    productVariant.SetProductVariantImage(ProductVariantImage.Create(path, alt));
+
+                    product.AddProductVariant(productVariant);
+                }
 
                 foreach (var imageRequest in command.ProductImages)
                 {
@@ -48,26 +78,17 @@ namespace SoraSora.Modules.Products.Application.Services
                     var alt = imageRequest.Alt;
                     var position = imageRequest.Position;
 
-                    uploadedProductImagePaths.Add(path);
+                    uploadedImagePaths.Add(path);
                     await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
 
                     product.AddImage(path, alt, position);
                 }
-
                 _dbContext.Products().Add(product);
                 await _dbContext.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "Created product {ProductName} - {ProductId}!",
-                    product.Name,
-                    product.Id
-                );
-
-                return ProductDtoMapper.ToProductResponse(product);
             }
             catch
             {
-                foreach (var path in uploadedProductImagePaths)
+                foreach (var path in uploadedImagePaths)
                 {
                     try
                     {
@@ -75,16 +96,16 @@ namespace SoraSora.Modules.Products.Application.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(
-                            ex,
-                            "Failed to delete uploaded product image {ImagePath} during cleanup",
-                            path
-                        );
+                        _logger.ProductImageCleanupFailed(ex, path);
                     }
                 }
 
                 throw;
             }
+
+            _logger.ProductCreated(product.Name, product.Id);
+
+            return ProductDtoMapper.ToProductResponse(product);
         }
 
         public async Task<List<ProductResponse>?> GetAllProductsAsync()
