@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SoraSora.Infrastructure.Identity;
 using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Shared.Interface;
@@ -8,10 +11,12 @@ namespace SoraSora.Infrastructure.Persistence
     public sealed class SoraSoraDbContext(
         DbContextOptions<SoraSoraDbContext> options,
         IEnumerable<IModelBuilderContributor> modelBuilderContributors
-    ) : DbContext(options)
+    ) : IdentityDbContext<ApplicationUser>(options)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.ApplyAuditConfiguration();
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SoraSoraDbContext).Assembly);
             foreach (var contributor in modelBuilderContributors)

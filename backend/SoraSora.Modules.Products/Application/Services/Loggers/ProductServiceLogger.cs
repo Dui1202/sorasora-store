@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
-using SoraSora.Modules.Products.Application.Services;
 
-namespace SoraSora.Modules.Products.Application.Loggers;
+namespace SoraSora.Modules.Products.Application.Services.Loggers;
 
 internal static partial class ProductServiceLogger
 {

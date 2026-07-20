@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Mappers;
 
@@ -7,7 +8,7 @@ namespace SoraSora.Modules.Products.Application.Controllers
 {
     [ApiController]
     [Route("api/products")]
-    public class ProductsController(IProductService productService) : ControllerBase
+    public sealed class ProductsController(IProductService productService) : ControllerBase
     {
         private readonly IProductService _productService = productService;
 
