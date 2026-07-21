@@ -1,8 +1,21 @@
 using FluentValidation;
-using Microsoft.AspNetCore.Identity.Data;
-using SoraSora.Modules.Auth.Contracts;
 
 namespace SoraSora.Modules.Auth.Contracts.Validators
 {
-    public sealed class RegisterRequestValidator : AbstractValidator<LoginRequest> { }
+    public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest>
+    {
+        public RegisterRequestValidator()
+        {
+            RuleFor(x => x.Email)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .MaximumLength(256)
+                .EmailAddress();
+
+            RuleFor(x => x.Password)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .MinimumLength(8);
+        }
+    }
 }

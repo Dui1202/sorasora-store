@@ -4,7 +4,7 @@ using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Infrastructure.Persistence.Extension
 {
-    public static class ProductModuleDbContextExtension
+    public static class ProductsModuleDbContextExtension
     {
         public static DbSet<Product> Products(this SoraSoraDbContext dbContext)
         {

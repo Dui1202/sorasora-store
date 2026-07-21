@@ -4,7 +4,7 @@ using SoraSora.Modules.Products.Infrastructure.Persistence.Configurations;
 
 namespace SoraSora.Modules.Products.Infrastructure.Persistence
 {
-    public sealed class ProductModuleModelBuilderContributor : IModelBuilderContributor
+    public sealed class ProductsModuleModelBuilderContributor : IModelBuilderContributor
     {
         public void Configure(ModelBuilder modelBuilder)
         {

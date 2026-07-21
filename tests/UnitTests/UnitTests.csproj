@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\backend\SoraSora.Modules.Auth\SoraSora.Modules.Auth.csproj" />
     <ProjectReference Include="..\..\backend\SoraSora.Modules.Products\SoraSora.Modules.Products.csproj" />
   </ItemGroup>
 

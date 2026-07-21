@@ -12,7 +12,10 @@ namespace SoraSora.Modules.Products.Application.Extensions
     {
         public static IServiceCollection AddProductsModule(this IServiceCollection services)
         {
-            services.AddSingleton<IModelBuilderContributor, ProductModuleModelBuilderContributor>();
+            services.AddSingleton<
+                IModelBuilderContributor,
+                ProductsModuleModelBuilderContributor
+            >();
             services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
             services.AddScoped<IProductService, ProductService>();
 

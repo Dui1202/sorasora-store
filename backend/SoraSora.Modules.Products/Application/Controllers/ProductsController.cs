@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Mappers;
+using SoraSora.Shared.Extension;
+using SoraSora.Shared.Route;
 
 namespace SoraSora.Modules.Products.Application.Controllers
 {
     [ApiController]
-    [Route("api/products")]
+    [Route(ApiRoute.ProductApiRoute)]
     public sealed class ProductsController(IProductService productService) : ControllerBase
     {
         private readonly IProductService _productService = productService;
@@ -22,14 +24,12 @@ namespace SoraSora.Modules.Products.Application.Controllers
             var validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
-                return ValidationProblem(
-                    new ValidationProblemDetails(validationResult.ToDictionary())
-                );
+                return this.ValidationProblem(validationResult);
             }
             var command = CreateProductDtoMapper.ToCreateProductCommand(request);
             var product = await _productService.CreateProductAsync(command, cancellationToken);
 
-            return Created($"/api/products/{product.Id}", product);
+            return Created($"{ApiRoute.ProductApiRoute}/{product.Id}", product);
         }
 
         [HttpGet]
