@@ -1045,6 +1045,9 @@
               "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj": {
                 "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj"
               },
+              "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj": {
+                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj"
+              },
               "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
                 "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj"
               }

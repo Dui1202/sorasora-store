@@ -48,6 +48,25 @@ namespace SoraSora.Api.Exceptions
                     Instance = httpContext.Request.Path,
                 },
 
+                IdentityOperationException => new ValidationProblemDetails
+                {
+                    Errors = ((IdentityOperationException)exception)
+                        .Errors.GroupBy(error => error.Code)
+                        .ToDictionary(
+                            group => group.Key,
+                            group => group.Select(error => error.Description).ToArray()
+                        ),
+                },
+
+                InvalidCredentialsException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Invalid credentials",
+                    Detail = exception.Message,
+                    Type = "https://sorasora.com/problems/invalid-credentials",
+                    Instance = httpContext.Request.Path,
+                },
+
                 _ => new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,

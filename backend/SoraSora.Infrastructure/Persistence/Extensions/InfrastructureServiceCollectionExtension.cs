@@ -20,32 +20,6 @@ namespace SoraSora.Infrastructure.Persistence.Extensions
             );
             services.AddSupabaseStorage(configuration);
 
-            services
-                .AddIdentity<ApplicationUser, IdentityRole>(options =>
-                {
-                    options.User.RequireUniqueEmail = true;
-                    options.Password.RequiredLength = 8;
-
-                    options.Lockout.AllowedForNewUsers = true;
-                    options.Lockout.MaxFailedAccessAttempts = 5;
-                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-                })
-                .AddRoles<IdentityRole>()
-                .AddSignInManager()
-                .AddEntityFrameworkStores<SoraSoraDbContext>()
-                .AddDefaultTokenProviders();
-
-            services.ConfigureApplicationCookie(options =>
-            {
-                options.Cookie.Name = "SoraSora.Auth";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-
-                options.ExpireTimeSpan = TimeSpan.FromHours(8);
-                options.SlidingExpiration = true;
-            });
-
             return services;
         }
     }

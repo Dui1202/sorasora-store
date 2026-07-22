@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Mappers;

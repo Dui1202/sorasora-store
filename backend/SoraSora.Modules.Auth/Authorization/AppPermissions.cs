@@ -18,6 +18,14 @@ public static class AppPermissions
         public const string Delete = "Users.Delete";
     }
 
+    public static class Roles
+    {
+        public const string UpdatePermissions = "Roles.UpdatePermissions";
+        public const string Create = "Roles.Create";
+        public const string Delete = "Roles.Delete";
+        public const string Read = "Roles.Read";
+    }
+
     public static readonly IReadOnlyCollection<string> All =
     [
         Products.Read,
@@ -28,5 +36,9 @@ public static class AppPermissions
         Users.Create,
         Users.UpdateRoles,
         Users.Delete,
+        Roles.UpdatePermissions,
+        Roles.Create,
+        Roles.Delete,
+        Roles.Read,
     ];
 }

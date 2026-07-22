@@ -1779,6 +1779,7 @@
           "Microsoft.EntityFrameworkCore": "10.0.10",
           "NUlid": "1.7.3",
           "SoraSora.Infrastructure": "1.0.0",
+          "SoraSora.Modules.Auth": "1.0.0",
           "SoraSora.Shared": "1.0.0"
         },
         "compile": {
