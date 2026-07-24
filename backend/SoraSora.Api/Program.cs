@@ -26,6 +26,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();

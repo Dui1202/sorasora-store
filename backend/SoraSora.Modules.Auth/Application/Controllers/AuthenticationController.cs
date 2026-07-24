@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SoraSora.Modules.Auth.Application.Services;
+using SoraSora.Modules.Auth.Application.Services.Abstractions;
 using SoraSora.Modules.Auth.Contracts;
 using SoraSora.Modules.Auth.Contracts.Responses;
 using SoraSora.Shared.Extension;

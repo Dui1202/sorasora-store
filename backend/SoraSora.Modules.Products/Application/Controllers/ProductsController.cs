@@ -10,7 +10,7 @@ using SoraSora.Shared.Route;
 namespace SoraSora.Modules.Products.Application.Controllers
 {
     [ApiController]
-    [Route(ApiRoute.ProductApiRoute)]
+    [Route(ApiRoute.ProductsApiRoute)]
     public sealed class ProductsController(IProductService productService) : ControllerBase
     {
         private readonly IProductService _productService = productService;
@@ -30,7 +30,7 @@ namespace SoraSora.Modules.Products.Application.Controllers
             var command = CreateProductDtoMapper.ToCreateProductCommand(request);
             var product = await _productService.CreateProductAsync(command, cancellationToken);
 
-            return Created($"{ApiRoute.ProductApiRoute}/{product.Id}", product);
+            return Created($"{ApiRoute.ProductsApiRoute}/{product.Id}", product);
         }
 
         [HttpGet]

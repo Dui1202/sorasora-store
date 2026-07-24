@@ -20,7 +20,7 @@ public static class AppPermissions
 
     public static class Roles
     {
-        public const string UpdatePermissions = "Roles.UpdatePermissions";
+        public const string UpdateRolePermissions = "Roles.UpdateRolePermissions";
         public const string Create = "Roles.Create";
         public const string Delete = "Roles.Delete";
         public const string Read = "Roles.Read";
@@ -36,9 +36,14 @@ public static class AppPermissions
         Users.Create,
         Users.UpdateRoles,
         Users.Delete,
-        Roles.UpdatePermissions,
+        Roles.UpdateRolePermissions,
         Roles.Create,
         Roles.Delete,
         Roles.Read,
     ];
+
+    public static bool IsAppPermission(string permission)
+    {
+        return All.Contains(permission);
+    }
 }

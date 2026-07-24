@@ -1,8 +1,7 @@
 using System.Security.Claims;
-using SoraSora.Modules.Auth.Contracts;
 using SoraSora.Modules.Auth.Contracts.Responses;
 
-namespace SoraSora.Modules.Auth.Application.Services
+namespace SoraSora.Modules.Auth.Application.Services.Abstractions
 {
     public interface IAuthenticationService
     {

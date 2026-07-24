@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -6,7 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using SoraSora.Infrastructure.Identity;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Auth.Application.Controllers;
+using SoraSora.Modules.Auth.Application.Services;
+using SoraSora.Modules.Auth.Application.Services.Abstractions;
 using SoraSora.Modules.Auth.Authorization;
+using SoraSora.Modules.Auth.Contracts.Validators;
 
 namespace SoraSora.Modules.Auth.Application.Extensions
 {
@@ -79,6 +83,13 @@ namespace SoraSora.Modules.Auth.Application.Extensions
                     },
                 };
             });
+
+            services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+
+            services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IRolesService, RolesService>();
+            services.AddScoped<IUserRolesService, UserRolesService>();
 
             services.AddControllers().AddApplicationPart(typeof(AuthenticationController).Assembly);
 

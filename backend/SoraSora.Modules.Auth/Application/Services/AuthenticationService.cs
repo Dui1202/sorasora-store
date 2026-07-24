@@ -1,11 +1,8 @@
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using Amazon.S3.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Npgsql.Internal;
 using SoraSora.Infrastructure.Identity;
-using SoraSora.Modules.Auth.Contracts;
+using SoraSora.Modules.Auth.Application.Extensions;
+using SoraSora.Modules.Auth.Application.Services.Abstractions;
 using SoraSora.Modules.Auth.Contracts.Responses;
 using SoraSora.Shared.Exceptions;
 
@@ -40,10 +37,7 @@ namespace SoraSora.Modules.Auth.Application.Services
 
             var creationResult = await _userManager.CreateAsync(user, password);
 
-            if (!creationResult.Succeeded)
-            {
-                throw new IdentityOperationException(creationResult.Errors);
-            }
+            creationResult.ThrowIfFailed();
 
             return;
         }
