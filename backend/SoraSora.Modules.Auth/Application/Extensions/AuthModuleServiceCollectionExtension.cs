@@ -12,88 +12,87 @@ using SoraSora.Modules.Auth.Application.Services.Abstractions;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Auth.Contracts.Validators;
 
-namespace SoraSora.Modules.Auth.Application.Extensions
+namespace SoraSora.Modules.Auth.Application.Extensions;
+
+public static class AuthModuleServiceCollectionExtension
 {
-    public static class AuthModuleServiceCollectionExtension
+    public static IServiceCollection AddAuthModule(this IServiceCollection services)
     {
-        public static IServiceCollection AddAuthModule(this IServiceCollection services)
+        services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
+
+        services.AddAuthorization(options =>
         {
-            services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
 
-            services.AddAuthorization(options =>
+            foreach (var permission in AppPermissions.All)
             {
-                options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
+                options.AddPolicy(
+                    permission,
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser();
 
-                foreach (var permission in AppPermissions.All)
-                {
-                    options.AddPolicy(
-                        permission,
-                        policy =>
-                        {
-                            policy.RequireAuthenticatedUser();
+                        policy.AddRequirements(new PermissionRequirement(permission));
+                    }
+                );
+            }
+        });
 
-                            policy.AddRequirements(new PermissionRequirement(permission));
-                        }
-                    );
-                }
-            });
-
-            services
-                .AddIdentityCore<ApplicationUser>(options =>
-                {
-                    options.User.RequireUniqueEmail = true;
-
-                    options.SignIn.RequireConfirmedEmail = false;
-
-                    options.Lockout.AllowedForNewUsers = true;
-                    options.Lockout.MaxFailedAccessAttempts = 5;
-                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-                })
-                .AddRoles<IdentityRole>()
-                .AddEntityFrameworkStores<SoraSoraDbContext>()
-                .AddSignInManager()
-                .AddDefaultTokenProviders();
-
-            services.ConfigureApplicationCookie(options =>
+        services
+            .AddIdentityCore<ApplicationUser>(options =>
             {
-                options.Cookie.Name = "sorasora.auth";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.User.RequireUniqueEmail = true;
 
-                options.SlidingExpiration = true;
-                options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                options.SignIn.RequireConfirmedEmail = false;
 
-                options.Events = new CookieAuthenticationEvents
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            })
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<SoraSoraDbContext>()
+            .AddSignInManager()
+            .AddDefaultTokenProviders();
+
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.Name = "sorasora.auth";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+
+            options.SlidingExpiration = true;
+            options.ExpireTimeSpan = TimeSpan.FromDays(7);
+
+            options.Events = new CookieAuthenticationEvents
+            {
+                OnRedirectToLogin = context =>
                 {
-                    OnRedirectToLogin = context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
 
-                        return Task.CompletedTask;
-                    },
+                    return Task.CompletedTask;
+                },
 
-                    OnRedirectToAccessDenied = context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
 
-                        return Task.CompletedTask;
-                    },
-                };
-            });
+                    return Task.CompletedTask;
+                },
+            };
+        });
 
-            services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
-            services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
-            services.AddScoped<IRolesService, RolesService>();
-            services.AddScoped<IUserRolesService, UserRolesService>();
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IRolesService, RolesService>();
+        services.AddScoped<IUserRolesService, UserRolesService>();
 
-            services.AddControllers().AddApplicationPart(typeof(AuthenticationController).Assembly);
+        services.AddControllers().AddApplicationPart(typeof(AuthenticationController).Assembly);
 
-            return services;
-        }
+        return services;
     }
 }

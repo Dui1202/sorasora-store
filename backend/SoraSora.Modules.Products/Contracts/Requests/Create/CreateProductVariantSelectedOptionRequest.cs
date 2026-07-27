@@ -1,8 +1,7 @@
-namespace SoraSora.Modules.Products.Contracts.Requests.Create
+namespace SoraSora.Modules.Products.Contracts.Requests.Create;
+
+public sealed record CreateProductVariantSelectedOptionRequest
 {
-    public sealed record CreateProductVariantSelectedOptionRequest
-    {
-        public required string VariationId { get; init; }
-        public required string OptionId { get; init; }
-    }
+    public required string VariationId { get; init; }
+    public required string OptionId { get; init; }
 }

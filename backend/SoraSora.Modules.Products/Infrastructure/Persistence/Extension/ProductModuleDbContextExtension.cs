@@ -2,18 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Products.Domain;
 
-namespace SoraSora.Modules.Products.Infrastructure.Persistence.Extension
-{
-    public static class ProductsModuleDbContextExtension
-    {
-        public static DbSet<Product> Products(this SoraSoraDbContext dbContext)
-        {
-            return dbContext.Set<Product>();
-        }
+namespace SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 
-        public static DbSet<ProductVariant> ProductVariants(this SoraSoraDbContext dbContext)
-        {
-            return dbContext.Set<ProductVariant>();
-        }
+public static class ProductsModuleDbContextExtension
+{
+    public static DbSet<Product> Products(this SoraSoraDbContext dbContext)
+    {
+        return dbContext.Set<Product>();
+    }
+
+    public static DbSet<ProductVariant> ProductVariants(this SoraSoraDbContext dbContext)
+    {
+        return dbContext.Set<ProductVariant>();
     }
 }

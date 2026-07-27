@@ -1,0 +1,110 @@
+using FluentValidation;
+using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Modules.Products.Contracts.Requests.Update;
+using SoraSora.Modules.Products.Domain;
+
+namespace SoraSora.Modules.Products.Contracts.Validators;
+
+public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequest>
+{
+    public UpdateProductRequestValidator(
+        IValidator<CreateProductImageRequest> newImageValidator,
+        IValidator<RetainedProductImageRequest> existingImageValidator,
+        IValidator<CreateProductVariantRequest> newVariantValidator,
+        IValidator<RetainedProductVariantRequest> existingVariantValidator
+    )
+    {
+        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(Product.MaxNameLength);
+        RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
+        RuleFor(x => x.SupplierCountry).IsInEnum();
+        RuleFor(x => x.SellMode).IsInEnum();
+        RuleFor(x => x.RetainedImages)
+            .Cascade(CascadeMode.Stop)
+            .Must((request, existingImages) => existingImages.Count + request.NewImages.Count > 0)
+            .WithMessage("A product must contain at least one image.")
+            .Must(
+                (request, existingImages) =>
+                    existingImages.Count + request.NewImages.Count
+                    <= ProductUploadLimits.MaxProductImages
+            )
+            .WithMessage(
+                $"A product can contain at most {ProductUploadLimits.MaxProductImages} images."
+            )
+            .Must((request, _) => HaveUniqueImagePositions(request))
+            .WithMessage("Product image positions must be unique.");
+        RuleForEach(x => x.RetainedImages).SetValidator(existingImageValidator);
+        RuleForEach(x => x.NewImages).SetValidator(newImageValidator);
+        RuleForEach(x => x.RetainedProductVariants).SetValidator(existingVariantValidator);
+        RuleForEach(x => x.NewProductVariants).SetValidator(newVariantValidator);
+
+        When(
+            request => !request.HasVariation,
+            () =>
+            {
+                RuleFor(request => request.BaseSku).NotEmpty();
+                RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
+                RuleFor(request => request.BaseSellingPrice).NotNull().GreaterThanOrEqualTo(0);
+                RuleFor(request => request.RetainedProductVariants).Empty();
+                RuleFor(request => request.NewProductVariants).Empty();
+            }
+        );
+        When(
+            request => request.HasVariation,
+            () =>
+            {
+                RuleFor(request => request.RetainedProductVariants)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(
+                        (request, existingVariants) =>
+                            existingVariants.Count + request.NewProductVariants.Count > 0
+                    )
+                    .WithMessage("A product with variations must contain at least one variant.")
+                    .Must(
+                        (request, existingVariants) =>
+                            existingVariants.Count + request.NewProductVariants.Count
+                            <= ProductUploadLimits.MaxProductVariants
+                    )
+                    .WithMessage(
+                        $"A product can contain at most {ProductUploadLimits.MaxProductVariants} variants."
+                    )
+                    .Must((request, _) => HaveUniqueVariantPositions(request))
+                    .WithMessage("Product variant positions must be unique.")
+                    .Must((request, _) => HaveUniqueVariantSkus(request))
+                    .WithMessage("Product variant SKUs must be unique.");
+            }
+        );
+    }
+
+    private static bool HaveUniqueImagePositions(UpdateProductRequest request)
+    {
+        var positions = request
+            .RetainedImages.Select(variant => variant.Position)
+            .Concat(request.NewImages.Select(variant => variant.Position));
+
+        var imageCount = request.RetainedImages.Count + request.NewImages.Count;
+
+        return positions.Distinct().Count() == imageCount;
+    }
+
+    private static bool HaveUniqueVariantPositions(UpdateProductRequest request)
+    {
+        var positions = request
+            .RetainedProductVariants.Select(variant => variant.Position)
+            .Concat(request.NewProductVariants.Select(variant => variant.Position));
+
+        var variantCount = request.RetainedProductVariants.Count + request.NewProductVariants.Count;
+
+        return positions.Distinct().Count() == variantCount;
+    }
+
+    private static bool HaveUniqueVariantSkus(UpdateProductRequest request)
+    {
+        var skus = request
+            .RetainedProductVariants.Select(variant => variant.Sku)
+            .Concat(request.NewProductVariants.Select(variant => variant.Sku));
+
+        var variantCount = request.RetainedProductVariants.Count + request.NewProductVariants.Count;
+        return skus.Distinct(StringComparer.OrdinalIgnoreCase).Count() == variantCount;
+    }
+}

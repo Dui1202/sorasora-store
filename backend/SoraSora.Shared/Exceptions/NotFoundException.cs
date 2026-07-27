@@ -1,4 +1,3 @@
-namespace SoraSora.Shared.Exceptions
-{
-    public sealed class NotFoundException(string message) : Exception(message) { }
-}
+namespace SoraSora.Shared.Exceptions;
+
+public sealed class NotFoundException(string message) : Exception(message) { }

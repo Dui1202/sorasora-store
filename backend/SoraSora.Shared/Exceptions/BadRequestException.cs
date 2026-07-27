@@ -1,4 +1,3 @@
-namespace SoraSora.Shared.Exceptions
-{
-    public sealed class BadRequestException(string message) : Exception(message) { }
-}
+namespace SoraSora.Shared.Exceptions;
+
+public sealed class BadRequestException(string message) : Exception(message) { }

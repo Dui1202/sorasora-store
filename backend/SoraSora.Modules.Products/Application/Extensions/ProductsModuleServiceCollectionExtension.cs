@@ -6,22 +6,18 @@ using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts.Validators;
 using SoraSora.Modules.Products.Infrastructure.Persistence;
 
-namespace SoraSora.Modules.Products.Application.Extensions
+namespace SoraSora.Modules.Products.Application.Extensions;
+
+public static class ProductsModuleServiceCollectionExtension
 {
-    public static class ProductsModuleServiceCollectionExtension
+    public static IServiceCollection AddProductsModule(this IServiceCollection services)
     {
-        public static IServiceCollection AddProductsModule(this IServiceCollection services)
-        {
-            services.AddSingleton<
-                IModelBuilderContributor,
-                ProductsModuleModelBuilderContributor
-            >();
-            services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
-            services.AddScoped<IProductService, ProductService>();
+        services.AddSingleton<IModelBuilderContributor, ProductsModuleModelBuilderContributor>();
+        services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
+        services.AddScoped<IProductService, ProductService>();
 
-            services.AddControllers().AddApplicationPart(typeof(ProductsController).Assembly);
+        services.AddControllers().AddApplicationPart(typeof(ProductsController).Assembly);
 
-            return services;
-        }
+        return services;
     }
 }

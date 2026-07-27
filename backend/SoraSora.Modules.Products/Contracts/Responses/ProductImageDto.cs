@@ -1,4 +1,3 @@
-namespace SoraSora.Modules.Products.Contracts.Responses
-{
-    public sealed record ProductImageDto { }
-}
+namespace SoraSora.Modules.Products.Contracts.Responses;
+
+public sealed record ProductImageDto { }

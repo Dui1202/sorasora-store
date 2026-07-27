@@ -2,26 +2,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Products.Domain;
 
-namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations
+namespace SoraSora.Modules.Products.Infrastructure.Persistence.Configurations;
+
+public sealed class ProductVariantImageConfiguration : IEntityTypeConfiguration<ProductVariantImage>
 {
-    public sealed class ProductVariantImageConfiguration
-        : IEntityTypeConfiguration<ProductVariantImage>
+    public void Configure(EntityTypeBuilder<ProductVariantImage> builder)
     {
-        public void Configure(EntityTypeBuilder<ProductVariantImage> builder)
-        {
-            builder.ToTable("ProductVariantImage");
+        builder.ToTable("ProductVariantImage");
 
-            builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
-            builder.Property(x => x.ProductVariantId).IsRequired();
-            builder.Property(x => x.Path).HasMaxLength(1024).IsRequired();
-            builder.Property(x => x.Alt).HasMaxLength(255).IsRequired(false);
-            builder
-                .HasOne(x => x.ProductVariant)
-                .WithOne(x => x.ProductVariantImage)
-                .HasForeignKey<ProductVariantImage>(x => x.ProductVariantId);
-        }
+        builder.Property(x => x.ProductVariantId).IsRequired();
+        builder.Property(x => x.Path).HasMaxLength(1024).IsRequired();
+        builder.Property(x => x.Alt).HasMaxLength(255).IsRequired(false);
+        builder
+            .HasOne(x => x.ProductVariant)
+            .WithOne(x => x.ProductVariantImage)
+            .HasForeignKey<ProductVariantImage>(x => x.ProductVariantId);
     }
 }

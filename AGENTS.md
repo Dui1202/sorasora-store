@@ -721,6 +721,9 @@ This is a guideline, not a forced checklist. Only create folders that the featur
 
 # Testing Guidance
 
+Only create or modify test scripts or test files when the user explicitly requests tests.
+Running existing tests for verification is allowed when relevant.
+
 Test the logic where failure is costly.
 
 ## Prioritize Tests For

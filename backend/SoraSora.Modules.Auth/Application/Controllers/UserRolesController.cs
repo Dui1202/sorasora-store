@@ -4,44 +4,40 @@ using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Auth.Contracts.Responses;
 using SoraSora.Shared.Route;
 
-namespace SoraSora.Modules.Auth.Application.Controllers
+namespace SoraSora.Modules.Auth.Application.Controllers;
+
+[ApiController]
+[Route(ApiRoute.UsersApiRoute)]
+public sealed class UserRolesController(IUserRolesService userRolesService) : ControllerBase
 {
-    [ApiController]
-    [Route(ApiRoute.UsersApiRoute)]
-    public sealed class UserRolesController(IUserRolesService userRolesService) : ControllerBase
+    private readonly IUserRolesService _userRolesService = userRolesService;
+
+    [HasPermission(AppPermissions.Users.UpdateRoles)]
+    [HttpPut("{userId}/role")]
+    public async Task<ActionResult<UserRoleResponse>> UpdateUserRoleAsync(
+        string userId,
+        string roleName,
+        CancellationToken cancellationToken = default
+    )
     {
-        private readonly IUserRolesService _userRolesService = userRolesService;
+        var userRole = await _userRolesService.UpdateUserRoleAsync(
+            userId,
+            roleName,
+            cancellationToken
+        );
 
-        [HasPermission(AppPermissions.Users.UpdateRoles)]
-        [HttpPut("{userId}/role")]
-        public async Task<ActionResult<UserRoleResponse>> UpdateUserRoleAsync(
-            string userId,
-            string roleName,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var userRole = await _userRolesService.UpdateUserRoleAsync(
-                userId,
-                roleName,
-                cancellationToken
-            );
+        return Ok(userRole);
+    }
 
-            return Ok(userRole);
-        }
+    [HasPermission(AppPermissions.Users.Read)]
+    [HttpGet("{userId}/role")]
+    public async Task<ActionResult<UserRoleResponse>> GetUserRoleByUserIdAsync(
+        string userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var userRole = await _userRolesService.GetUserRoleByUserIdAsync(userId, cancellationToken);
 
-        [HasPermission(AppPermissions.Users.Read)]
-        [HttpGet("{userId}/role")]
-        public async Task<ActionResult<UserRoleResponse>> GetUserRoleByUserIdAsync(
-            string userId,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var userRole = await _userRolesService.GetUserRoleByUserIdAsync(
-                userId,
-                cancellationToken
-            );
-
-            return Ok(userRole);
-        }
+        return Ok(userRole);
     }
 }

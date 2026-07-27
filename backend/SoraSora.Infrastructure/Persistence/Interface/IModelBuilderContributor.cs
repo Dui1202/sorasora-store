@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace SoraSora.Infrastructure.Persistence.Interface
+namespace SoraSora.Infrastructure.Persistence.Interface;
+
+public interface IModelBuilderContributor
 {
-    public interface IModelBuilderContributor
-    {
-        void Configure(ModelBuilder modelBuilder);
-    }
+    void Configure(ModelBuilder modelBuilder);
 }

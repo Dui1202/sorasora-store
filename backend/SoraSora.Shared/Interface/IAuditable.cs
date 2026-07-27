@@ -1,8 +1,7 @@
-namespace SoraSora.Shared.Interface
+namespace SoraSora.Shared.Interface;
+
+public interface IAuditable
 {
-    public interface IAuditable
-    {
-        DateTimeOffset CreatedAt { get; }
-        DateTimeOffset UpdatedAt { get; }
-    }
+    DateTimeOffset CreatedAt { get; }
+    DateTimeOffset UpdatedAt { get; }
 }

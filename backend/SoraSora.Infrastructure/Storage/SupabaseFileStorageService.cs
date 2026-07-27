@@ -4,43 +4,42 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SoraSora.Infrastructure.Abstractions;
 
-namespace SoraSora.Infrastructure.Storage
+namespace SoraSora.Infrastructure.Storage;
+
+public class SupabaseFileStorageService(
+    IAmazonS3 s3Client,
+    IOptions<SupabaseStorageOptions> options
+) : IFileStorageService
 {
-    public class SupabaseFileStorageService(
-        IAmazonS3 s3Client,
-        IOptions<SupabaseStorageOptions> options
-    ) : IFileStorageService
+    private readonly IAmazonS3 _s3Client = s3Client;
+    private readonly SupabaseStorageOptions _options = options.Value;
+
+    public async Task<string> UploadFileAsync(
+        IFormFile file,
+        string path,
+        CancellationToken cancellationToken = default
+    )
     {
-        private readonly IAmazonS3 _s3Client = s3Client;
-        private readonly SupabaseStorageOptions _options = options.Value;
+        await using var stream = file.OpenReadStream();
 
-        public async Task<string> UploadFileAsync(
-            IFormFile file,
-            string path,
-            CancellationToken cancellationToken = default
-        )
+        var request = new PutObjectRequest
         {
-            await using var stream = file.OpenReadStream();
+            BucketName = _options.Bucket,
+            Key = path,
+            InputStream = stream,
+            ContentType = file.ContentType,
+            AutoCloseStream = false,
+        };
 
-            var request = new PutObjectRequest
-            {
-                BucketName = _options.Bucket,
-                Key = path,
-                InputStream = stream,
-                ContentType = file.ContentType,
-                AutoCloseStream = false,
-            };
+        await _s3Client.PutObjectAsync(request, cancellationToken);
 
-            await _s3Client.PutObjectAsync(request, cancellationToken);
+        return path;
+    }
 
-            return path;
-        }
+    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken)
+    {
+        var request = new DeleteObjectRequest { BucketName = _options.Bucket, Key = path };
 
-        public async Task DeleteFileAsync(string path, CancellationToken cancellationToken)
-        {
-            var request = new DeleteObjectRequest { BucketName = _options.Bucket, Key = path };
-
-            await _s3Client.DeleteObjectAsync(request, cancellationToken);
-        }
+        await _s3Client.DeleteObjectAsync(request, cancellationToken);
     }
 }

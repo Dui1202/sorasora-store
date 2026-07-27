@@ -9,381 +9,380 @@ using SoraSora.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SoraSora.Infrastructure.Persistence.Migrations
+namespace SoraSora.Infrastructure.Persistence.Migrations;
+
+[DbContext(typeof(SoraSoraDbContext))]
+[Migration("20260713081315_add and fix ProductVariant and related domains configs and fields")]
+partial class addandfixProductVariantandrelateddomainsconfigsandfields
 {
-    [DbContext(typeof(SoraSoraDbContext))]
-    [Migration("20260713081315_add and fix ProductVariant and related domains configs and fields")]
-    partial class addandfixProductVariantandrelateddomainsconfigsandfields
+    /// <inheritdoc />
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+        modelBuilder
+            .HasAnnotation("ProductVersion", "10.0.9")
+            .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+        NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text");
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
+            {
+                b.Property<string>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("text");
 
-                    b.Property<string>("BannerUrl")
-                        .HasColumnType("text");
+                b.Property<string>("BannerUrl")
+                    .HasColumnType("text");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
+                b.Property<string>("Description")
+                    .HasColumnType("text");
 
-                    b.Property<string>("LogoUrl")
-                        .HasColumnType("text");
+                b.Property<string>("LogoUrl")
+                    .HasColumnType("text");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Slug")
-                        .HasColumnType("text");
+                b.Property<string>("Slug")
+                    .HasColumnType("text");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                b.HasIndex("Name")
+                    .IsUnique();
 
-                    b.HasIndex("Slug")
-                        .IsUnique();
+                b.HasIndex("Slug")
+                    .IsUnique();
 
-                    b.ToTable("Franchise", (string)null);
-                });
+                b.ToTable("Franchise", (string)null);
+            });
 
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
+            {
+                b.Property<string>("Id")
+                    .HasColumnType("text");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                b.Property<string>("Description")
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("FranchiseId")
-                        .HasColumnType("text");
+                b.Property<string>("FranchiseId")
+                    .HasColumnType("text");
 
-                    b.Property<bool>("HasVariation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                b.Property<bool>("HasVariation")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("boolean")
+                    .HasDefaultValue(false);
 
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                b.Property<bool>("IsArchived")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("boolean")
+                    .HasDefaultValue(false);
 
-                    b.Property<bool>("IsPublished")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                b.Property<bool>("IsPublished")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("boolean")
+                    .HasDefaultValue(false);
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<string>("SellMode")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("IN_STOCK");
+                b.Property<string>("SellMode")
+                    .IsRequired()
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("text")
+                    .HasDefaultValue("IN_STOCK");
 
-                    b.Property<string>("SupplierCountry")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NONE");
+                b.Property<string>("SupplierCountry")
+                    .IsRequired()
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("text")
+                    .HasDefaultValue("NONE");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("FranchiseId");
+                b.HasIndex("FranchiseId");
 
-                    b.ToTable("Product", (string)null);
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductImage", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Alt")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                b.ToTable("Product", (string)null);
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductImage", b =>
+            {
+                b.Property<string>("Id")
+                    .HasColumnType("text");
+
+                b.Property<string>("Alt")
+                    .HasMaxLength(255)
+                    .HasColumnType("character varying(255)");
+
+                b.Property<string>("Path")
+                    .IsRequired()
+                    .HasMaxLength(1024)
+                    .HasColumnType("character varying(1024)");
 
-                    b.Property<int>("Position")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                b.Property<int>("Position")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
 
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ProductId")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("ProductId", "Position")
-                        .IsUnique();
-
-                    b.ToTable("ProductImage", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_ProductImage_Position", "\"Position\" >= 0");
-                        });
-                });
+                b.HasIndex("ProductId", "Position")
+                    .IsUnique();
+
+                b.ToTable("ProductImage", null, t =>
+                    {
+                        t.HasCheckConstraint("CK_ProductImage_Position", "\"Position\" >= 0");
+                    });
+            });
 
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
+            {
+                b.Property<string>("Id")
+                    .HasColumnType("text");
 
-                    b.Property<int>("CostPrice")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                b.Property<int>("CostPrice")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                b.Property<bool>("IsArchived")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("boolean")
+                    .HasDefaultValue(false);
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<int>("Position")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                b.Property<int>("Position")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
 
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ProductId")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("SellingPrice")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                b.Property<int>("SellingPrice")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("ProductId", "Position")
-                        .IsUnique();
+                b.HasIndex("ProductId", "Position")
+                    .IsUnique();
 
-                    b.ToTable("ProductVariant", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_ProductVariant_CostPrice", "\"CostPrice\" >= 0");
+                b.ToTable("ProductVariant", null, t =>
+                    {
+                        t.HasCheckConstraint("CK_ProductVariant_CostPrice", "\"CostPrice\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductVariant_Position", "\"Position\" >= 0");
+                        t.HasCheckConstraint("CK_ProductVariant_Position", "\"Position\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0");
-                        });
-                });
+                        t.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0");
+                    });
+            });
 
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantImage", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantImage", b =>
+            {
+                b.Property<string>("Id")
+                    .HasColumnType("text");
 
-                    b.Property<string>("Alt")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                b.Property<string>("Alt")
+                    .HasMaxLength(255)
+                    .HasColumnType("character varying(255)");
 
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                b.Property<string>("Path")
+                    .IsRequired()
+                    .HasMaxLength(1024)
+                    .HasColumnType("character varying(1024)");
 
-                    b.Property<string>("ProductVariantId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ProductVariantId")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("ProductVariantId")
-                        .IsUnique();
-
-                    b.ToTable("ProductVariantImage", (string)null);
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Position")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("Variation", (string)null);
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Position")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("VariationId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VariationId");
-
-                    b.ToTable("VariationOption", (string)null);
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.Franchise", null)
-                        .WithMany("Products")
-                        .HasForeignKey("FranchiseId");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductImage", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
-                        .WithMany("ProductImages")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
-                        .WithMany("ProductVariants")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantImage", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.ProductVariant", "ProductVariant")
-                        .WithOne("ProductVariantImage")
-                        .HasForeignKey("SoraSora.Modules.Products.Domain.ProductVariantImage", "ProductVariantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProductVariant");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
-                {
-                    b.HasOne("SoraSora.Modules.Products.Domain.Variation", "Variation")
-                        .WithMany("VariationOptions")
-                        .HasForeignKey("VariationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Variation");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
-                {
-                    b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
-                {
-                    b.Navigation("ProductImages");
-
-                    b.Navigation("ProductVariants");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
-                {
-                    b.Navigation("ProductVariantImage");
-                });
-
-            modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
-                {
-                    b.Navigation("VariationOptions");
-                });
+                b.HasIndex("ProductVariantId")
+                    .IsUnique();
+
+                b.ToTable("ProductVariantImage", (string)null);
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
+            {
+                b.Property<string>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("text");
+
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<int>("Position")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
+
+                b.Property<string>("ProductId")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.HasKey("Id");
+
+                b.HasIndex("ProductId");
+
+                b.ToTable("Variation", (string)null);
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
+            {
+                b.Property<string>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("text");
+
+                b.Property<DateTimeOffset>("CreatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<int>("Position")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer")
+                    .HasDefaultValue(0);
+
+                b.Property<DateTimeOffset>("UpdatedAt")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("Value")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<string>("VariationId")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.HasKey("Id");
+
+                b.HasIndex("VariationId");
+
+                b.ToTable("VariationOption", (string)null);
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.Franchise", null)
+                    .WithMany("Products")
+                    .HasForeignKey("FranchiseId");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductImage", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
+                    .WithMany("ProductImages")
+                    .HasForeignKey("ProductId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Product");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
+                    .WithMany("ProductVariants")
+                    .HasForeignKey("ProductId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Product");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantImage", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.ProductVariant", "ProductVariant")
+                    .WithOne("ProductVariantImage")
+                    .HasForeignKey("SoraSora.Modules.Products.Domain.ProductVariantImage", "ProductVariantId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("ProductVariant");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
+                    .WithMany()
+                    .HasForeignKey("ProductId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Product");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
+            {
+                b.HasOne("SoraSora.Modules.Products.Domain.Variation", "Variation")
+                    .WithMany("VariationOptions")
+                    .HasForeignKey("VariationId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Variation");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
+            {
+                b.Navigation("Products");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
+            {
+                b.Navigation("ProductImages");
+
+                b.Navigation("ProductVariants");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
+            {
+                b.Navigation("ProductVariantImage");
+            });
+
+        modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
+            {
+                b.Navigation("VariationOptions");
+            });
 #pragma warning restore 612, 618
-        }
     }
 }

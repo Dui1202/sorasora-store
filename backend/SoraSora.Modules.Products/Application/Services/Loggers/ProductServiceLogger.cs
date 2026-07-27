@@ -29,6 +29,18 @@ internal static partial class ProductServiceLogger
     );
 
     [LoggerMessage(
+        EventId = 1002,
+        EventName = nameof(ProductImageDeleteFailed),
+        Level = LogLevel.Warning,
+        Message = "Failed to delete uploaded product image {ImagePath} during cleanup"
+    )]
+    public static partial void ProductImageDeleteFailed(
+        this ILogger<ProductService> logger,
+        Exception exception,
+        string imagePath
+    );
+
+    [LoggerMessage(
         EventId = 1100,
         EventName = nameof(ProductUpdated),
         Level = LogLevel.Information,

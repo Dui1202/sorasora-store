@@ -1,4 +1,3 @@
-namespace SoraSora.Modules.Auth.Contracts
-{
-    public sealed record RegisterRequest(string Email, string Password);
-}
+namespace SoraSora.Modules.Auth.Contracts;
+
+public sealed record RegisterRequest(string Email, string Password);
