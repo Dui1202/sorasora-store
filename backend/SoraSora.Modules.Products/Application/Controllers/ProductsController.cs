@@ -1,7 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Auth.Authorization;
+using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Mappers;
 using SoraSora.Shared.Extension;
@@ -54,7 +56,30 @@ public sealed class ProductsController(IProductService productService) : Control
         return Ok(product);
     }
 
-    public async Task<ActionResult<ProductResponse>> Update(string id) { }
+    [HttpPatch("{id}")]
+    public async Task<ActionResult<ProductResponse>> Update(
+        string id,
+        [FromForm] UpdateProductRequest request,
+        [FromServices] IValidator<UpdateProductRequest> validator,
+        CancellationToken cancellationToken
+    )
+    {
+        request = request with { Id = id };
 
-    public async Task<IActionResult> Delete(string id) { }
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return this.ValidationProblem(validationResult);
+        }
+
+        var command = UpdateProductMapper.ToUpdateProductCommand(request);
+        var product = await _productService.UpdateProductAsync(command, cancellationToken);
+
+        return Ok(product);
+    }
+
+    public Task<IActionResult> Delete(string id)
+    {
+        throw new NotImplementedException();
+    }
 }

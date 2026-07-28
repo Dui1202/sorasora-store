@@ -16,6 +16,7 @@ public sealed class Product : IAuditable
     public string? Description { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    public Guid Version { get; private set; } = Guid.NewGuid();
     public SupplierCountry SupplierCountry { get; private set; }
     public SellMode SellMode { get; private set; }
 
@@ -38,24 +39,7 @@ public sealed class Product : IAuditable
         bool hasVariation
     )
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Product name is required!", nameof(name));
-        }
-        if (name.Length > MaxNameLength)
-        {
-            throw new ArgumentException(
-                $"Product name cannot exceed {MaxNameLength} characters.",
-                nameof(name)
-            );
-        }
-        if (description?.Length > MaxDescriptionLength)
-        {
-            throw new ArgumentException(
-                $"Product description cannot exceed {MaxDescriptionLength} characters.",
-                nameof(description)
-            );
-        }
+        ValidateDetails(name, description, supplierCountry, sellMode);
 
         return new Product
         {
@@ -78,6 +62,8 @@ public sealed class Product : IAuditable
         bool hasVariation
     )
     {
+        ValidateDetails(name, description, supplierCountry, sellMode);
+
         Name = name;
         Description = description;
         SupplierCountry = supplierCountry;
@@ -114,5 +100,49 @@ public sealed class Product : IAuditable
     public void RemoveProductVariant(ProductVariant productVariant)
     {
         _productVariants.Remove(productVariant);
+    }
+
+    public void AdvanceVersion()
+    {
+        Version = Guid.NewGuid();
+    }
+
+    private static void ValidateDetails(
+        string name,
+        string? description,
+        SupplierCountry supplierCountry,
+        SellMode sellMode
+    )
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Product name is required!", nameof(name));
+        }
+
+        if (name.Length > MaxNameLength)
+        {
+            throw new ArgumentException(
+                $"Product name cannot exceed {MaxNameLength} characters.",
+                nameof(name)
+            );
+        }
+
+        if (description?.Length > MaxDescriptionLength)
+        {
+            throw new ArgumentException(
+                $"Product description cannot exceed {MaxDescriptionLength} characters.",
+                nameof(description)
+            );
+        }
+
+        if (!Enum.IsDefined(supplierCountry))
+        {
+            throw new ArgumentOutOfRangeException(nameof(supplierCountry));
+        }
+
+        if (!Enum.IsDefined(sellMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(sellMode));
+        }
     }
 }

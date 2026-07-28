@@ -10,6 +10,7 @@ internal static class ProductDtoMapper
         return new ProductResponse
         {
             Id = product.Id,
+            Version = product.Version,
             Name = product.Name,
             Description = product.Description,
             IsPublished = product.IsPublished,

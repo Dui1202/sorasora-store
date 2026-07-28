@@ -12,6 +12,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.Version).IsRequired().ValueGeneratedNever().IsConcurrencyToken();
 
         builder.Property(x => x.Name).HasMaxLength(Product.MaxNameLength).IsRequired();
         builder

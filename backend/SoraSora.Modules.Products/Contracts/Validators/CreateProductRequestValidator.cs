@@ -32,7 +32,6 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
             request => !request.HasVariation,
             () =>
             {
-                RuleFor(request => request.BaseSku).NotEmpty();
                 RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
                 RuleFor(request => request.BaseSellingPrice).NotNull().GreaterThanOrEqualTo(0);
                 RuleFor(request => request.ProductVariants).Empty();
@@ -53,9 +52,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                         $"A product can contain at most {ProductUploadLimits.MaxProductVariants} variants."
                     )
                     .Must(HaveUniqueVariantPositions)
-                    .WithMessage("Product variant positions must be unique.")
-                    .Must(HaveUniqueVariantSkus)
-                    .WithMessage("Product variant SKUs must be unique.");
+                    .WithMessage("Product variant positions must be unique.");
             }
         );
     }
@@ -70,13 +67,5 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
     )
     {
         return variants.Select(x => x.Position).Distinct().Count() == variants.Count;
-    }
-
-    private static bool HaveUniqueVariantSkus(
-        IReadOnlyCollection<CreateProductVariantRequest> variants
-    )
-    {
-        return variants.Select(x => x.Sku).Distinct(StringComparer.OrdinalIgnoreCase).Count()
-            == variants.Count;
     }
 }

@@ -15,6 +15,7 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
     )
     {
         RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Version).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(Product.MaxNameLength);
         RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
         RuleFor(x => x.SupplierCountry).IsInEnum();
@@ -42,7 +43,6 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
             request => !request.HasVariation,
             () =>
             {
-                RuleFor(request => request.BaseSku).NotEmpty();
                 RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
                 RuleFor(request => request.BaseSellingPrice).NotNull().GreaterThanOrEqualTo(0);
                 RuleFor(request => request.RetainedProductVariants).Empty();
@@ -69,9 +69,7 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
                         $"A product can contain at most {ProductUploadLimits.MaxProductVariants} variants."
                     )
                     .Must((request, _) => HaveUniqueVariantPositions(request))
-                    .WithMessage("Product variant positions must be unique.")
-                    .Must((request, _) => HaveUniqueVariantSkus(request))
-                    .WithMessage("Product variant SKUs must be unique.");
+                    .WithMessage("Product variant positions must be unique.");
             }
         );
     }
@@ -96,15 +94,5 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
         var variantCount = request.RetainedProductVariants.Count + request.NewProductVariants.Count;
 
         return positions.Distinct().Count() == variantCount;
-    }
-
-    private static bool HaveUniqueVariantSkus(UpdateProductRequest request)
-    {
-        var skus = request
-            .RetainedProductVariants.Select(variant => variant.Sku)
-            .Concat(request.NewProductVariants.Select(variant => variant.Sku));
-
-        var variantCount = request.RetainedProductVariants.Count + request.NewProductVariants.Count;
-        return skus.Distinct(StringComparer.OrdinalIgnoreCase).Count() == variantCount;
     }
 }

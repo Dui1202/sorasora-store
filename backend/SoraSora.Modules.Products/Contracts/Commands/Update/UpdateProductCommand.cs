@@ -7,6 +7,7 @@ namespace SoraSora.Modules.Products.Contracts.Commands.Update;
 public sealed record UpdateProductCommand
 {
     public required string Id { get; init; }
+    public required Guid Version { get; init; }
     public required string Name { get; init; }
     public string? Description { get; init; }
     public SupplierCountry SupplierCountry { get; init; }

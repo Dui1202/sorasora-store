@@ -307,6 +307,10 @@ partial class SoraSoraDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset>("UpdatedAt")
                     .HasColumnType("timestamp with time zone");
 
+                b.Property<Guid>("Version")
+                    .IsConcurrencyToken()
+                    .HasColumnType("uuid");
+
                 b.HasKey("Id");
 
                 b.HasIndex("FranchiseId");
@@ -386,16 +390,12 @@ partial class SoraSoraDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue(0);
 
                 b.Property<string>("Sku")
-                    .IsRequired()
                     .HasColumnType("text");
 
                 b.Property<DateTimeOffset>("UpdatedAt")
                     .HasColumnType("timestamp with time zone");
 
                 b.HasKey("Id");
-
-                b.HasIndex("Sku")
-                    .IsUnique();
 
                 b.HasIndex("ProductId", "Position")
                     .IsUnique();

@@ -22,7 +22,7 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.ProductId).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(ProductVariant.MaxNameLength).IsRequired();
-        builder.Property(x => x.Sku).IsRequired();
+        builder.Property(x => x.Sku);
         builder.Property(x => x.CostPrice).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.SellingPrice).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.IsArchived).IsRequired().HasDefaultValue(false);
@@ -35,6 +35,5 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
-        builder.HasIndex(x => x.Sku).IsUnique();
     }
 }

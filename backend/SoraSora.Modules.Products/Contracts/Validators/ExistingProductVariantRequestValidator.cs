@@ -14,7 +14,6 @@ public sealed class ExistingProductVariantRequestValidator
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(ProductVariant.MaxNameLength);
-        RuleFor(x => x.Sku).NotEmpty();
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);

@@ -10,7 +10,7 @@ public sealed class ProductVariant : IAuditable
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string ProductId { get; private set; } = null!;
 
-    public string Sku { get; private set; } = null!;
+    public string? Sku { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public string Name { get; private set; } = null!;
@@ -28,39 +28,13 @@ public sealed class ProductVariant : IAuditable
 
     public static ProductVariant Create(
         string name,
-        string sku,
+        string? sku,
         int costPrice,
         int sellingPrice,
         int position
     )
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Product variant name is required.", nameof(name));
-        }
-        if (name.Length > MaxNameLength)
-        {
-            throw new ArgumentException(
-                $"Product variant name cannot exceed {MaxNameLength} characters.",
-                nameof(name)
-            );
-        }
-        if (string.IsNullOrWhiteSpace(sku))
-        {
-            throw new ArgumentException("Product variant SKU is required.", nameof(sku));
-        }
-        if (costPrice < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(costPrice));
-        }
-        if (sellingPrice < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(sellingPrice));
-        }
-        if (position < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(position));
-        }
+        ValidateDetails(name, sku, costPrice, sellingPrice, position);
 
         return new ProductVariant
         {
@@ -80,16 +54,55 @@ public sealed class ProductVariant : IAuditable
 
     public void UpdateDetails(
         string name,
-        string sku,
+        string? sku,
         int costPrice,
         int sellingPrice,
         int position
     )
     {
+        ValidateDetails(name, sku, costPrice, sellingPrice, position);
+
         Name = name;
         Sku = sku;
         CostPrice = costPrice;
         SellingPrice = sellingPrice;
         Position = position;
+    }
+
+    public void UpdatePosition(int position)
+    {
+        ValidatePosition(position);
+        Position = position;
+    }
+
+    private static void ValidateDetails(
+        string name,
+        string? sku,
+        int costPrice,
+        int sellingPrice,
+        int position
+    )
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Product variant name is required.", nameof(name));
+        }
+
+        if (name.Length > MaxNameLength)
+        {
+            throw new ArgumentException(
+                $"Product variant name cannot exceed {MaxNameLength} characters.",
+                nameof(name)
+            );
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(costPrice);
+        ArgumentOutOfRangeException.ThrowIfNegative(sellingPrice);
+        ArgumentOutOfRangeException.ThrowIfNegative(position);
+    }
+
+    private static void ValidatePosition(int position)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(position);
     }
 }

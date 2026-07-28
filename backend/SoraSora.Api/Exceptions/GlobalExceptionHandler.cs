@@ -30,13 +30,14 @@ public sealed class GlobalExceptionHandler(
                 Instance = httpContext.Request.Path,
             },
 
-            ConflictException => new ProblemDetails
+            ConflictException conflictException => new ProblemDetails
             {
                 Status = StatusCodes.Status409Conflict,
                 Title = "Conflict",
                 Detail = exception.Message,
                 Type = "https://sorasora.com/problems/conflict",
                 Instance = httpContext.Request.Path,
+                Extensions = { ["code"] = conflictException.Code },
             },
 
             BadRequestException => new ProblemDetails

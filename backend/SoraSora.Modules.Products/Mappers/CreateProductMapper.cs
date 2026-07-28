@@ -68,15 +68,9 @@ internal static class CreateProductDtoMapper
                 "A product without variations must have a base selling price."
             );
 
-        var sku =
-            request.BaseSku
-            ?? throw new InvalidOperationException(
-                "A product without variations must have a base SKU."
-            );
-
         return new CreateProductVariantCommand(
             Name: request.Name,
-            Sku: sku,
+            Sku: request.BaseSku,
             CostPrice: costPrice,
             SellingPrice: sellingPrice,
             Position: DefaultPosition,

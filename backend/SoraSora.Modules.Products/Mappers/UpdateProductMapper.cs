@@ -21,6 +21,7 @@ public static class UpdateProductMapper
         return new UpdateProductCommand
         {
             Id = request.Id,
+            Version = request.Version,
             Name = request.Name,
             Description = request.Description,
             SupplierCountry = request.SupplierCountry,

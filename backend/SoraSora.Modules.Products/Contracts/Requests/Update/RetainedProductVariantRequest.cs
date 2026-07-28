@@ -8,7 +8,7 @@ public sealed record RetainedProductVariantRequest
 
     public required string Name { get; init; }
 
-    public required string Sku { get; init; }
+    public string? Sku { get; init; }
 
     public int CostPrice { get; init; }
 

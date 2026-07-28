@@ -6,7 +6,8 @@ namespace SoraSora.Modules.Products.Contracts.Requests.Update;
 
 public sealed record UpdateProductRequest
 {
-    public required string Id { get; init; }
+    public string Id { get; init; } = string.Empty;
+    public Guid Version { get; init; }
     public required string Name { get; init; }
     public string? Description { get; init; }
     public SupplierCountry SupplierCountry { get; init; }
