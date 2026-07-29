@@ -14,6 +14,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="NUlid" Version="1.7.3" />
+    <PackageReference Include="SkiaSharp" Version="4.150.1" />
     <ProjectReference Include="..\SoraSora.Shared\SoraSora.Shared.csproj" />
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Auth\SoraSora.Modules.Auth.csproj" />

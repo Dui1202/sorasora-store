@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using SoraSora.Infrastructure.Domain;
+using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
@@ -23,11 +25,12 @@ public sealed partial class ProductService
         var product =
             await _dbContext
                 .Products()
+                .Where(x => !x.IsArchived)
                 .Include(x => x.ProductImages)
                 .Include(x => x.ProductVariants)
                     .ThenInclude(x => x.ProductVariantImage)
                 .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
-             ?? throw new NotFoundException($"Product {command.Id} was not found.");
+            ?? throw new NotFoundException($"Product {command.Id} was not found.");
 
         if (product.Version != command.Version)
         {
@@ -65,19 +68,37 @@ public sealed partial class ProductService
                 cancellationToken
             );
 
+            foreach (var path in imagePathsToRemove)
+            {
+                _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync(CancellationToken.None);
-            foreach (var path in uploadedImagePaths)
+
+            // A rollback does not reset EF Core's tracked entity states. Detach the rolled-back
+            // product changes so the cleanup save cannot accidentally persist them.
+            _dbContext.ChangeTracker.Clear();
+
+            try
             {
-                try
+                foreach (var path in uploadedImagePaths)
                 {
-                    await _fileStorageService.DeleteFileAsync(path, CancellationToken.None);
+                    _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
                 }
-                catch (Exception cleanupException)
+
+                if (uploadedImagePaths.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(CancellationToken.None);
+                }
+            }
+            catch (Exception cleanupException)
+            {
+                foreach (var path in uploadedImagePaths)
                 {
                     _logger.ProductImageCleanupFailed(cleanupException, path);
                 }
@@ -91,10 +112,7 @@ public sealed partial class ProductService
             throw;
         }
 
-        foreach (var path in imagePathsToRemove)
-        {
-            await TryDeleteFileAsync(path);
-        }
+        _logger.ProductUpdated(product.Name, product.Id);
 
         return ProductDtoMapper.ToProductResponse(product);
     }
@@ -207,14 +225,17 @@ public sealed partial class ProductService
             }
 
             ///Upload the new image
-            var path = ProductImagePathBuilder.BuildProductVariantImagePath(
-                productId: product.Id,
-                productVariantId: productVariantToUpdate.Id,
-                fileName: newImage.File.FileName
+            var path = await ProcessAndUploadImageAsync(
+                newImage.File,
+                format =>
+                    ProductImagePathBuilder.BuildProductVariantImagePath(
+                        productId: product.Id,
+                        productVariantId: productVariantToUpdate.Id,
+                        format
+                    ),
+                uploadedImagePaths,
+                cancellationToken
             );
-
-            uploadedImagePaths.Add(path);
-            await _fileStorageService.UploadFileAsync(newImage.File, path, cancellationToken);
 
             productVariantToUpdate.SetProductVariantImage(
                 ProductVariantImage.Create(path, newImage.Alt)
@@ -237,14 +258,17 @@ public sealed partial class ProductService
             ///Add and upload image
             var image = newProductVariant.ProductVariantImage;
 
-            var path = ProductImagePathBuilder.BuildProductVariantImagePath(
-                productId: product.Id,
-                productVariantId: productVariant.Id,
-                fileName: image.File.FileName
+            var path = await ProcessAndUploadImageAsync(
+                image.File,
+                format =>
+                    ProductImagePathBuilder.BuildProductVariantImagePath(
+                        productId: product.Id,
+                        productVariantId: productVariant.Id,
+                        format
+                    ),
+                uploadedImagePaths,
+                cancellationToken
             );
-
-            uploadedImagePaths.Add(path);
-            await _fileStorageService.UploadFileAsync(image.File, path, cancellationToken);
 
             productVariant.SetProductVariantImage(ProductVariantImage.Create(path, image.Alt));
         }
@@ -315,10 +339,12 @@ public sealed partial class ProductService
         foreach (var image in command.NewImages)
         {
             var file = image.File;
-            var path = ProductImagePathBuilder.BuildProductImagePath(product.Id, file.FileName);
-
-            uploadedImagePaths.Add(path);
-            await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
+            var path = await ProcessAndUploadImageAsync(
+                file,
+                format => ProductImagePathBuilder.BuildProductImagePath(product.Id, format),
+                uploadedImagePaths,
+                cancellationToken
+            );
 
             var productImage = ProductImage.Create(path, image.Alt, image.Position);
             product.AddImage(productImage);

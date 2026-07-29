@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using SoraSora.Infrastructure.Identity;
 using SoraSora.Infrastructure.Persistence;
+using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Modules.Auth.Application.Controllers;
 using SoraSora.Modules.Auth.Application.Services;
 using SoraSora.Modules.Auth.Application.Services.Abstractions;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Auth.Contracts.Validators;
+using SoraSora.Modules.Auth.Infrastructure.Persistence;
 
 namespace SoraSora.Modules.Auth.Application.Extensions;
 
@@ -85,6 +87,8 @@ public static class AuthModuleServiceCollectionExtension
         });
 
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+
+        services.AddSingleton<IModelBuilderContributor, AuthModuleModelBuilderContributor>();
 
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();

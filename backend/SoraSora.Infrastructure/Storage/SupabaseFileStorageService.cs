@@ -1,6 +1,5 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SoraSora.Infrastructure.Abstractions;
 
@@ -15,19 +14,18 @@ public class SupabaseFileStorageService(
     private readonly SupabaseStorageOptions _options = options.Value;
 
     public async Task<string> UploadFileAsync(
-        IFormFile file,
+        Stream content,
         string path,
+        string contentType,
         CancellationToken cancellationToken = default
     )
     {
-        await using var stream = file.OpenReadStream();
-
         var request = new PutObjectRequest
         {
             BucketName = _options.Bucket,
             Key = path,
-            InputStream = stream,
-            ContentType = file.ContentType,
+            InputStream = content,
+            ContentType = contentType,
             AutoCloseStream = false,
         };
 
@@ -40,6 +38,13 @@ public class SupabaseFileStorageService(
     {
         var request = new DeleteObjectRequest { BucketName = _options.Bucket, Key = path };
 
-        await _s3Client.DeleteObjectAsync(request, cancellationToken);
+        try
+        {
+            await _s3Client.DeleteObjectAsync(request, cancellationToken);
+        }
+        catch
+        {
+            //Do nothing
+        }
     }
 }

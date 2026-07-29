@@ -6,4 +6,7 @@ public static class ProductUploadLimits
     public const int MaxProductVariants = 20;
     public const long MaxImageBytes = 5 * 1024 * 1024;
     public const long MaxRequestBytes = 160 * 1024 * 1024;
+    public const int MaxImageWidth = 8192;
+    public const int MaxImageHeight = 8192;
+    public const long MaxImagePixels = 40_000_000;
 }

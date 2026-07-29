@@ -54,11 +54,11 @@ internal static partial class ProductServiceLogger
 
     [LoggerMessage(
         EventId = 1200,
-        EventName = nameof(ProductDeleted),
+        EventName = nameof(ProductArchived),
         Level = LogLevel.Information,
-        Message = "Deleted product {ProductName} with ID {ProductId}"
+        Message = "Archived product {ProductName} with ID {ProductId}"
     )]
-    public static partial void ProductDeleted(
+    public static partial void ProductArchived(
         this ILogger<ProductService> logger,
         string productName,
         string productId

@@ -75,6 +75,11 @@ public sealed class ProductVariant : IAuditable
         Position = position;
     }
 
+    public void Archive()
+    {
+        IsArchived = true;
+    }
+
     private static void ValidateDetails(
         string name,
         string? sku,

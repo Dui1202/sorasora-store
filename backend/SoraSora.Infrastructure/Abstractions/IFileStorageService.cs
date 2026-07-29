@@ -1,9 +1,13 @@
-using Microsoft.AspNetCore.Http;
-
 namespace SoraSora.Infrastructure.Abstractions;
 
 public interface IFileStorageService
 {
-    Task<string> UploadFileAsync(IFormFile file, string path, CancellationToken cancellationToken);
+    Task<string> UploadFileAsync(
+        Stream content,
+        string path,
+        string contentType,
+        CancellationToken cancellationToken
+    );
+
     Task DeleteFileAsync(string path, CancellationToken cancellationToken);
 }

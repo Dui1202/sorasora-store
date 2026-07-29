@@ -3,6 +3,7 @@ using SoraSora.Shared.Interface;
 
 namespace SoraSora.Modules.Products.Domain;
 
+//TODO: Add Variation, Variation-option, Franchise model to the Products Module
 public sealed class Product : IAuditable
 {
     public const int MaxNameLength = 100;
@@ -105,6 +106,12 @@ public sealed class Product : IAuditable
     public void AdvanceVersion()
     {
         Version = Guid.NewGuid();
+    }
+
+    public void Archive()
+    {
+        IsArchived = true;
+        IsPublished = false;
     }
 
     private static void ValidateDetails(

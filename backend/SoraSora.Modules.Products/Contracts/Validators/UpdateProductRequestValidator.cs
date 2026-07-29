@@ -43,10 +43,15 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
             request => !request.HasVariation,
             () =>
             {
-                RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
-                RuleFor(request => request.BaseSellingPrice).NotNull().GreaterThanOrEqualTo(0);
-                RuleFor(request => request.RetainedProductVariants).Empty();
-                RuleFor(request => request.NewProductVariants).Empty();
+                RuleFor(request => request.RetainedProductVariants)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(
+                        (request, retainedVariants) =>
+                            retainedVariants.Count + request.NewProductVariants.Count == 1
+                    )
+                    .WithMessage(
+                        $"A product can contain at most 1 variants if HasVariation field is false."
+                    );
             }
         );
         When(

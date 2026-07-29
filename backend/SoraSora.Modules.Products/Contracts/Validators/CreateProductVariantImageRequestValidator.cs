@@ -7,13 +7,6 @@ namespace SoraSora.Modules.Products.Contracts.Validators;
 public sealed class CreateProductVariantImageRequestValidator
     : AbstractValidator<CreateProductVariantImageRequest>
 {
-    private static readonly HashSet<string> AllowedImageContentTypes =
-    [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-    ];
-
     public CreateProductVariantImageRequestValidator()
     {
         RuleFor(x => x.File)
@@ -22,9 +15,7 @@ public sealed class CreateProductVariantImageRequestValidator
             .Must(file => file.Length > 0)
             .WithMessage("Image file cannot be empty.")
             .Must(file => file.Length <= ProductUploadLimits.MaxImageBytes)
-            .WithMessage("Image file cannot exceed 5 MB.")
-            .Must(file => AllowedImageContentTypes.Contains(file.ContentType))
-            .WithMessage("Only JPEG, PNG, and WebP images are allowed.");
+            .WithMessage("Image file cannot exceed 5 MB.");
         RuleFor(x => x.Alt).MaximumLength(200);
     }
 }

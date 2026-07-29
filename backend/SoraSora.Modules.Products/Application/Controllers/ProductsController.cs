@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Application.Services;
+using SoraSora.Modules.Products.Contracts;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
@@ -17,6 +18,9 @@ public sealed class ProductsController(IProductService productService) : Control
 {
     private readonly IProductService _productService = productService;
 
+    [HasPermission(AppPermissions.Products.Create)]
+    [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromForm] CreateProductRequest request,
@@ -35,6 +39,7 @@ public sealed class ProductsController(IProductService productService) : Control
         return Created($"{ApiRoute.ProductsApiRoute}/{product.Id}", product);
     }
 
+    [HasPermission(AppPermissions.Products.Read)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -43,6 +48,7 @@ public sealed class ProductsController(IProductService productService) : Control
         return Ok(products);
     }
 
+    [HasPermission(AppPermissions.Products.Read)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
@@ -56,6 +62,9 @@ public sealed class ProductsController(IProductService productService) : Control
         return Ok(product);
     }
 
+    [HasPermission(AppPermissions.Products.Update)]
+    [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
     [HttpPatch("{id}")]
     public async Task<ActionResult<ProductResponse>> Update(
         string id,
@@ -78,8 +87,12 @@ public sealed class ProductsController(IProductService productService) : Control
         return Ok(product);
     }
 
-    public Task<IActionResult> Delete(string id)
+    [HasPermission(AppPermissions.Products.Delete)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        await _productService.DeleteProductAsync(id, cancellationToken);
+
+        return NoContent();
     }
 }

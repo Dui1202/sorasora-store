@@ -1,3 +1,5 @@
+using SoraSora.Infrastructure.Domain;
+using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Responses;
@@ -39,14 +41,17 @@ public sealed partial class ProductService
 
                 var file = productVariantCommand.ProductVariantImage.File;
                 var alt = productVariantCommand.ProductVariantImage.Alt;
-                var path = ProductImagePathBuilder.BuildProductVariantImagePath(
-                    productId: product.Id,
-                    productVariantId: productVariant.Id,
-                    fileName: file.FileName
+                var path = await ProcessAndUploadImageAsync(
+                    file,
+                    format =>
+                        ProductImagePathBuilder.BuildProductVariantImagePath(
+                            productId: product.Id,
+                            productVariantId: productVariant.Id,
+                            format
+                        ),
+                    uploadedImagePaths,
+                    cancellationToken
                 );
-
-                uploadedImagePaths.Add(path);
-                await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
 
                 productVariant.SetProductVariantImage(ProductVariantImage.Create(path, alt));
 
@@ -56,15 +61,18 @@ public sealed partial class ProductService
             foreach (var imageRequest in command.ProductImages)
             {
                 var file = imageRequest.File;
-                var path = ProductImagePathBuilder.BuildProductImagePath(
-                    productId: product.Id,
-                    fileName: file.FileName
+                var path = await ProcessAndUploadImageAsync(
+                    file,
+                    format =>
+                        ProductImagePathBuilder.BuildProductImagePath(
+                            productId: product.Id,
+                            format
+                        ),
+                    uploadedImagePaths,
+                    cancellationToken
                 );
                 var alt = imageRequest.Alt;
                 var position = imageRequest.Position;
-
-                uploadedImagePaths.Add(path);
-                await _fileStorageService.UploadFileAsync(file, path, cancellationToken);
 
                 product.AddImage(path, alt, position);
             }
@@ -73,18 +81,25 @@ public sealed partial class ProductService
         }
         catch
         {
-            foreach (var path in uploadedImagePaths)
+            try
             {
-                try
+                foreach (var path in uploadedImagePaths)
                 {
-                    await _fileStorageService.DeleteFileAsync(path, CancellationToken.None);
+                    _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
+
+                    if (uploadedImagePaths.Count > 0)
+                    {
+                        await _dbContext.SaveChangesAsync(CancellationToken.None);
+                    }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                foreach (var path in uploadedImagePaths)
                 {
                     _logger.ProductImageCleanupFailed(ex, path);
                 }
             }
-
             throw;
         }
 

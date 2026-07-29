@@ -1095,6 +1095,10 @@
             "NUlid": {
               "target": "Package",
               "version": "[1.7.3, )"
+            },
+            "SkiaSharp": {
+              "target": "Package",
+              "version": "[4.150.1, )"
             }
           },
           "imports": [
