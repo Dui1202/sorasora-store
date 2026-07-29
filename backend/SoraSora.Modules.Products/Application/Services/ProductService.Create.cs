@@ -81,16 +81,18 @@ public sealed partial class ProductService
         }
         catch
         {
+            _dbContext.ChangeTracker.Clear();
+
             try
             {
                 foreach (var path in uploadedImagePaths)
                 {
                     _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
+                }
 
-                    if (uploadedImagePaths.Count > 0)
-                    {
-                        await _dbContext.SaveChangesAsync(CancellationToken.None);
-                    }
+                if (uploadedImagePaths.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(CancellationToken.None);
                 }
             }
             catch (Exception ex)
