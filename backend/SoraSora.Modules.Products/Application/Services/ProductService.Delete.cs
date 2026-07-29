@@ -5,22 +5,31 @@ using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
-using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
 public sealed partial class ProductService
 {
-    public async Task DeleteProductAsync(string id, CancellationToken cancellationToken)
+    public async Task DeleteProductAsync(
+        string id,
+        Guid version,
+        CancellationToken cancellationToken
+    )
     {
         var product =
             await _dbContext
                 .Products()
+                .Where(x => !x.IsArchived)
                 .Include(x => x.ProductImages)
                 .Include(x => x.ProductVariants)
                     .ThenInclude(x => x.ProductVariantImage)
                 .SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException($"Product {id} was not found.");
+            ?? throw new ProductNotFoundException(id);
+
+        if (product.Version != version)
+        {
+            throw new ProductConcurrencyException(product.Id);
+        }
 
         var productImages = product.ProductImages.ToList();
         var productVariantImages = product

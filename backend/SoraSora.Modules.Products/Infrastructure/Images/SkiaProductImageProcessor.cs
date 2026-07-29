@@ -1,7 +1,7 @@
 using SkiaSharp;
+using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Images;
 using SoraSora.Modules.Products.Contracts;
-using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Products.Infrastructure.Images;
 
@@ -30,7 +30,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
     /// <returns>
     /// Canonical image bytes together with the server-detected format and final dimensions.
     /// </returns>
-    /// <exception cref="BadRequestException">
+    /// <exception cref="ProductValidationException">
     /// The input is empty, malformed, unsupported, animated, too large, or cannot be encoded.
     /// </exception>
     /// <exception cref="OperationCanceledException">
@@ -47,7 +47,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
         if (sourceLength <= 0 || sourceLength > ProductUploadLimits.MaxImageBytes)
         {
-            throw new BadRequestException("Image file must be between 1 byte and 5 MB.");
+            throw new ProductValidationException(
+                "Image file must be between 1 byte and 5 MB."
+            );
         }
 
         // Read only format and dimensions first. Pixel memory is not allocated until the
@@ -91,7 +93,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
             if (content.LongLength > ProductUploadLimits.MaxImageBytes)
             {
-                throw new BadRequestException("The processed image cannot exceed 5 MB.");
+                throw new ProductValidationException(
+                    "The processed image cannot exceed 5 MB."
+                );
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -126,7 +130,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
             return codec;
         }
-        catch (BadRequestException)
+        catch (ProductValidationException)
         {
             throw;
         }
@@ -150,7 +154,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
             SKEncodedImageFormat.Jpeg => ProductImageFormat.Jpeg,
             SKEncodedImageFormat.Png => ProductImageFormat.Png,
             SKEncodedImageFormat.Webp => ProductImageFormat.WebP,
-            _ => throw new BadRequestException("Only JPEG, PNG, and WebP images are allowed."),
+            _ => throw new ProductValidationException(
+                "Only JPEG, PNG, and WebP images are allowed."
+            ),
         };
     }
 
@@ -173,7 +179,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
             || (long)width * height > ProductUploadLimits.MaxImagePixels
         )
         {
-            throw new BadRequestException(
+            throw new ProductValidationException(
                 $"Image dimensions cannot exceed {ProductUploadLimits.MaxImageWidth}x"
                     + $"{ProductUploadLimits.MaxImageHeight} pixels or "
                     + $"{ProductUploadLimits.MaxImagePixels:N0} total pixels."
@@ -182,7 +188,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
         if (codec.FrameCount > 1)
         {
-            throw new BadRequestException("Animated images are not supported.");
+            throw new ProductValidationException("Animated images are not supported.");
         }
     }
 
@@ -287,9 +293,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
         return stream.ToArray();
     }
 
-    private static BadRequestException InvalidImage()
+    private static ProductValidationException InvalidImage()
     {
-        return new BadRequestException(
+        return new ProductValidationException(
             "The uploaded file is not a valid JPEG, PNG, or WebP image."
         );
     }

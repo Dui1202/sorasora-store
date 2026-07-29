@@ -33,7 +33,11 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
                 $"A product can contain at most {ProductUploadLimits.MaxProductImages} images."
             )
             .Must((request, _) => HaveUniqueImagePositions(request))
-            .WithMessage("Product image positions must be unique.");
+            .WithMessage("Product image positions must be unique.")
+            .Must((request, _) => HaveUniqueVariantIds(request))
+            .WithMessage("Retained product variants ids must be unique.")
+            .Must((request, _) => HaveUniquePaths(request))
+            .WithMessage("Retained product images paths must be unique.");
         RuleForEach(x => x.RetainedImages).SetValidator(existingImageValidator);
         RuleForEach(x => x.NewImages).SetValidator(newImageValidator);
         RuleForEach(x => x.RetainedProductVariants).SetValidator(existingVariantValidator);
@@ -50,7 +54,7 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
                             retainedVariants.Count + request.NewProductVariants.Count == 1
                     )
                     .WithMessage(
-                        $"A product can contain at most 1 variants if HasVariation field is false."
+                        $"A product can contain exactly 1 variants if Has Variation field is false."
                     );
             }
         );
@@ -99,5 +103,23 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
         var variantCount = request.RetainedProductVariants.Count + request.NewProductVariants.Count;
 
         return positions.Distinct().Count() == variantCount;
+    }
+
+    private static bool HaveUniqueVariantIds(UpdateProductRequest request)
+    {
+        var ids = request.RetainedProductVariants.Select(variant => variant.Id);
+
+        var retainedVariantCount = request.RetainedProductVariants.Count;
+
+        return ids.Distinct().Count() == retainedVariantCount;
+    }
+
+    private static bool HaveUniquePaths(UpdateProductRequest request)
+    {
+        var paths = request.RetainedImages.Select(variant => variant.Path);
+
+        var retainedImageCount = request.RetainedImages.Count;
+
+        return paths.Distinct().Count() == retainedImageCount;
     }
 }

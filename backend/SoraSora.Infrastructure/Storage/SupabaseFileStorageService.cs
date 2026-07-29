@@ -29,7 +29,14 @@ public class SupabaseFileStorageService(
             AutoCloseStream = false,
         };
 
-        await _s3Client.PutObjectAsync(request, cancellationToken);
+        try
+        {
+            await _s3Client.PutObjectAsync(request, cancellationToken);
+        }
+        catch (AmazonS3Exception exception)
+        {
+            throw new FileStorageException("upload", path, exception);
+        }
 
         return path;
     }
@@ -42,9 +49,9 @@ public class SupabaseFileStorageService(
         {
             await _s3Client.DeleteObjectAsync(request, cancellationToken);
         }
-        catch
+        catch (AmazonS3Exception exception)
         {
-            //Do nothing
+            throw new FileStorageException("deletion", path, exception);
         }
     }
 }

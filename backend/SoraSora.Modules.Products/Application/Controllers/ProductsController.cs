@@ -31,7 +31,7 @@ public sealed class ProductsController(IProductService productService) : Control
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return this.ValidationProblem(validationResult);
+            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
         }
         var command = CreateProductDtoMapper.ToCreateProductCommand(request);
         var product = await _productService.CreateProductAsync(command, cancellationToken);
@@ -54,18 +54,13 @@ public sealed class ProductsController(IProductService productService) : Control
     {
         var product = await _productService.GetProductByIdAsync(id);
 
-        if (product is null)
-        {
-            return NotFound();
-        }
-
         return Ok(product);
     }
 
     [HasPermission(AppPermissions.Products.Update)]
     [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
-    [HttpPatch("{id}")]
+    [HttpPut("{id}")]
     public async Task<ActionResult<ProductResponse>> Update(
         string id,
         [FromForm] UpdateProductRequest request,
@@ -78,7 +73,7 @@ public sealed class ProductsController(IProductService productService) : Control
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return this.ValidationProblem(validationResult);
+            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
         }
 
         var command = UpdateProductMapper.ToUpdateProductCommand(request);
@@ -89,9 +84,13 @@ public sealed class ProductsController(IProductService productService) : Control
 
     [HasPermission(AppPermissions.Products.Delete)]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        string id,
+        Guid version,
+        CancellationToken cancellationToken
+    )
     {
-        await _productService.DeleteProductAsync(id, cancellationToken);
+        await _productService.DeleteProductAsync(id, version, cancellationToken);
 
         return NoContent();
     }

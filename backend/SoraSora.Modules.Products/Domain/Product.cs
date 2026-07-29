@@ -123,12 +123,12 @@ public sealed class Product : IAuditable
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException("Product name is required!", nameof(name));
+            throw new ProductDomainException("Product name is required.", nameof(name));
         }
 
         if (name.Length > MaxNameLength)
         {
-            throw new ArgumentException(
+            throw new ProductDomainException(
                 $"Product name cannot exceed {MaxNameLength} characters.",
                 nameof(name)
             );
@@ -136,7 +136,7 @@ public sealed class Product : IAuditable
 
         if (description?.Length > MaxDescriptionLength)
         {
-            throw new ArgumentException(
+            throw new ProductDomainException(
                 $"Product description cannot exceed {MaxDescriptionLength} characters.",
                 nameof(description)
             );
@@ -144,12 +144,15 @@ public sealed class Product : IAuditable
 
         if (!Enum.IsDefined(supplierCountry))
         {
-            throw new ArgumentOutOfRangeException(nameof(supplierCountry));
+            throw new ProductDomainException(
+                "Supplier country is invalid.",
+                nameof(supplierCountry)
+            );
         }
 
         if (!Enum.IsDefined(sellMode))
         {
-            throw new ArgumentOutOfRangeException(nameof(sellMode));
+            throw new ProductDomainException("Sell mode is invalid.", nameof(sellMode));
         }
     }
 }

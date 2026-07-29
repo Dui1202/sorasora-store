@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Shared.Exceptions;
 
@@ -19,39 +18,52 @@ public sealed class GlobalExceptionHandler(
         CancellationToken cancellationToken
     )
     {
+        var errorCode = exception is IErrorCodeException codedException
+            ? codedException.Code
+            : "INTERNAL_SERVER_ERROR";
+
         var problemDetails = exception switch
         {
-            NotFoundException => new ProblemDetails
-            {
-                Status = StatusCodes.Status404NotFound,
-                Title = "Resource not found",
-                Detail = exception.Message,
-                Type = "https://sorasora.com/problems/resource-not-found",
-                Instance = httpContext.Request.Path,
-            },
+            NotFoundException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status404NotFound,
+                "Resource not found",
+                exception.Message
+            ),
 
-            ConflictException conflictException => new ProblemDetails
-            {
-                Status = StatusCodes.Status409Conflict,
-                Title = "Conflict",
-                Detail = exception.Message,
-                Type = "https://sorasora.com/problems/conflict",
-                Instance = httpContext.Request.Path,
-                Extensions = { ["code"] = conflictException.Code },
-            },
+            ConflictException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status409Conflict,
+                "Conflict",
+                exception.Message
+            ),
 
-            BadRequestException => new ProblemDetails
+            BadRequestException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status400BadRequest,
+                "Bad request",
+                exception.Message
+            ),
+
+            ExternalServiceException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status503ServiceUnavailable,
+                "Service unavailable",
+                exception.Message
+            ),
+
+            IdentityOperationException identityException => new ValidationProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
-                Title = "Bad request",
-                Detail = exception.Message,
-                Type = "https://sorasora.com/problems/bad-request",
+                Title = "Validation failed",
+                Detail = identityException.Message,
+                Type = GetProblemType(errorCode),
                 Instance = httpContext.Request.Path,
-            },
-
-            IdentityOperationException => new ValidationProblemDetails
-            {
-                Errors = ((IdentityOperationException)exception)
+                Errors = identityException
                     .Errors.GroupBy(error => error.Code)
                     .ToDictionary(
                         group => group.Key,
@@ -59,24 +71,25 @@ public sealed class GlobalExceptionHandler(
                     ),
             },
 
-            InvalidCredentialsException => new ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Invalid credentials",
-                Detail = exception.Message,
-                Type = "https://sorasora.com/problems/invalid-credentials",
-                Instance = httpContext.Request.Path,
-            },
+            InvalidCredentialsException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status401Unauthorized,
+                "Invalid credentials",
+                exception.Message
+            ),
 
-            _ => new ProblemDetails
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Title = "Internal server error",
-                Detail = "An unexpected error occurred.",
-                Type = "https://sorasora.com/problems/internal-server-error",
-                Instance = httpContext.Request.Path,
-            },
+            _ => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status500InternalServerError,
+                "Internal server error",
+                "An unexpected error occurred."
+            ),
         };
+
+        problemDetails.Extensions["code"] = errorCode;
+        problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
         if (problemDetails.Status == StatusCodes.Status500InternalServerError)
         {
@@ -93,5 +106,30 @@ public sealed class GlobalExceptionHandler(
                 Exception = exception,
             }
         );
+    }
+
+    private static ProblemDetails CreateProblemDetails(
+        HttpContext httpContext,
+        string errorCode,
+        int status,
+        string title,
+        string detail
+    )
+    {
+        return new ProblemDetails
+        {
+            Status = status,
+            Title = title,
+            Detail = detail,
+            Type = GetProblemType(errorCode),
+            Instance = httpContext.Request.Path,
+        };
+    }
+
+    private static string GetProblemType(string errorCode)
+    {
+        var problemName = errorCode.ToLowerInvariant().Replace('_', '-');
+
+        return $"https://sorasora.com/problems/{problemName}";
     }
 }

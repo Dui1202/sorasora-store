@@ -1,5 +1,6 @@
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence.Extensions;
+using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Responses;
@@ -18,14 +19,23 @@ public sealed partial class ProductService
     )
     {
         var uploadedImagePaths = new List<string>();
-        var product = Product.Create(
-            name: command.Name,
-            description: command.Description,
-            supplierCountry: command.SupplierCountry,
-            sellMode: command.SellMode,
-            isPublished: command.IsPublished,
-            hasVariation: command.HasVariation
-        );
+        Product product;
+
+        try
+        {
+            product = Product.Create(
+                name: command.Name,
+                description: command.Description,
+                supplierCountry: command.SupplierCountry,
+                sellMode: command.SellMode,
+                isPublished: command.IsPublished,
+                hasVariation: command.HasVariation
+            );
+        }
+        catch (ProductDomainException exception)
+        {
+            throw new ProductValidationException(exception.Message, exception);
+        }
 
         try
         {
@@ -79,7 +89,7 @@ public sealed partial class ProductService
             _dbContext.Products().Add(product);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
             _dbContext.ChangeTracker.Clear();
 
@@ -102,6 +112,15 @@ public sealed partial class ProductService
                     _logger.ProductImageCleanupFailed(ex, path);
                 }
             }
+
+            if (exception is ProductDomainException domainException)
+            {
+                throw new ProductValidationException(
+                    domainException.Message,
+                    domainException
+                );
+            }
+
             throw;
         }
 

@@ -1,3 +1,10 @@
 namespace SoraSora.Shared.Exceptions;
 
-public sealed class BadRequestException(string message) : Exception(message) { }
+public class BadRequestException(
+    string message,
+    string code = "BAD_REQUEST",
+    Exception? innerException = null
+) : Exception(message, innerException), IErrorCodeException
+{
+    public string Code { get; } = code;
+}

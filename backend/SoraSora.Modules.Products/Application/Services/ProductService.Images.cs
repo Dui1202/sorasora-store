@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http;
+using SoraSora.Infrastructure.Abstractions;
+using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Images;
 
 namespace SoraSora.Modules.Products.Application.Services;
@@ -23,12 +25,19 @@ public sealed partial class ProductService
         uploadedImagePaths.Add(path);
 
         await using var content = new MemoryStream(processedImage.Content, writable: false);
-        await _fileStorageService.UploadFileAsync(
-            content,
-            path,
-            processedImage.ContentType,
-            cancellationToken
-        );
+        try
+        {
+            await _fileStorageService.UploadFileAsync(
+                content,
+                path,
+                processedImage.ContentType,
+                cancellationToken
+            );
+        }
+        catch (FileStorageException exception)
+        {
+            throw new ProductStorageException(exception);
+        }
 
         return path;
     }

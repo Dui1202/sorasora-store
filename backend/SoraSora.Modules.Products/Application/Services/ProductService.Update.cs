@@ -9,10 +9,10 @@ using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Infrastructure.Storage;
 using SoraSora.Modules.Products.Mappers;
-using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
+//TODO: Archive product variants instead delete them permanently
 public sealed partial class ProductService
 {
     public async Task<ProductResponse> UpdateProductAsync(
@@ -30,7 +30,7 @@ public sealed partial class ProductService
                 .Include(x => x.ProductVariants)
                     .ThenInclude(x => x.ProductVariantImage)
                 .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
-            ?? throw new NotFoundException($"Product {command.Id} was not found.");
+            ?? throw new ProductNotFoundException(command.Id);
 
         if (product.Version != command.Version)
         {
@@ -109,24 +109,17 @@ public sealed partial class ProductService
                 throw new ProductConcurrencyException(product.Id, ex);
             }
 
+            if (ex is ProductDomainException domainException)
+            {
+                throw new ProductValidationException(domainException.Message, domainException);
+            }
+
             throw;
         }
 
         _logger.ProductUpdated(product.Name, product.Id);
 
         return ProductDtoMapper.ToProductResponse(product);
-    }
-
-    private async Task TryDeleteFileAsync(string path)
-    {
-        try
-        {
-            await _fileStorageService.DeleteFileAsync(path, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            _logger.ProductImageDeleteFailed(ex, path);
-        }
     }
 
     private async Task UpdateProductVariantsAsync(
@@ -175,9 +168,7 @@ public sealed partial class ProductService
                 )
             )
             {
-                throw new BadRequestException(
-                    $"Product Variant {productVariant.Id} doesn't belong to Product {product.Id}."
-                );
+                throw new ProductVariantOwnershipException(productVariant.Id, product.Id);
             }
 
             productVariantToUpdate.UpdatePosition(tempPositions[tempIndex++]);
@@ -196,9 +187,7 @@ public sealed partial class ProductService
                 )
             )
             {
-                throw new BadRequestException(
-                    $"Product Variant {productVariant.Id} doesn't belong to Product {product.Id}."
-                );
+                throw new ProductVariantOwnershipException(productVariant.Id, product.Id);
             }
 
             productVariantToUpdate.UpdateDetails(
@@ -313,9 +302,7 @@ public sealed partial class ProductService
         {
             if (!existingProductImagesById.TryGetValue(image.Path, out var productImage))
             {
-                throw new BadRequestException(
-                    $"Image with path {image.Path} does not belong to {product.Id}"
-                );
+                throw new ProductImageOwnershipException(image.Path, product.Id);
             }
 
             productImage.UpdatePosition(tempPositions[tempIndex++]);
@@ -327,9 +314,7 @@ public sealed partial class ProductService
         {
             if (!existingProductImagesById.TryGetValue(image.Path, out var productImage))
             {
-                throw new BadRequestException(
-                    $"Image with path {image.Path} does not belong to {product.Id}"
-                );
+                throw new ProductImageOwnershipException(image.Path, product.Id);
             }
 
             productImage.UpdateDetails(image.Alt, image.Position);

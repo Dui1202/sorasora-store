@@ -18,7 +18,7 @@ public sealed class ProductImage
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            throw new ArgumentException("Image path is required!", nameof(path));
+            throw new ProductDomainException("Image path is required.", nameof(path));
         }
 
         ValidateDetails(alt, position);
@@ -49,17 +49,23 @@ public sealed class ProductImage
     {
         if (alt?.Length > MaxAltLength)
         {
-            throw new ArgumentException(
+            throw new ProductDomainException(
                 $"Image alt text cannot exceed {MaxAltLength} characters.",
                 nameof(alt)
             );
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(position);
+        ValidatePosition(position);
     }
 
     private static void ValidatePosition(int position)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(position);
+        if (position < 0)
+        {
+            throw new ProductDomainException(
+                "Image position cannot be negative.",
+                nameof(position)
+            );
+        }
     }
 }

@@ -1,4 +1,5 @@
 using SoraSora.Shared.Exceptions;
+using SoraSora.Modules.Products.Contracts;
 
 namespace SoraSora.Modules.Products.Application.Exceptions;
 
@@ -9,5 +10,5 @@ public sealed class ProductConcurrencyException(string productId, Exception? inn
         innerException
     )
 {
-    public const string ErrorCode = "product_concurrency_conflict";
+    public const string ErrorCode = ProductErrorCodes.ConcurrencyConflict;
 }

@@ -90,24 +90,35 @@ public sealed class ProductVariant : IAuditable
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException("Product variant name is required.", nameof(name));
+            throw new ProductDomainException(
+                "Product variant name is required.",
+                nameof(name)
+            );
         }
 
         if (name.Length > MaxNameLength)
         {
-            throw new ArgumentException(
+            throw new ProductDomainException(
                 $"Product variant name cannot exceed {MaxNameLength} characters.",
                 nameof(name)
             );
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(costPrice);
-        ArgumentOutOfRangeException.ThrowIfNegative(sellingPrice);
-        ArgumentOutOfRangeException.ThrowIfNegative(position);
+        ValidateNonNegative(costPrice, nameof(costPrice));
+        ValidateNonNegative(sellingPrice, nameof(sellingPrice));
+        ValidatePosition(position);
     }
 
     private static void ValidatePosition(int position)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(position);
+        ValidateNonNegative(position, nameof(position));
+    }
+
+    private static void ValidateNonNegative(int value, string field)
+    {
+        if (value < 0)
+        {
+            throw new ProductDomainException($"{field} cannot be negative.", field);
+        }
     }
 }
