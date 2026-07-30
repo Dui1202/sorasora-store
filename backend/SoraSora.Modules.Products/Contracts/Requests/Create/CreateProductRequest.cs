@@ -17,4 +17,5 @@ public sealed record CreateProductRequest
     public int? BaseSellingPrice { get; init; }
     public IReadOnlyCollection<CreateProductVariantRequest> ProductVariants { get; init; } = [];
     public required IReadOnlyCollection<CreateProductImageRequest> ProductImages { get; init; }
+    public IReadOnlyCollection<CreateVariationRequest> Variations { get; init; } = [];
 }

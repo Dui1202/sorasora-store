@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence.Extensions;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 
 namespace SoraSora.Modules.Products.Application.Services;

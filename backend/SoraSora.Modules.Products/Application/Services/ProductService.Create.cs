@@ -1,10 +1,10 @@
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence.Extensions;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Infrastructure.Storage;
 using SoraSora.Modules.Products.Mappers;
@@ -115,10 +115,7 @@ public sealed partial class ProductService
 
             if (exception is ProductDomainException domainException)
             {
-                throw new ProductValidationException(
-                    domainException.Message,
-                    domainException
-                );
+                throw new ProductValidationException(domainException.Message, domainException);
             }
 
             throw;

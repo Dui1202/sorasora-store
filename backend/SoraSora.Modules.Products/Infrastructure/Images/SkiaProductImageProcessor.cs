@@ -1,7 +1,7 @@
 using SkiaSharp;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Images;
 using SoraSora.Modules.Products.Contracts;
+using SoraSora.Modules.Products.Exceptions;
 
 namespace SoraSora.Modules.Products.Infrastructure.Images;
 
@@ -47,9 +47,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
         if (sourceLength <= 0 || sourceLength > ProductUploadLimits.MaxImageBytes)
         {
-            throw new ProductValidationException(
-                "Image file must be between 1 byte and 5 MB."
-            );
+            throw new ProductValidationException("Image file must be between 1 byte and 5 MB.");
         }
 
         // Read only format and dimensions first. Pixel memory is not allocated until the
@@ -93,9 +91,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
             if (content.LongLength > ProductUploadLimits.MaxImageBytes)
             {
-                throw new ProductValidationException(
-                    "The processed image cannot exceed 5 MB."
-                );
+                throw new ProductValidationException("The processed image cannot exceed 5 MB.");
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -134,11 +130,8 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
         {
             throw;
         }
-        catch (Exception exception) when (
-            exception is ArgumentException
-                or InvalidOperationException
-                or IOException
-        )
+        catch (Exception exception)
+            when (exception is ArgumentException or InvalidOperationException or IOException)
         {
             throw InvalidImage();
         }
@@ -196,10 +189,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
     /// Applies the encoded EXIF orientation to the pixels so the re-encoded file no longer
     /// depends on orientation metadata for correct display.
     /// </summary>
-    private static SKBitmap ApplyEncodedOrientation(
-        SKBitmap source,
-        SKEncodedOrigin encodedOrigin
-    )
+    private static SKBitmap ApplyEncodedOrientation(SKBitmap source, SKEncodedOrigin encodedOrigin)
     {
         var swapsDimensions =
             encodedOrigin

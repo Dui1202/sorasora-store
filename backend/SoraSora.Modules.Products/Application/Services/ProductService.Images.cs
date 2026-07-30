@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using SoraSora.Infrastructure.Abstractions;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Images;
+using SoraSora.Modules.Products.Exceptions;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
@@ -15,11 +15,7 @@ public sealed partial class ProductService
     )
     {
         await using var source = file.OpenReadStream();
-        var processedImage = _productImageProcessor.Process(
-            source,
-            file.Length,
-            cancellationToken
-        );
+        var processedImage = _productImageProcessor.Process(source, file.Length, cancellationToken);
         var path = buildPath(processedImage.Format);
 
         uploadedImagePaths.Add(path);

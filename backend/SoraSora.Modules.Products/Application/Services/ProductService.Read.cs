@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Contracts.Responses;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Mappers;
 

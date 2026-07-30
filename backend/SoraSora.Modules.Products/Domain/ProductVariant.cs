@@ -6,10 +6,9 @@ namespace SoraSora.Modules.Products.Domain;
 public sealed class ProductVariant : IAuditable
 {
     public const int MaxNameLength = 100;
-
+    private readonly List<ProductVariantOption> _productVariantOptions = [];
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string ProductId { get; private set; } = null!;
-
     public string? Sku { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -20,6 +19,8 @@ public sealed class ProductVariant : IAuditable
     public int Position { get; private set; } = 0;
     public bool IsArchived { get; private set; }
     public ProductVariantImage? ProductVariantImage { get; private set; }
+    public IReadOnlyCollection<ProductVariantOption> ProductVariantOptions =>
+        _productVariantOptions;
 
     // public required bool IsFullPaymentAllowed { get; set; } = true;
     // public required bool IsDepositRequired { get; set; } = false;
@@ -90,10 +91,7 @@ public sealed class ProductVariant : IAuditable
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ProductDomainException(
-                "Product variant name is required.",
-                nameof(name)
-            );
+            throw new ProductDomainException("Product variant name is required.", nameof(name));
         }
 
         if (name.Length > MaxNameLength)

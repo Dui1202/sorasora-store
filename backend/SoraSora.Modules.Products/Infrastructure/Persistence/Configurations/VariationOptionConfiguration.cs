@@ -12,6 +12,10 @@ public sealed class VariationOptionConfiguration : IEntityTypeConfiguration<Vari
         builder.ToTable("VariationOption");
 
         builder.HasKey(x => x.Id);
+        builder.HasAlternateKey(x => new { x.Id, x.VariationId });
+        builder.HasIndex(x => new { x.VariationId, x.Value }).IsUnique();
+        builder.HasIndex(x => new { x.VariationId, x.Position });
+
         builder
             .Property(x => x.Id)
             .HasValueGenerator<UlidStringValueGenerator>()

@@ -11,6 +11,8 @@ public sealed class VariationConfiguration : IEntityTypeConfiguration<Variation>
     {
         builder.ToTable("Variation");
         builder.HasKey(x => x.Id);
+        builder.HasIndex(x => new { x.ProductId, x.Name }).IsUnique();
+        builder.HasIndex(x => new { x.ProductId, x.Position });
 
         builder
             .Property(x => x.Id)
@@ -21,5 +23,11 @@ public sealed class VariationConfiguration : IEntityTypeConfiguration<Variation>
         builder.Property(x => x.ProductId).IsRequired();
         builder.Property(x => x.Name).IsRequired();
         builder.Property(x => x.Position).IsRequired().HasDefaultValue(0);
+
+        builder
+            .HasOne(x => x.Product)
+            .WithMany(x => x.Variations)
+            .HasForeignKey(x => x.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

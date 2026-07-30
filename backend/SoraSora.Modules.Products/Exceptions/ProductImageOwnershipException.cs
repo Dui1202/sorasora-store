@@ -1,7 +1,7 @@
 using SoraSora.Modules.Products.Contracts;
 using SoraSora.Shared.Exceptions;
 
-namespace SoraSora.Modules.Products.Application.Exceptions;
+namespace SoraSora.Modules.Products.Exceptions;
 
 public sealed class ProductImageOwnershipException(string imagePath, string productId)
     : BadRequestException(

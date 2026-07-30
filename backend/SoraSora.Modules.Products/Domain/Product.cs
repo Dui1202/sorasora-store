@@ -11,6 +11,7 @@ public sealed class Product : IAuditable
 
     private readonly List<ProductImage> _productImages = [];
     private readonly List<ProductVariant> _productVariants = [];
+    private readonly List<Variation> _variations = [];
     public IReadOnlyCollection<ProductImage> ProductImages => _productImages;
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string Name { get; private set; } = null!;
@@ -20,11 +21,8 @@ public sealed class Product : IAuditable
     public Guid Version { get; private set; } = Guid.NewGuid();
     public SupplierCountry SupplierCountry { get; private set; }
     public SellMode SellMode { get; private set; }
-
-    // public DateTime? PreorderReleaseAt { get; set; }
     public IReadOnlyCollection<ProductVariant> ProductVariants => _productVariants;
-
-    // public ICollection<Variation> Variations { get; set; } = [];
+    public IReadOnlyCollection<Variation> Variations => _variations;
     public bool IsPublished { get; private set; }
     public bool HasVariation { get; private set; }
     public bool IsArchived { get; private set; }
@@ -101,6 +99,16 @@ public sealed class Product : IAuditable
     public void RemoveProductVariant(ProductVariant productVariant)
     {
         _productVariants.Remove(productVariant);
+    }
+
+    public void AddVariation(Variation variation)
+    {
+        _variations.Add(variation);
+    }
+
+    public void RemoveVariation(Variation variation)
+    {
+        _variations.Remove(variation);
     }
 
     public void AdvanceVersion()

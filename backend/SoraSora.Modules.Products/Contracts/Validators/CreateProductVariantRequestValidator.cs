@@ -8,7 +8,8 @@ public sealed class CreateProductVariantRequestValidator
     : AbstractValidator<CreateProductVariantRequest>
 {
     public CreateProductVariantRequestValidator(
-        IValidator<CreateProductVariantImageRequest> imageValidator
+        IValidator<CreateProductVariantImageRequest> imageValidator,
+        IValidator<CreateProductVariantOptionRequest> variantOptionValidator
     )
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(ProductVariant.MaxNameLength);
@@ -16,5 +17,22 @@ public sealed class CreateProductVariantRequestValidator
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ProductVariantImage).NotNull().SetValidator(imageValidator);
+        RuleFor(x => x.ProductVariantOptions)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Must(HaveUniqueVariationOptionClientIds)
+            .WithMessage("Product variant option client ids must be unique.");
+        RuleForEach(x => x.ProductVariantOptions).SetValidator(variantOptionValidator);
+    }
+
+    private static bool HaveUniqueVariationOptionClientIds(
+        IReadOnlyCollection<CreateProductVariantOptionRequest> options
+    )
+    {
+        return options
+                .Select(x => x.VariationOptionClientId)
+                .Distinct(StringComparer.Ordinal)
+                .Count()
+            == options.Count;
     }
 }

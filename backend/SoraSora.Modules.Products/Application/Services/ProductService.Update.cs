@@ -1,18 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence.Extensions;
-using SoraSora.Modules.Products.Application.Exceptions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Infrastructure.Storage;
 using SoraSora.Modules.Products.Mappers;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
-//TODO: Archive product variants instead delete them permanently
+//TODO: Archive product variants instead of deleting them permanently
 public sealed partial class ProductService
 {
     public async Task<ProductResponse> UpdateProductAsync(

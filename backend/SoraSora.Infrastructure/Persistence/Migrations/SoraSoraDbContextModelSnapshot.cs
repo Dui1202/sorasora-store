@@ -484,6 +484,32 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductVariantImage", (string)null);
                 });
 
+            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantOption", b =>
+                {
+                    b.Property<string>("ProductVariantId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("VariationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("VariationOptionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("ProductVariantId", "VariationId");
+
+                    b.HasIndex("VariationId");
+
+                    b.HasIndex("VariationOptionId");
+
+                    b.HasIndex("ProductVariantId", "VariationOptionId")
+                        .IsUnique();
+
+                    b.HasIndex("VariationOptionId", "VariationId");
+
+                    b.ToTable("ProductVariantOptions", (string)null);
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
                     b.Property<string>("Id")
@@ -511,7 +537,10 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "Position");
 
                     b.ToTable("Variation", (string)null);
                 });
@@ -543,7 +572,10 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("VariationId");
+                    b.HasIndex("VariationId", "Position");
+
+                    b.HasIndex("VariationId", "Value")
+                        .IsUnique();
 
                     b.ToTable("VariationOption", (string)null);
                 });
@@ -639,10 +671,38 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Navigation("ProductVariant");
                 });
 
+            modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariantOption", b =>
+                {
+                    b.HasOne("SoraSora.Modules.Products.Domain.ProductVariant", "ProductVariant")
+                        .WithMany("ProductVariantOptions")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoraSora.Modules.Products.Domain.Variation", "Variation")
+                        .WithMany("ProductVariantOptions")
+                        .HasForeignKey("VariationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoraSora.Modules.Products.Domain.VariationOption", "VariationOption")
+                        .WithMany("ProductVariantOptions")
+                        .HasForeignKey("VariationOptionId", "VariationId")
+                        .HasPrincipalKey("Id", "VariationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("Variation");
+
+                    b.Navigation("VariationOption");
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
                     b.HasOne("SoraSora.Modules.Products.Domain.Product", "Product")
-                        .WithMany()
+                        .WithMany("Variations")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -671,16 +731,27 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Navigation("ProductImages");
 
                     b.Navigation("ProductVariants");
+
+                    b.Navigation("Variations");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
                 {
                     b.Navigation("ProductVariantImage");
+
+                    b.Navigation("ProductVariantOptions");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
+                    b.Navigation("ProductVariantOptions");
+
                     b.Navigation("VariationOptions");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
+                {
+                    b.Navigation("ProductVariantOptions");
                 });
 #pragma warning restore 612, 618
         }
