@@ -4,6 +4,7 @@
     <Project Path="backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj" />
     <Project Path="backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj" />
     <Project Path="backend/SoraSora.Modules.Inventory/SoraSora.Modules.Inventory.csproj" />
+    <Project Path="backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj" />
     <Project Path="backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj" />
     <Project Path="backend/SoraSora.Shared/SoraSora.Shared.csproj" />
   </Folder>

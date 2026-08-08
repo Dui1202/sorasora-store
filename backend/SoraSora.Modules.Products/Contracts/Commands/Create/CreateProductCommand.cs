@@ -12,5 +12,5 @@ public sealed record CreateProductCommand
     public bool HasVariation { get; init; }
     public required IReadOnlyCollection<CreateProductImageCommand> ProductImages { get; init; }
     public required IReadOnlyCollection<CreateProductVariantCommand> ProductVariants { get; init; }
-    public IReadOnlyCollection<CreateVariationCommand> VariationCommands { get; init; } = [];
+    public IReadOnlyCollection<CreateVariationCommand> Variations { get; init; } = [];
 };

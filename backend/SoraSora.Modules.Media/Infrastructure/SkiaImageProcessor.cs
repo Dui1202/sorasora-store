@@ -1,9 +1,9 @@
 using SkiaSharp;
-using SoraSora.Modules.Products.Application.Images;
-using SoraSora.Modules.Products.Contracts;
-using SoraSora.Modules.Products.Exceptions;
+using SoraSora.Modules.Media.Contracts;
+using SoraSora.Modules.Media.Domain;
+using SoraSora.Modules.Media.Exceptions;
 
-namespace SoraSora.Modules.Products.Infrastructure.Images;
+namespace SoraSora.Modules.Media.Infrastructure;
 
 /// <summary>
 /// Treats uploaded product images as untrusted input and converts them into a
@@ -15,7 +15,7 @@ namespace SoraSora.Modules.Products.Infrastructure.Images;
 /// re-encodes the image. The resulting format is then used by the application to choose the
 /// storage content type and file extension.
 /// </remarks>
-public sealed class SkiaProductImageProcessor : IProductImageProcessor
+public sealed class SkiaImageProcessor : IImageProcessor
 {
     private const int LossyImageQuality = 90;
 
@@ -30,13 +30,13 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
     /// <returns>
     /// Canonical image bytes together with the server-detected format and final dimensions.
     /// </returns>
-    /// <exception cref="ProductValidationException">
+    /// <exception cref="MediaProcessingException">
     /// The input is empty, malformed, unsupported, animated, too large, or cannot be encoded.
     /// </exception>
     /// <exception cref="OperationCanceledException">
     /// <paramref name="cancellationToken"/> has been cancelled.
     /// </exception>
-    public ProcessedProductImage Process(
+    public ProcessedImage Process(
         Stream source,
         long sourceLength,
         CancellationToken cancellationToken
@@ -45,9 +45,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
         ArgumentNullException.ThrowIfNull(source);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (sourceLength <= 0 || sourceLength > ProductUploadLimits.MaxImageBytes)
+        if (sourceLength <= 0 || sourceLength > MediaUploadLimits.MaxImageBytes)
         {
-            throw new ProductValidationException("Image file must be between 1 byte and 5 MB.");
+            throw new MediaProcessingException("Image file must be between 1 byte and 5 MB.");
         }
 
         // Read only format and dimensions first. Pixel memory is not allocated until the
@@ -89,19 +89,14 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
             // object storage.
             var content = Encode(bitmapToEncode, format);
 
-            if (content.LongLength > ProductUploadLimits.MaxImageBytes)
+            if (content.LongLength > MediaUploadLimits.MaxImageBytes)
             {
-                throw new ProductValidationException("The processed image cannot exceed 5 MB.");
+                throw new MediaProcessingException("The processed image cannot exceed 5 MB.");
             }
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            return new ProcessedProductImage(
-                content,
-                format,
-                bitmapToEncode.Width,
-                bitmapToEncode.Height
-            );
+            return new ProcessedImage(content, format, bitmapToEncode.Width, bitmapToEncode.Height);
         }
         finally
         {
@@ -126,7 +121,7 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
 
             return codec;
         }
-        catch (ProductValidationException)
+        catch (MediaProcessingException)
         {
             throw;
         }
@@ -140,16 +135,14 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
     /// <summary>
     /// Converts SkiaSharp's detected format into the product module's restricted format model.
     /// </summary>
-    private static ProductImageFormat GetSupportedFormat(SKEncodedImageFormat encodedFormat)
+    private static ImageFormat GetSupportedFormat(SKEncodedImageFormat encodedFormat)
     {
         return encodedFormat switch
         {
-            SKEncodedImageFormat.Jpeg => ProductImageFormat.Jpeg,
-            SKEncodedImageFormat.Png => ProductImageFormat.Png,
-            SKEncodedImageFormat.Webp => ProductImageFormat.WebP,
-            _ => throw new ProductValidationException(
-                "Only JPEG, PNG, and WebP images are allowed."
-            ),
+            SKEncodedImageFormat.Jpeg => ImageFormat.Jpeg,
+            SKEncodedImageFormat.Png => ImageFormat.Png,
+            SKEncodedImageFormat.Webp => ImageFormat.WebP,
+            _ => throw new MediaProcessingException("Only JPEG, PNG, and WebP images are allowed."),
         };
     }
 
@@ -167,21 +160,21 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
         }
 
         if (
-            width > ProductUploadLimits.MaxImageWidth
-            || height > ProductUploadLimits.MaxImageHeight
-            || (long)width * height > ProductUploadLimits.MaxImagePixels
+            width > MediaUploadLimits.MaxImageWidth
+            || height > MediaUploadLimits.MaxImageHeight
+            || (long)width * height > MediaUploadLimits.MaxImagePixels
         )
         {
-            throw new ProductValidationException(
-                $"Image dimensions cannot exceed {ProductUploadLimits.MaxImageWidth}x"
-                    + $"{ProductUploadLimits.MaxImageHeight} pixels or "
-                    + $"{ProductUploadLimits.MaxImagePixels:N0} total pixels."
+            throw new MediaProcessingException(
+                $"Image dimensions cannot exceed {MediaUploadLimits.MaxImageWidth}x"
+                    + $"{MediaUploadLimits.MaxImageHeight} pixels or "
+                    + $"{MediaUploadLimits.MaxImagePixels:N0} total pixels."
             );
         }
 
         if (codec.FrameCount > 1)
         {
-            throw new ProductValidationException("Animated images are not supported.");
+            throw new MediaProcessingException("Animated images are not supported.");
         }
     }
 
@@ -263,17 +256,17 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
     /// Encodes only the normalized bitmap. Lossy formats use the module's fixed quality so
     /// callers cannot influence the stored representation.
     /// </summary>
-    private static byte[] Encode(SKBitmap bitmap, ProductImageFormat format)
+    private static byte[] Encode(SKBitmap bitmap, ImageFormat format)
     {
         using var stream = new MemoryStream();
         var encodedFormat = format switch
         {
-            ProductImageFormat.Jpeg => SKEncodedImageFormat.Jpeg,
-            ProductImageFormat.Png => SKEncodedImageFormat.Png,
-            ProductImageFormat.WebP => SKEncodedImageFormat.Webp,
+            ImageFormat.Jpeg => SKEncodedImageFormat.Jpeg,
+            ImageFormat.Png => SKEncodedImageFormat.Png,
+            ImageFormat.WebP => SKEncodedImageFormat.Webp,
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
         };
-        var quality = format == ProductImageFormat.Png ? 100 : LossyImageQuality;
+        var quality = format == ImageFormat.Png ? 100 : LossyImageQuality;
 
         if (!bitmap.Encode(stream, encodedFormat, quality))
         {
@@ -283,9 +276,9 @@ public sealed class SkiaProductImageProcessor : IProductImageProcessor
         return stream.ToArray();
     }
 
-    private static ProductValidationException InvalidImage()
+    private static MediaProcessingException InvalidImage()
     {
-        return new ProductValidationException(
+        return new MediaProcessingException(
             "The uploaded file is not a valid JPEG, PNG, or WebP image."
         );
     }

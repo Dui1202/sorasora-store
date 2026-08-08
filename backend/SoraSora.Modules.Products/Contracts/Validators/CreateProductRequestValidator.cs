@@ -15,21 +15,23 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(Product.MaxNameLength);
         RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
-        RuleFor(x => x.SupplierCountry).NotNull().IsInEnum();
+        RuleFor(x => x.SupplierCountry).IsInEnum();
         RuleFor(x => x.SellMode).IsInEnum();
-        RuleFor(x => x.IsPublished).NotNull();
         RuleFor(x => x.ProductImages)
             .Cascade(CascadeMode.Stop)
+            .NotNull()
             .NotEmpty()
             .Must(images => images.Count <= ProductUploadLimits.MaxProductImages)
             .WithMessage(
                 $"A product can contain at most {ProductUploadLimits.MaxProductImages} images."
             )
-            .Must(HaveUniquePositions);
+            .Must(HaveUniquePositions)
+            .WithMessage("Product image positions must be unique.");
+        RuleFor(x => x.ProductVariants).NotNull();
+        RuleFor(x => x.Variations).NotNull();
         RuleForEach(x => x.ProductImages).SetValidator(createProductImageRequestValidator);
         RuleForEach(x => x.ProductVariants).SetValidator(createProductVariantRequestValidator);
         RuleForEach(x => x.Variations).SetValidator(createVariationRequestValidator);
-        RuleFor(x => x.HasVariation).NotNull();
 
         When(
             request => !request.HasVariation,
@@ -57,16 +59,23 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                     )
                     .Must(HaveUniqueVariantPositions)
                     .WithMessage("Product variant positions must be unique.")
-                    .Must((request, variants) => HaveValidVariantOptionSelections(request, variants))
+                    .Must(
+                        (request, variants) => HaveValidVariantOptionSelections(request, variants)
+                    )
                     .WithMessage(
                         "Each product variant must select exactly one valid option for each variation."
                     )
-                    .Must((request, variants) => HaveUniqueVariantOptionCombinations(request, variants))
+                    .Must(
+                        (request, variants) =>
+                            HaveUniqueVariantOptionCombinations(request, variants)
+                    )
                     .WithMessage("Product variant option combinations must be unique.");
 
                 RuleFor(request => request.Variations)
                     .Cascade(CascadeMode.Stop)
                     .NotEmpty()
+                    .Must(HaveUniqueVariationClientIds)
+                    .WithMessage("Variation client ids must be unique.")
                     .Must(HaveUniqueVariationPositions)
                     .WithMessage("Variation positions must be unique.")
                     .Must(HaveUniqueVariationNames)
@@ -96,6 +105,21 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         return variations.Select(x => x.Position).Distinct().Count() == variations.Count;
     }
 
+    private static bool HaveUniqueVariationClientIds(
+        IReadOnlyCollection<CreateVariationRequest> variations
+    )
+    {
+        if (variations.Any(x => string.IsNullOrWhiteSpace(x.ClientId)))
+        {
+            return true;
+        }
+
+        return variations
+                .Select(x => x.ClientId)
+                .Distinct(StringComparer.Ordinal)
+                .Count() == variations.Count;
+    }
+
     private static bool HaveUniqueVariationNames(
         IReadOnlyCollection<CreateVariationRequest> variations
     )
@@ -108,8 +132,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         return variations
                 .Select(x => x.Name.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Count()
-            == variations.Count;
+                .Count() == variations.Count;
     }
 
     private static bool HaveGloballyUniqueVariationOptionClientIds(
@@ -143,7 +166,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
     {
         if (
             request.Variations is null
-            || !TryBuildVariationIndexByOptionClientId(
+            || !TryBuildVariationClientIdByOptionClientId(
                 request.Variations,
                 out var variationByOption
             )
@@ -162,16 +185,21 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                 return false;
             }
 
-            var selectedVariations = new HashSet<int>();
+            var selectedVariationClientIds = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var selectedOption in variant.ProductVariantOptions)
             {
                 if (
                     !variationByOption.TryGetValue(
                         selectedOption.VariationOptionClientId,
-                        out var variationIndex
+                        out var expectedVariationClientId
                     )
-                    || !selectedVariations.Add(variationIndex)
+                    || !string.Equals(
+                        selectedOption.VariationClientId,
+                        expectedVariationClientId,
+                        StringComparison.Ordinal
+                    )
+                    || !selectedVariationClientIds.Add(selectedOption.VariationClientId)
                 )
                 {
                     return false;
@@ -195,8 +223,10 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         var combinations = variants.Select(variant =>
             string.Join(
                 "\u001F",
-                variant
-                    .ProductVariantOptions.Select(option => option.VariationOptionClientId)
+                variant.ProductVariantOptions
+                    .Select(option =>
+                        $"{option.VariationClientId}\u001E{option.VariationOptionClientId}"
+                    )
                     .Order(StringComparer.Ordinal)
             )
         );
@@ -204,17 +234,19 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         return combinations.Distinct(StringComparer.Ordinal).Count() == variants.Count;
     }
 
-    private static bool TryBuildVariationIndexByOptionClientId(
+    private static bool TryBuildVariationClientIdByOptionClientId(
         IReadOnlyCollection<CreateVariationRequest> variations,
-        out Dictionary<string, int> variationByOption
+        out Dictionary<string, string> variationByOption
     )
     {
-        variationByOption = new Dictionary<string, int>(StringComparer.Ordinal);
-        var variationIndex = 0;
+        variationByOption = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (var variation in variations)
         {
-            if (variation.VariationOptions is null)
+            if (
+                string.IsNullOrWhiteSpace(variation.ClientId)
+                || variation.VariationOptions is null
+            )
             {
                 return false;
             }
@@ -223,14 +255,12 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
             {
                 if (
                     string.IsNullOrWhiteSpace(option.ClientId)
-                    || !variationByOption.TryAdd(option.ClientId, variationIndex)
+                    || !variationByOption.TryAdd(option.ClientId, variation.ClientId)
                 )
                 {
                     return false;
                 }
             }
-
-            variationIndex++;
         }
 
         return true;

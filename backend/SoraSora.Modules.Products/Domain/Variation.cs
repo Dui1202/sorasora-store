@@ -15,4 +15,21 @@ public sealed class Variation : IAuditable
     public DateTimeOffset UpdatedAt { get; private set; }
     public int Position { get; private set; }
     public IReadOnlyCollection<VariationOption> VariationOptions => _variationOptions;
+
+    private Variation() { }
+
+    public static Variation Create(string name, int position)
+    {
+        return new Variation { Name = name, Position = position };
+    }
+
+    public void AddOption(VariationOption option)
+    {
+        _variationOptions.Add(option);
+    }
+
+    public void RemoveOption(VariationOption option)
+    {
+        _variationOptions.Remove(option);
+    }
 }

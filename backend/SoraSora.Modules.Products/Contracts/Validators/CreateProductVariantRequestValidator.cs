@@ -20,15 +20,38 @@ public sealed class CreateProductVariantRequestValidator
         RuleFor(x => x.ProductVariantOptions)
             .Cascade(CascadeMode.Stop)
             .NotNull()
+            .Must(HaveUniqueVariationClientIds)
+            .WithMessage("Product variant variation client ids must be unique.")
             .Must(HaveUniqueVariationOptionClientIds)
             .WithMessage("Product variant option client ids must be unique.");
         RuleForEach(x => x.ProductVariantOptions).SetValidator(variantOptionValidator);
+    }
+
+    private static bool HaveUniqueVariationClientIds(
+        IReadOnlyCollection<CreateProductVariantOptionRequest> options
+    )
+    {
+        if (options.Any(x => string.IsNullOrWhiteSpace(x.VariationClientId)))
+        {
+            return true;
+        }
+
+        return options
+                .Select(x => x.VariationClientId)
+                .Distinct(StringComparer.Ordinal)
+                .Count()
+            == options.Count;
     }
 
     private static bool HaveUniqueVariationOptionClientIds(
         IReadOnlyCollection<CreateProductVariantOptionRequest> options
     )
     {
+        if (options.Any(x => string.IsNullOrWhiteSpace(x.VariationOptionClientId)))
+        {
+            return true;
+        }
+
         return options
                 .Select(x => x.VariationOptionClientId)
                 .Distinct(StringComparer.Ordinal)

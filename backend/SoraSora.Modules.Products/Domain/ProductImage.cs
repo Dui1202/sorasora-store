@@ -9,56 +9,33 @@ public sealed class ProductImage
 
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string ProductId { get; private set; } = null!;
-    public string Path { get; private set; } = null!;
+    public string MediaAssetId { get; private set; } = null!;
     public Product Product { get; private set; } = null!;
-    public string? Alt { get; private set; }
     public int Position { get; private set; } = 0;
 
-    internal static ProductImage Create(string path, string? alt, int position)
+    internal static ProductImage Create(string mediaAssetId, string? alt, int position)
     {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            throw new ProductDomainException("Image path is required.", nameof(path));
-        }
-
-        ValidateDetails(alt, position);
-
-        return new ProductImage
-        {
-            Path = path,
-            Alt = alt,
-            Position = position,
-        };
-    }
-
-    public void UpdateDetails(string? alt, int position)
-    {
-        ValidateDetails(alt, position);
-
-        Alt = alt;
-        Position = position;
-    }
-
-    public void UpdatePosition(int position)
-    {
-        ValidatePosition(position);
-        Position = position;
-    }
-
-    private static void ValidateDetails(string? alt, int position)
-    {
-        if (alt?.Length > MaxAltLength)
+        if (string.IsNullOrWhiteSpace(mediaAssetId))
         {
             throw new ProductDomainException(
-                $"Image alt text cannot exceed {MaxAltLength} characters.",
-                nameof(alt)
+                "Image MediaAssetId is required.",
+                nameof(mediaAssetId)
             );
         }
 
-        ValidatePosition(position);
+        ValidateDetails(position);
+
+        return new ProductImage { MediaAssetId = mediaAssetId, Position = position };
     }
 
-    private static void ValidatePosition(int position)
+    public void UpdateDetails(int position)
+    {
+        ValidateDetails(position);
+
+        Position = position;
+    }
+
+    private static void ValidateDetails(int position)
     {
         if (position < 0)
         {

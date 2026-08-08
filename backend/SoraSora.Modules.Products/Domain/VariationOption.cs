@@ -22,9 +22,4 @@ public sealed class VariationOption : IAuditable
     {
         return new VariationOption { Value = value, Position = position };
     }
-
-    // public void AddVariationOption(VariationOption option)
-    // {
-    //     _productVariantOptions.Add(option);
-    // }
 }

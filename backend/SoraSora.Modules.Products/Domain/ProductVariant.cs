@@ -81,6 +81,16 @@ public sealed class ProductVariant : IAuditable
         IsArchived = true;
     }
 
+    public void AddProductVariantOption(ProductVariantOption productVariantOption)
+    {
+        _productVariantOptions.Add(productVariantOption);
+    }
+
+    public void RemoveProductVariantOption(ProductVariantOption productVariantOption)
+    {
+        _productVariantOptions.Remove(productVariantOption);
+    }
+
     private static void ValidateDetails(
         string name,
         string? sku,

@@ -16,16 +16,18 @@ internal static class CreateProductDtoMapper
             ? request.ProductVariants.Select(ToCreateProductVariantCommand).ToList()
             : [ToCreateProductVariantCommand(request)];
 
-        return new CreateProductCommand(
-            Name: request.Name,
-            Description: request.Description,
-            SupplierCountry: request.SupplierCountry,
-            SellMode: request.SellMode,
-            IsPublished: request.IsPublished,
-            HasVariation: request.HasVariation,
-            ProductImages: productImages,
-            ProductVariants: productVariants
-        );
+        return new CreateProductCommand
+        {
+            Name = request.Name,
+            Description = request.Description,
+            SupplierCountry = request.SupplierCountry,
+            SellMode = request.SellMode,
+            IsPublished = request.IsPublished,
+            HasVariation = request.HasVariation,
+            ProductImages = productImages,
+            ProductVariants = productVariants,
+            Variations = request.Variations.Select(ToCreateVariationCommand).ToList(),
+        };
     }
 
     internal static CreateProductVariantImageCommand ToCreateProductVariantImageCommand(
@@ -44,6 +46,31 @@ internal static class CreateProductDtoMapper
             Alt: request.Alt,
             Position: request.Position
         );
+    }
+
+    private static CreateVariationCommand ToCreateVariationCommand(CreateVariationRequest request)
+    {
+        return new CreateVariationCommand
+        {
+            ClientId = request.ClientId,
+            Name = request.Name,
+            Position = request.Position,
+            VariationOptions = request
+                .VariationOptions.Select(ToCreateVariationOptionCommand)
+                .ToList(),
+        };
+    }
+
+    private static CreateVariationOptionCommand ToCreateVariationOptionCommand(
+        CreateVariationOptionRequest request
+    )
+    {
+        return new CreateVariationOptionCommand
+        {
+            ClientId = request.ClientId,
+            Value = request.Value,
+            Position = request.Position,
+        };
     }
 
     private static CreateProductVariantCommand ToCreateProductVariantCommand(
@@ -68,28 +95,33 @@ internal static class CreateProductDtoMapper
                 "A product without variations must have a base selling price."
             );
 
-        return new CreateProductVariantCommand(
-            Name: request.Name,
-            Sku: request.BaseSku,
-            CostPrice: costPrice,
-            SellingPrice: sellingPrice,
-            Position: DefaultPosition,
-            ProductVariantImage: ToCreateProductVariantImageCommand(baseImage)
-        );
+        return new CreateProductVariantCommand
+        {
+            Name = request.Name,
+            Sku = request.BaseSku,
+            CostPrice = costPrice,
+            SellingPrice = sellingPrice,
+            Position = DefaultPosition,
+            ProductVariantImage = ToCreateProductVariantImageCommand(baseImage),
+        };
     }
 
     internal static CreateProductVariantCommand ToCreateProductVariantCommand(
         CreateProductVariantRequest request
     )
     {
-        return new CreateProductVariantCommand(
-            Name: request.Name,
-            Sku: request.Sku,
-            CostPrice: request.CostPrice,
-            SellingPrice: request.SellingPrice,
-            Position: request.Position,
-            ProductVariantImage: ToCreateProductVariantImageCommand(request.ProductVariantImage)
-        );
+        return new CreateProductVariantCommand
+        {
+            Name = request.Name,
+            Sku = request.Sku,
+            CostPrice = request.CostPrice,
+            SellingPrice = request.SellingPrice,
+            Position = request.Position,
+            ProductVariantImage = ToCreateProductVariantImageCommand(request.ProductVariantImage),
+            ProductVariantOptions = request
+                .ProductVariantOptions.Select(ToCreateProductVariantOptionCommand)
+                .ToList(),
+        };
     }
 
     internal static CreateProductVariantImageCommand ToCreateProductVariantImageCommand(
@@ -109,5 +141,16 @@ internal static class CreateProductDtoMapper
         }
 
         return new CreateProductVariantImageCommand(File: request.File, Alt: request.Alt);
+    }
+
+    private static CreateProductVariantOptionCommand ToCreateProductVariantOptionCommand(
+        CreateProductVariantOptionRequest request
+    )
+    {
+        return new CreateProductVariantOptionCommand
+        {
+            VariationClientId = request.VariationClientId,
+            VariationOptionClientId = request.VariationOptionClientId,
+        };
     }
 }

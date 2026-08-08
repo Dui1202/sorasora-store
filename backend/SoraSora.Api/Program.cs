@@ -2,6 +2,7 @@ using Serilog;
 using SoraSora.Api.Exceptions;
 using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Auth.Application.Extensions;
+using SoraSora.Modules.Media.Application.Extensions;
 using SoraSora.Modules.Products.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,7 @@ builder.Host.UseSerilog(
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductsModule();
 builder.Services.AddAuthModule();
+builder.Services.AddMediaModule();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

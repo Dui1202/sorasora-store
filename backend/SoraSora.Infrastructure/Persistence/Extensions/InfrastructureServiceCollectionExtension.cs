@@ -16,7 +16,7 @@ public static class InfrastructureServiceCollectionExtension
         IConfiguration configuration
     )
     {
-        services.AddDbContext<SoraSoraDbContext>(options =>
+        services.AddDbContextFactory<SoraSoraDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
         );
         services.AddSupabaseStorage(configuration);

@@ -8,6 +8,7 @@ public sealed class CreateProductVariantOptionRequestValidator
 {
     public CreateProductVariantOptionRequestValidator()
     {
+        RuleFor(x => x.VariationClientId).NotEmpty();
         RuleFor(x => x.VariationOptionClientId).NotEmpty();
     }
 }

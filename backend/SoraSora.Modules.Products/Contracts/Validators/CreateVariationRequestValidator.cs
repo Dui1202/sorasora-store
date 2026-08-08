@@ -9,6 +9,7 @@ public sealed class CreateVariationRequestValidator : AbstractValidator<CreateVa
         IValidator<CreateVariationOptionRequest> variationOptionValidator
     )
     {
+        RuleFor(x => x.ClientId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty();
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);
         RuleFor(x => x.VariationOptions)

@@ -20,7 +20,7 @@ public sealed partial class ProductService
         CancellationToken cancellationToken
     )
     {
-        var uploadedImagePaths = new HashSet<string>();
+        var imagePathsToUpload = new HashSet<string>();
         var imagePathsToRemove = new HashSet<string>();
         var product =
             await _dbContext
@@ -55,7 +55,7 @@ public sealed partial class ProductService
             await UpdateProductVariantsAsync(
                 product,
                 command,
-                uploadedImagePaths,
+                imagePathsToUpload,
                 imagePathsToRemove,
                 cancellationToken
             );
@@ -63,7 +63,7 @@ public sealed partial class ProductService
             await UpdateProductImagesAsync(
                 product,
                 command,
-                uploadedImagePaths,
+                imagePathsToUpload,
                 imagePathsToRemove,
                 cancellationToken
             );
@@ -86,19 +86,19 @@ public sealed partial class ProductService
 
             try
             {
-                foreach (var path in uploadedImagePaths)
+                foreach (var path in imagePathsToUpload)
                 {
                     _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
                 }
 
-                if (uploadedImagePaths.Count > 0)
+                if (imagePathsToUpload.Count > 0)
                 {
                     await _dbContext.SaveChangesAsync(CancellationToken.None);
                 }
             }
             catch (Exception cleanupException)
             {
-                foreach (var path in uploadedImagePaths)
+                foreach (var path in imagePathsToUpload)
                 {
                     _logger.ProductImageCleanupFailed(cleanupException, path);
                 }
@@ -125,7 +125,7 @@ public sealed partial class ProductService
     private async Task UpdateProductVariantsAsync(
         Product product,
         UpdateProductCommand command,
-        HashSet<string> uploadedImagePaths,
+        HashSet<string> imagePathsToUpload,
         HashSet<string> imagePathsToRemove,
         CancellationToken cancellationToken
     )
@@ -214,7 +214,7 @@ public sealed partial class ProductService
             }
 
             ///Upload the new image
-            var path = await ProcessAndUploadImageAsync(
+            var path = await ProcessImageAsync(
                 newImage.File,
                 format =>
                     ProductImagePathBuilder.BuildProductVariantImagePath(
@@ -222,7 +222,7 @@ public sealed partial class ProductService
                         productVariantId: productVariantToUpdate.Id,
                         format
                     ),
-                uploadedImagePaths,
+                imagePathsToUpload,
                 cancellationToken
             );
 
@@ -247,7 +247,7 @@ public sealed partial class ProductService
             ///Add and upload image
             var image = newProductVariant.ProductVariantImage;
 
-            var path = await ProcessAndUploadImageAsync(
+            var path = await ProcessImageAsync(
                 image.File,
                 format =>
                     ProductImagePathBuilder.BuildProductVariantImagePath(
@@ -255,7 +255,7 @@ public sealed partial class ProductService
                         productVariantId: productVariant.Id,
                         format
                     ),
-                uploadedImagePaths,
+                imagePathsToUpload,
                 cancellationToken
             );
 
@@ -266,7 +266,7 @@ public sealed partial class ProductService
     private async Task UpdateProductImagesAsync(
         Product product,
         UpdateProductCommand command,
-        HashSet<string> uploadedImagePaths,
+        HashSet<string> imagePathsToUpload,
         HashSet<string> imagePathsToRemove,
         CancellationToken cancellationToken
     )
@@ -324,10 +324,10 @@ public sealed partial class ProductService
         foreach (var image in command.NewImages)
         {
             var file = image.File;
-            var path = await ProcessAndUploadImageAsync(
+            var path = await ProcessImageAsync(
                 file,
                 format => ProductImagePathBuilder.BuildProductImagePath(product.Id, format),
-                uploadedImagePaths,
+                imagePathsToUpload,
                 cancellationToken
             );
 
@@ -336,7 +336,7 @@ public sealed partial class ProductService
         }
     }
 
-    private static IReadOnlyList<int> AllocateTemporaryPositions(
+    private static List<int> AllocateTemporaryPositions(
         IEnumerable<int> occupiedPositions,
         IEnumerable<int> finalPositions,
         int count

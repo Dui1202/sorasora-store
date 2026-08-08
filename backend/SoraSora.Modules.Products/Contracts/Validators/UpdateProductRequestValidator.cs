@@ -20,13 +20,19 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
         RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
         RuleFor(x => x.SupplierCountry).IsInEnum();
         RuleFor(x => x.SellMode).IsInEnum();
+        RuleFor(x => x.NewImages).NotNull();
         RuleFor(x => x.RetainedImages)
             .Cascade(CascadeMode.Stop)
-            .Must((request, existingImages) => existingImages.Count + request.NewImages.Count > 0)
+            .NotNull()
+            .Must(
+                (request, retainedImages) =>
+                    request.NewImages is not null
+                    && retainedImages.Count + request.NewImages.Count > 0
+            )
             .WithMessage("A product must contain at least one image.")
             .Must(
-                (request, existingImages) =>
-                    existingImages.Count + request.NewImages.Count
+                (request, retainedImages) =>
+                    retainedImages.Count + request.NewImages.Count
                     <= ProductUploadLimits.MaxProductImages
             )
             .WithMessage(
@@ -34,17 +40,24 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
             )
             .Must((request, _) => HaveUniqueImagePositions(request))
             .WithMessage("Product image positions must be unique.")
-            .Must((request, _) => HaveUniqueVariantIds(request))
-            .WithMessage("Retained product variants ids must be unique.")
             .Must((request, _) => HaveUniquePaths(request))
             .WithMessage("Retained product images paths must be unique.");
+        RuleFor(x => x.NewProductVariants).NotNull();
+        RuleFor(x => x.RetainedProductVariants)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Must((request, _) => HaveUniqueVariantIds(request))
+            .WithMessage("Retained product variant ids must be unique.");
         RuleForEach(x => x.RetainedImages).SetValidator(existingImageValidator);
         RuleForEach(x => x.NewImages).SetValidator(newImageValidator);
         RuleForEach(x => x.RetainedProductVariants).SetValidator(existingVariantValidator);
         RuleForEach(x => x.NewProductVariants).SetValidator(newVariantValidator);
 
         When(
-            request => !request.HasVariation,
+            request =>
+                !request.HasVariation
+                && request.RetainedProductVariants is not null
+                && request.NewProductVariants is not null,
             () =>
             {
                 RuleFor(request => request.RetainedProductVariants)
@@ -54,12 +67,15 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
                             retainedVariants.Count + request.NewProductVariants.Count == 1
                     )
                     .WithMessage(
-                        $"A product can contain exactly 1 variants if Has Variation field is false."
+                        "A product must contain exactly one variant when variations are disabled."
                     );
             }
         );
         When(
-            request => request.HasVariation,
+            request =>
+                request.HasVariation
+                && request.RetainedProductVariants is not null
+                && request.NewProductVariants is not null,
             () =>
             {
                 RuleFor(request => request.RetainedProductVariants)

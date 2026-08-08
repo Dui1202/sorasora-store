@@ -10,4 +10,6 @@ public sealed record CreateProductVariantCommand
     public int SellingPrice { get; init; }
     public int Position { get; init; }
     public required CreateProductVariantImageCommand ProductVariantImage { get; init; }
+    public IReadOnlyCollection<CreateProductVariantOptionCommand> ProductVariantOptions { get; init; } =
+    [];
 }

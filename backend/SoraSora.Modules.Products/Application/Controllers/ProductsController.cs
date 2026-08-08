@@ -6,6 +6,7 @@ using SoraSora.Modules.Products.Contracts;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Mappers;
 using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;

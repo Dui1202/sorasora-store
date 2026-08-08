@@ -1,31 +1,29 @@
-using SoraSora.Modules.Products.Application.Images;
-
 namespace SoraSora.Modules.Products.Infrastructure.Storage;
 
 public static class ProductImagePathBuilder
 {
-    public static string BuildProductImagePath(string productId, ProductImageFormat format)
+    public static string BuildProductImagePath(string productId, string contentType)
     {
-        return $"products/{productId}/images/{BuildImageFileName(format)}";
+        return $"products/{productId}/images/{BuildImageFileName(contentType)}";
     }
 
     public static string BuildProductVariantImagePath(
         string productId,
         string productVariantId,
-        ProductImageFormat format
+        string contentType
     )
     {
-        return $"products/{productId}/{productVariantId}/images/{BuildImageFileName(format)}";
+        return $"products/{productId}/{productVariantId}/images/{BuildImageFileName(contentType)}";
     }
 
-    private static string BuildImageFileName(ProductImageFormat format)
+    private static string BuildImageFileName(string contentType)
     {
-        var extension = format switch
+        var extension = contentType switch
         {
-            ProductImageFormat.Jpeg => ".jpg",
-            ProductImageFormat.Png => ".png",
-            ProductImageFormat.WebP => ".webp",
-            _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
+            "image/jpg" => ".jpg",
+            "image/png" => ".png",
+            "image/webp" => ".webp",
+            _ => throw new ArgumentOutOfRangeException(nameof(contentType), contentType, null),
         };
 
         return $"{Guid.NewGuid()}{extension}";
