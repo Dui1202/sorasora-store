@@ -1,19 +1,17 @@
 using Microsoft.Extensions.Logging;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence;
-using SoraSora.Modules.Products.Application.Images;
+using SoraSora.Modules.Media.Application;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
 public sealed partial class ProductService(
     SoraSoraDbContext dbContext,
-    IFileStorageService fileStorageService,
-    IProductImageProcessor productImageProcessor,
+    IImageMediaService imageMediaService,
     ILogger<ProductService> logger
 ) : IProductService
 {
     private readonly SoraSoraDbContext _dbContext = dbContext;
-    private readonly IFileStorageService _fileStorageService = fileStorageService;
-    private readonly IProductImageProcessor _productImageProcessor = productImageProcessor;
+    private readonly IImageMediaService _imageMediaService = imageMediaService;
     private readonly ILogger<ProductService> _logger = logger;
 }

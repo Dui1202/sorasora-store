@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Modules.Media.Infrastructure;
 using SoraSora.Modules.Media.Infrastructure.Persistence;
+using SoraSora.Modules.Media.Infrastructure.Storage;
 
 namespace SoraSora.Modules.Media.Application.Extensions
 {
@@ -13,6 +15,7 @@ namespace SoraSora.Modules.Media.Application.Extensions
             services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
 
             services.AddScoped<IImageMediaService, ImageMediaService>();
+            services.AddScoped<IStorageCleanupProcessor, MediaStorageCleanupProcessor>();
 
             return services;
         }

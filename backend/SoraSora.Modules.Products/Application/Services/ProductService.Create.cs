@@ -36,13 +36,21 @@ public sealed partial class ProductService
         try
         {
             CreateVariations(product, command, out var variationOptionsByVariationClientId);
-            await CreateProductVariantsAsync(
+
+            var createdProductVariants = CreateProductVariantsAsync(
                 product,
                 command,
-                variationOptionsByVariationClientId,
-                cancellationToken
+                variationOptionsByVariationClientId
             );
-            await CreateProductImagesAsync(product, command, cancellationToken);
+
+            //Create ProductImageUploadJobs
+            var productImageUploadJobs = BuildProductImageUploadJobForCreateCommand(
+                product,
+                command,
+                createdProductVariants
+            );
+
+            await HandleProductMediaAsset(productImageUploadJobs, cancellationToken);
 
             _dbContext.Products().Add(product);
 
@@ -84,7 +92,12 @@ public sealed partial class ProductService
             foreach (var optionCommand in variationCommand.VariationOptions)
             {
                 var option = VariationOption.Create(optionCommand.Value, optionCommand.Position);
-                variationOptionsByClientId.TryAdd(optionCommand.ClientId, option);
+                if (!variationOptionsByClientId.TryAdd(optionCommand.ClientId, option))
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate variation option Id detected: {optionCommand.ClientId}"
+                    );
+                }
                 variation.AddOption(option);
             }
 
@@ -94,17 +107,24 @@ public sealed partial class ProductService
                     variationOptionsByClientId
                 )
             )
-                product.AddVariation(variation);
+            {
+                throw new InvalidOperationException(
+                    $"Duplicate variation client Id detected: {variationOptionsByClientId}"
+                );
+            }
+
+            product.AddVariation(variation);
         }
     }
 
-    private async Task CreateProductVariantsAsync(
+    private IReadOnlyList<CreatedProductVariant> CreateProductVariantsAsync(
         Product product,
         CreateProductCommand command,
-        Dictionary<string, Dictionary<string, VariationOption>> variationOptionsByVariationClientId,
-        CancellationToken cancellationToken
+        Dictionary<string, Dictionary<string, VariationOption>> variationOptionsByVariationClientId
     )
     {
+        List<CreatedProductVariant> createdProductVariants = [];
+
         var variationsByClientId = command.Variations.ToDictionary(x => x.ClientId);
         foreach (var productVariantCommand in command.ProductVariants)
         {
@@ -144,29 +164,48 @@ public sealed partial class ProductService
                 productVariant.AddProductVariantOption(productVariantOption);
             }
 
-            var file = productVariantCommand.ProductVariantImage.File;
-            var alt = productVariantCommand.ProductVariantImage.Alt;
-
-            // productVariant.SetProductVariantImage(ProductVariantImage.Create(path, alt));
-
             product.AddProductVariant(productVariant);
+
+            createdProductVariants.Add(
+                new CreatedProductVariant(
+                    ProductVariant: productVariant,
+                    Command: productVariantCommand
+                )
+            );
         }
+
+        return createdProductVariants;
     }
 
-    private async Task CreateProductImagesAsync(
-        Product product,
-        CreateProductCommand command,
+    private async Task HandleProductMediaAsset(
+        IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
         CancellationToken cancellationToken
     )
     {
-        foreach (var imageRequest in command.ProductImages)
+        Dictionary<string, Action<string>> attachMediaByUploadIds =
+            productImageUploadJobs.ToDictionary(
+                productJob => productJob.Job.Id,
+                productJob => productJob.Attach,
+                StringComparer.Ordinal
+            );
+
+        var imageUploadJobs = productImageUploadJobs.Select(x => x.Job).ToList();
+
+        var mediaUploadResults = await _imageMediaService.UploadImagesAsync(
+            imageUploadJobs,
+            cancellationToken
+        );
+
+        foreach (var result in mediaUploadResults)
         {
-            var file = imageRequest.File;
+            if (!attachMediaByUploadIds.TryGetValue(result.JobId, out var attach))
+            {
+                throw new InvalidOperationException(
+                    "This media upload result is not from the original upload job"
+                );
+            }
 
-            var alt = imageRequest.Alt;
-            var position = imageRequest.Position;
-
-            // product.AddImage(path, alt, position);
+            attach(result.AssetId);
         }
     }
 }

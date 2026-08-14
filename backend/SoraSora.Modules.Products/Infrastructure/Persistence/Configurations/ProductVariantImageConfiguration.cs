@@ -15,11 +15,13 @@ public sealed class ProductVariantImageConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ProductVariantId).IsRequired();
-        builder.Property(x => x.Path).HasMaxLength(1024).IsRequired();
-        builder.Property(x => x.Alt).HasMaxLength(255).IsRequired(false);
+        builder.Property(x=>x.MediaAssetId).IsRequired();
+
         builder
             .HasOne(x => x.ProductVariant)
             .WithOne(x => x.ProductVariantImage)
             .HasForeignKey<ProductVariantImage>(x => x.ProductVariantId);
+
+        builder.HasIndex(x=>x.MediaAssetId).IsUnique();
     }
 }

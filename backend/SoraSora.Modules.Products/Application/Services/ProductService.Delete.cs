@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using SoraSora.Infrastructure.Domain;
-using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Exceptions;
@@ -36,9 +34,9 @@ public sealed partial class ProductService
             .ProductVariants.Select(x => x.ProductVariantImage)
             .OfType<ProductVariantImage>()
             .ToList();
-        var imagePaths = productImages
-            .Select(x => x.Path)
-            .Concat(productVariantImages.Select(x => x.Path))
+        var imageAssetIds = productImages
+            .Select(image => image.MediaAssetId)
+            .Concat(productVariantImages.Select(image => image.MediaAssetId))
             .ToHashSet(StringComparer.Ordinal);
 
         product.Archive();
@@ -52,10 +50,7 @@ public sealed partial class ProductService
         _dbContext.RemoveRange(productImages);
         _dbContext.RemoveRange(productVariantImages);
 
-        foreach (var path in imagePaths)
-        {
-            _dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
-        }
+        await _imageMediaService.ScheduleImageDeletionAsync(imageAssetIds, cancellationToken);
 
         try
         {

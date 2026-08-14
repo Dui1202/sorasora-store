@@ -20,12 +20,12 @@ internal static partial class ProductServiceLogger
         EventId = 1001,
         EventName = nameof(ProductImageCleanupFailed),
         Level = LogLevel.Warning,
-        Message = "Failed to delete uploaded product image {ImagePath} during cleanup"
+        Message = "Failed to schedule uploaded product media asset {MediaAssetId} for cleanup"
     )]
     public static partial void ProductImageCleanupFailed(
         this ILogger<ProductService> logger,
         Exception exception,
-        string imagePath
+        string mediaAssetId
     );
 
     [LoggerMessage(

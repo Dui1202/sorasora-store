@@ -1,4 +1,4 @@
-namespace SoraSora.Modules.Media.Domain
+namespace SoraSora.Modules.Media.Domain.Upload
 {
     public record ProcessedImageUpload(
         ImageUploadJob ImageUploadJob,

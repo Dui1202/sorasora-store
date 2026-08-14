@@ -71,24 +71,19 @@ public sealed class Product : IAuditable
         HasVariation = hasVariation;
     }
 
-    public void AddImage(string path, string? alt, int position)
-    {
-        _productImages.Add(ProductImage.Create(path, alt, position));
-    }
-
     public void AddImage(ProductImage productImage)
     {
         _productImages.Add(productImage);
     }
 
+    public void RemoveImageByAssetId(string mediaAssetId)
+    {
+        _productImages.RemoveAll(image => image.MediaAssetId == mediaAssetId);
+    }
+
     public void AddProductVariant(ProductVariant productVariant)
     {
         _productVariants.Add(productVariant);
-    }
-
-    public void RemoveImageByPath(string path)
-    {
-        _productImages.RemoveAll(image => image.Path == path);
     }
 
     public void RemoveProductVariant(string id)

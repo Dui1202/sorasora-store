@@ -20,8 +20,6 @@ public static class InfrastructureServiceCollectionExtension
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
         );
         services.AddSupabaseStorage(configuration);
-        services.AddScoped<StorageCleanupProcessor>();
-
         services.AddHostedService<StorageCleanupBackgroundService>();
 
         return services;

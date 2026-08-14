@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SoraSora.Infrastructure.Abstractions;
 
 namespace SoraSora.Infrastructure.Storage.Cleanup;
 
@@ -33,7 +34,7 @@ public sealed class StorageCleanupBackgroundService(
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
 
-            var processor = scope.ServiceProvider.GetRequiredService<StorageCleanupProcessor>();
+            var processor = scope.ServiceProvider.GetRequiredService<IStorageCleanupProcessor>();
 
             await processor.ProcessPendingTasksAsync(cancellationToken);
         }

@@ -40,7 +40,7 @@ public static class UpdateProductMapper
     )
     {
         return new RetainedProductImageCommand(
-            Path: request.Path,
+            MediaAssetId: request.Path,
             Alt: request.Alt,
             Position: request.Position
         );

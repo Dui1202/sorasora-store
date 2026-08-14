@@ -266,6 +266,27 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SoraSora.Modules.Media.Domain.MediaAsset", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Path")
+                        .IsUnique();
+
+                    b.ToTable("MediaAsset");
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
                 {
                     b.Property<string>("Id")
@@ -371,14 +392,9 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<string>("Alt")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Path")
+                    b.Property<string>("MediaAssetId")
                         .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Position")
                         .ValueGeneratedOnAdd()
@@ -390,6 +406,9 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MediaAssetId")
+                        .IsUnique();
 
                     b.HasIndex("ProductId", "Position")
                         .IsUnique();
@@ -463,20 +482,18 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<string>("Alt")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Path")
+                    b.Property<string>("MediaAssetId")
                         .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProductVariantId")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MediaAssetId")
+                        .IsUnique();
 
                     b.HasIndex("ProductVariantId")
                         .IsUnique();
@@ -489,23 +506,15 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Property<string>("ProductVariantId")
                         .HasColumnType("text");
 
-                    b.Property<string>("VariationId")
-                        .HasColumnType("text");
-
                     b.Property<string>("VariationOptionId")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("ProductVariantId", "VariationId");
-
-                    b.HasIndex("VariationId");
+                    b.HasKey("ProductVariantId", "VariationOptionId");
 
                     b.HasIndex("VariationOptionId");
 
                     b.HasIndex("ProductVariantId", "VariationOptionId")
                         .IsUnique();
-
-                    b.HasIndex("VariationOptionId", "VariationId");
 
                     b.ToTable("ProductVariantOptions", (string)null);
                 });
@@ -571,6 +580,8 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("Id", "VariationId");
 
                     b.HasIndex("VariationId", "Position");
 
@@ -679,22 +690,13 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SoraSora.Modules.Products.Domain.Variation", "Variation")
-                        .WithMany("ProductVariantOptions")
-                        .HasForeignKey("VariationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("SoraSora.Modules.Products.Domain.VariationOption", "VariationOption")
                         .WithMany("ProductVariantOptions")
-                        .HasForeignKey("VariationOptionId", "VariationId")
-                        .HasPrincipalKey("Id", "VariationId")
+                        .HasForeignKey("VariationOptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ProductVariant");
-
-                    b.Navigation("Variation");
 
                     b.Navigation("VariationOption");
                 });
@@ -744,8 +746,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
-                    b.Navigation("ProductVariantOptions");
-
                     b.Navigation("VariationOptions");
                 });
 

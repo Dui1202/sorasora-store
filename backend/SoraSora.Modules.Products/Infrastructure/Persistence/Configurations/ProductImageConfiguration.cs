@@ -17,8 +17,7 @@ public sealed class ProductImageConfiguration : IEntityTypeConfiguration<Product
         builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ProductId).IsRequired();
-        builder.Property(x => x.Path).HasMaxLength(1024).IsRequired();
-        builder.Property(x => x.Alt).HasMaxLength(255).IsRequired(false);
+        builder.Property(x=>x.MediaAssetId).IsRequired();
         builder.Property(x => x.Position).IsRequired().HasDefaultValue(0);
         builder
             .HasOne(x => x.Product)
@@ -27,5 +26,6 @@ public sealed class ProductImageConfiguration : IEntityTypeConfiguration<Product
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
+        builder.HasIndex(x=>x.MediaAssetId).IsUnique();
     }
 }

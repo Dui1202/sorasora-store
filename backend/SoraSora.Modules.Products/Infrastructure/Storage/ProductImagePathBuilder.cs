@@ -20,7 +20,7 @@ public static class ProductImagePathBuilder
     {
         var extension = contentType switch
         {
-            "image/jpg" => ".jpg",
+            "image/jpeg" => ".jpg",
             "image/png" => ".png",
             "image/webp" => ".webp",
             _ => throw new ArgumentOutOfRangeException(nameof(contentType), contentType, null),

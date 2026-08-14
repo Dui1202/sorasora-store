@@ -13,7 +13,7 @@ public sealed class ProductImage
     public Product Product { get; private set; } = null!;
     public int Position { get; private set; } = 0;
 
-    internal static ProductImage Create(string mediaAssetId, string? alt, int position)
+    internal static ProductImage Create(string mediaAssetId, int position)
     {
         if (string.IsNullOrWhiteSpace(mediaAssetId))
         {

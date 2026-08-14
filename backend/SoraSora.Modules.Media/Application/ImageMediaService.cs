@@ -2,24 +2,30 @@ using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Media.Domain;
+using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Media.Infrastructure;
 
 namespace SoraSora.Modules.Media.Application
 {
     public class ImageMediaService(
+        SoraSoraDbContext dbContext,
         IDbContextFactory<SoraSoraDbContext> dbContextFactory,
         IImageProcessor imageProcessor,
-        IFileStorageService fileStorageService
+        IFileStorageService fileStorageService,
+        ILogger<ImageMediaService> logger
     ) : IImageMediaService
     {
+        private readonly SoraSoraDbContext _dbContext = dbContext;
         private readonly IDbContextFactory<SoraSoraDbContext> _dbContextFactory = dbContextFactory;
         private readonly IImageProcessor _imageProcessor = imageProcessor;
         private readonly IFileStorageService _fileStorageService = fileStorageService;
+        private readonly ILogger<ImageMediaService> _logger = logger;
 
         private const int UploadWorkerCount = 2;
         private const int MaxBufferedImages = 2;
@@ -30,7 +36,7 @@ namespace SoraSora.Modules.Media.Application
         )
         {
             ConcurrentDictionary<string, byte> attemptedUploadPaths = new(StringComparer.Ordinal);
-            ConcurrentBag<MediaUploadResult> successfullyUploadedImages = [];
+            ConcurrentBag<MediaUpload> successfulUploads = [];
 
             var channel = Channel.CreateBounded<ProcessedImageUpload>(
                 new BoundedChannelOptions(MaxBufferedImages)
@@ -59,7 +65,7 @@ namespace SoraSora.Modules.Media.Application
                         channel.Reader,
                         bufferedImageSlots,
                         attemptedUploadPaths,
-                        successfullyUploadedImages,
+                        successfulUploads,
                         pipelineFailures,
                         pipelineCancellation,
                         pipelineToken
@@ -85,54 +91,25 @@ namespace SoraSora.Modules.Media.Application
                 await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
                     cancellationToken
                 );
+                var uploadResults = new List<MediaUploadResult>(successfulUploads.Count);
 
-                foreach (var result in successfullyUploadedImages)
+                foreach (var upload in successfulUploads)
                 {
-                    var mediaAsset = MediaAsset.Create(result.Path, result.ContentType);
+                    var mediaAsset = MediaAsset.Create(upload.Path, upload.ContentType);
+                    uploadResults.Add(new MediaUploadResult(upload.Job.Id, mediaAsset.Id));
 
                     dbContext.MediaAssets().Add(mediaAsset);
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
+
+                return uploadResults;
             }
             catch
             {
-                var failedCleanupPaths = new List<string>();
+                await ScheduleFailedUploadCleanupAsync(attemptedUploadPaths.Keys.ToArray());
 
-                foreach (var path in attemptedUploadPaths.Keys)
-                {
-                    try
-                    {
-                        await _fileStorageService.DeleteFileAsync(path, CancellationToken.None);
-                    }
-                    catch (Exception)
-                    {
-                        // TODO: log cleanupException
-                        failedCleanupPaths.Add(path);
-                    }
-                }
-
-                if (failedCleanupPaths.Count > 0)
-                {
-                    await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
-                        cancellationToken
-                    );
-
-                    try
-                    {
-                        foreach (var path in failedCleanupPaths)
-                        {
-                            dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(path));
-                        }
-
-                        await dbContext.SaveChangesAsync(CancellationToken.None);
-                    }
-                    catch (Exception)
-                    {
-                        // TODO: log this as a serious cleanup/reconciliation failure.
-                    }
-                }
-                //Priotize throwing the http CancellationToken first because it could be the reason why the pipeline failed
+                // Prefer the request cancellation when it caused the pipeline failure.
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (pipelineFailures.TryPeek(out var pipelineFailure))
@@ -142,8 +119,133 @@ namespace SoraSora.Modules.Media.Application
 
                 throw;
             }
+        }
 
-            return successfullyUploadedImages.ToList();
+        public async Task DeleteImagesAsync(
+            IReadOnlyCollection<string> mediaAssetIds,
+            CancellationToken cancellationToken
+        )
+        {
+            var requestedAssetIds = mediaAssetIds
+                .Where(mediaAssetId => !string.IsNullOrWhiteSpace(mediaAssetId))
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (requestedAssetIds.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var mediaAssets = await _dbContext
+                    .MediaAssets()
+                    .Where(asset => requestedAssetIds.Contains(asset.Id))
+                    .ToListAsync(cancellationToken);
+                var failedDeletionPaths = new HashSet<string>(StringComparer.Ordinal);
+
+                foreach (var mediaAsset in mediaAssets)
+                {
+                    _dbContext.MediaAssets().Remove(mediaAsset);
+
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(
+                            mediaAsset.Path,
+                            cancellationToken
+                        );
+                    }
+                    catch (Exception exception)
+                    {
+                        failedDeletionPaths.Add(mediaAsset.Path);
+                        _logger.LogWarning(
+                            exception,
+                            "Failed to delete media asset {MediaAssetId} at {ObjectPath}; scheduling cleanup",
+                            mediaAsset.Id,
+                            mediaAsset.Path
+                        );
+                    }
+                }
+
+                await AddCleanupTasksAsync(
+                    _dbContext,
+                    failedDeletionPaths,
+                    cancellationToken
+                );
+            }
+            catch
+            {
+                await ScheduleImageDeletionAsync(requestedAssetIds, CancellationToken.None);
+            }
+        }
+
+        public async Task ScheduleImageDeletionAsync(
+            IReadOnlyCollection<string> mediaAssetIds,
+            CancellationToken cancellationToken
+        )
+        {
+            var requestedAssetIds = mediaAssetIds
+                .Where(mediaAssetId => !string.IsNullOrWhiteSpace(mediaAssetId))
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (requestedAssetIds.Count == 0)
+            {
+                return;
+            }
+
+            var mediaAssetPathsById = await _dbContext
+                .MediaAssets()
+                .Where(asset => requestedAssetIds.Contains(asset.Id))
+                .ToDictionaryAsync(asset => asset.Id, asset => asset.Path, cancellationToken);
+
+            if (mediaAssetPathsById.Count != requestedAssetIds.Count)
+            {
+                var missingAssetIds = requestedAssetIds
+                    .Where(assetId => !mediaAssetPathsById.ContainsKey(assetId))
+                    .ToArray();
+
+                _logger.LogWarning(
+                    "Could not schedule image cleanup because media metadata was missing for asset IDs {MediaAssetIds}",
+                    missingAssetIds
+                );
+            }
+
+            await AddCleanupTasksAsync(_dbContext, mediaAssetPathsById.Values, cancellationToken);
+        }
+
+        private async Task ScheduleFailedUploadCleanupAsync(
+            IReadOnlyCollection<string> attemptedUploadPaths
+        )
+        {
+            if (attemptedUploadPaths.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
+                    CancellationToken.None
+                );
+
+                await AddCleanupTasksAsync(
+                    dbContext,
+                    attemptedUploadPaths,
+                    CancellationToken.None
+                );
+                await dbContext.SaveChangesAsync(CancellationToken.None);
+
+                return;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Failed to schedule cleanup for uploaded objects {ObjectPaths}; falling back to direct deletion",
+                    attemptedUploadPaths
+                );
+            }
+
+            await DeleteUnscheduledUploadsAsync(attemptedUploadPaths);
         }
 
         private async Task ProduceProcessedImagesAsync(
@@ -217,7 +319,7 @@ namespace SoraSora.Modules.Media.Application
             ChannelReader<ProcessedImageUpload> reader,
             SemaphoreSlim bufferedImageSlots,
             ConcurrentDictionary<string, byte> attemptedUploadPaths,
-            ConcurrentBag<MediaUploadResult> successfullyUploadedImages,
+            ConcurrentBag<MediaUpload> successfulUploads,
             ConcurrentQueue<Exception> failures,
             CancellationTokenSource pipelineCancellation,
             CancellationToken cancellationToken
@@ -231,6 +333,7 @@ namespace SoraSora.Modules.Media.Application
                     {
                         var path = processedImage.Path;
                         var contentType = processedImage.Image.ContentType;
+                        var job = processedImage.ImageUploadJob;
 
                         if (!attemptedUploadPaths.TryAdd(path, 0))
                         {
@@ -251,7 +354,7 @@ namespace SoraSora.Modules.Media.Application
                             cancellationToken
                         );
 
-                        successfullyUploadedImages.Add(new MediaUploadResult(path, contentType));
+                        successfulUploads.Add(new MediaUpload(job, path, contentType));
                     }
                     finally
                     {
@@ -269,6 +372,87 @@ namespace SoraSora.Modules.Media.Application
                 pipelineCancellation.Cancel();
 
                 throw;
+            }
+        }
+
+        private static async Task AddCleanupTasksAsync(
+            SoraSoraDbContext dbContext,
+            IEnumerable<string> objectPaths,
+            CancellationToken cancellationToken
+        )
+        {
+            var requestedPaths = objectPaths
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (requestedPaths.Count == 0)
+            {
+                return;
+            }
+
+            var scheduledPaths = await dbContext
+                .StorageCleanupTasks()
+                .Where(task => requestedPaths.Contains(task.ObjectPath))
+                .Select(task => task.ObjectPath)
+                .ToListAsync(cancellationToken);
+
+            requestedPaths.ExceptWith(scheduledPaths);
+            requestedPaths.ExceptWith(
+                dbContext.StorageCleanupTasks().Local.Select(task => task.ObjectPath)
+            );
+
+            foreach (var objectPath in requestedPaths)
+            {
+                dbContext.StorageCleanupTasks().Add(StorageCleanupTask.Create(objectPath));
+            }
+        }
+
+        private async Task DeleteUnscheduledUploadsAsync(IReadOnlyCollection<string> objectPaths)
+        {
+            var deletedPaths = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var objectPath in objectPaths)
+            {
+                try
+                {
+                    await _fileStorageService.DeleteFileAsync(objectPath, CancellationToken.None);
+                    deletedPaths.Add(objectPath);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogCritical(
+                        exception,
+                        "Failed to delete unscheduled storage object {ObjectPath}",
+                        objectPath
+                    );
+                }
+            }
+
+            if (deletedPaths.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
+                    CancellationToken.None
+                );
+                var mediaAssets = await dbContext
+                    .MediaAssets()
+                    .Where(asset => deletedPaths.Contains(asset.Path))
+                    .ToListAsync(CancellationToken.None);
+
+                dbContext.MediaAssets().RemoveRange(mediaAssets);
+                await dbContext.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogCritical(
+                    exception,
+                    "Deleted storage objects but failed to remove matching media metadata for {ObjectPaths}",
+                    deletedPaths
+                );
             }
         }
     }

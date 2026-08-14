@@ -1,40 +1,33 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Project\\sorasora-store\\tests\\UnitTests\\UnitTests.csproj": {}
+    "/home/duii/Projects/sorasora-store/tests/UnitTests/UnitTests.csproj": {}
   },
   "projects": {
-    "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj": {
+    "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj",
         "projectName": "SoraSora.Infrastructure",
-        "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj"
               }
             }
           }
@@ -49,7 +42,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -99,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -517,40 +510,33 @@
         }
       }
     },
-    "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj": {
+    "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj",
         "projectName": "SoraSora.Modules.Auth",
-        "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj"
               }
             }
           }
@@ -565,7 +551,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -599,7 +585,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -1017,40 +1003,33 @@
         }
       }
     },
-    "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\SoraSora.Modules.Media.csproj": {
+    "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\SoraSora.Modules.Media.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj",
         "projectName": "SoraSora.Modules.Media",
-        "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\SoraSora.Modules.Media.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj"
               }
             }
           }
@@ -1065,7 +1044,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -1096,7 +1075,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -1374,46 +1353,39 @@
         }
       }
     },
-    "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\SoraSora.Modules.Products.csproj": {
+    "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\SoraSora.Modules.Products.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj",
         "projectName": "SoraSora.Modules.Products",
-        "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\SoraSora.Modules.Products.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Infrastructure\\SoraSora.Infrastructure.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Infrastructure/SoraSora.Infrastructure.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\SoraSora.Modules.Media.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Media\\SoraSora.Modules.Media.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Media/SoraSora.Modules.Media.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj"
               }
             }
           }
@@ -1428,7 +1400,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -1476,7 +1448,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -1894,29 +1866,22 @@
         }
       }
     },
-    "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj": {
+    "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj",
         "projectName": "SoraSora.Shared",
-        "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\SoraSora.Shared.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Shared\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/SoraSora.Shared.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Shared/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -1935,7 +1900,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -1973,7 +1938,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -2391,40 +2356,33 @@
         }
       }
     },
-    "D:\\Project\\sorasora-store\\tests\\UnitTests\\UnitTests.csproj": {
+    "/home/duii/Projects/sorasora-store/tests/UnitTests/UnitTests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\sorasora-store\\tests\\UnitTests\\UnitTests.csproj",
+        "projectUniqueName": "/home/duii/Projects/sorasora-store/tests/UnitTests/UnitTests.csproj",
         "projectName": "UnitTests",
-        "projectPath": "D:\\Project\\sorasora-store\\tests\\UnitTests\\UnitTests.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\sorasora-store\\tests\\UnitTests\\obj\\",
+        "projectPath": "/home/duii/Projects/sorasora-store/tests/UnitTests/UnitTests.csproj",
+        "packagesPath": "/home/duii/.nuget/packages/",
+        "outputPath": "/home/duii/Projects/sorasora-store/tests/UnitTests/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/duii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Auth\\SoraSora.Modules.Auth.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Auth/SoraSora.Modules.Auth.csproj"
               },
-              "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\SoraSora.Modules.Products.csproj": {
-                "projectPath": "D:\\Project\\sorasora-store\\backend\\SoraSora.Modules.Products\\SoraSora.Modules.Products.csproj"
+              "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj": {
+                "projectPath": "/home/duii/Projects/sorasora-store/backend/SoraSora.Modules.Products/SoraSora.Modules.Products.csproj"
               }
             }
           }
@@ -2439,7 +2397,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -2478,7 +2436,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
