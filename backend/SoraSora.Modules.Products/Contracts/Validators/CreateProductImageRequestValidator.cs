@@ -1,7 +1,7 @@
 using FluentValidation;
 using SoraSora.Modules.Products.Contracts;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
-using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Media.Domain;
 
 namespace SoraSora.Modules.Products.Contracts.Validators;
 
@@ -17,7 +17,7 @@ public sealed class CreateProductImageRequestValidator
             .WithMessage("Image file cannot be empty.")
             .Must(file => file.Length <= ProductUploadLimits.MaxImageBytes)
             .WithMessage("Image file cannot exceed 5 MB.");
-        RuleFor(x => x.Alt).MaximumLength(ProductImage.MaxAltLength);
+        RuleFor(x => x.Alt).MaximumLength(MediaAsset.MaxAltLength);
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);
     }
 }

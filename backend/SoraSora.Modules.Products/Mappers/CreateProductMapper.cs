@@ -12,7 +12,7 @@ internal static class CreateProductDtoMapper
     {
         var productImages = request.ProductImages.Select(ToCreateProductImageCommand).ToList();
 
-        var productVariants = request.HasVariation
+        var productVariants = request.Variations.Count > 0
             ? request.ProductVariants.Select(ToCreateProductVariantCommand).ToList()
             : [ToCreateProductVariantCommand(request)];
 
@@ -23,7 +23,6 @@ internal static class CreateProductDtoMapper
             SupplierCountry = request.SupplierCountry,
             SellMode = request.SellMode,
             IsPublished = request.IsPublished,
-            HasVariation = request.HasVariation,
             ProductImages = productImages,
             ProductVariants = productVariants,
             Variations = request.Variations.Select(ToCreateVariationCommand).ToList(),

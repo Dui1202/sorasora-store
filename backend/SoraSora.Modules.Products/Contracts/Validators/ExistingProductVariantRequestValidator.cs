@@ -9,7 +9,8 @@ public sealed class ExistingProductVariantRequestValidator
     : AbstractValidator<RetainedProductVariantRequest>
 {
     public ExistingProductVariantRequestValidator(
-        IValidator<CreateProductVariantImageRequest> newImageValidator
+        IValidator<CreateProductVariantImageRequest> newImageValidator,
+        IValidator<CreateProductVariantOptionRequest> variantOptionValidator
     )
     {
         RuleFor(x => x.Id).NotEmpty();
@@ -17,6 +18,8 @@ public sealed class ExistingProductVariantRequestValidator
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.ProductVariantOptions).NotNull();
+        RuleForEach(x => x.ProductVariantOptions).SetValidator(variantOptionValidator);
 
         When(
             x => x.NewImage is not null,

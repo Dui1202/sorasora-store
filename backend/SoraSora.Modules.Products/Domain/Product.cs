@@ -24,7 +24,6 @@ public sealed class Product : IAuditable
     public IReadOnlyCollection<ProductVariant> ProductVariants => _productVariants;
     public IReadOnlyCollection<Variation> Variations => _variations;
     public bool IsPublished { get; private set; }
-    public bool HasVariation { get; private set; }
     public bool IsArchived { get; private set; }
 
     private Product() { }
@@ -34,8 +33,7 @@ public sealed class Product : IAuditable
         string? description,
         SupplierCountry supplierCountry,
         SellMode sellMode,
-        bool isPublished,
-        bool hasVariation
+        bool isPublished
     )
     {
         ValidateDetails(name, description, supplierCountry, sellMode);
@@ -47,7 +45,6 @@ public sealed class Product : IAuditable
             SupplierCountry = supplierCountry,
             SellMode = sellMode,
             IsPublished = isPublished,
-            HasVariation = hasVariation,
             IsArchived = false,
         };
     }
@@ -57,8 +54,7 @@ public sealed class Product : IAuditable
         string? description,
         SupplierCountry supplierCountry,
         SellMode sellMode,
-        bool isPublished,
-        bool hasVariation
+        bool isPublished
     )
     {
         ValidateDetails(name, description, supplierCountry, sellMode);
@@ -68,7 +64,6 @@ public sealed class Product : IAuditable
         SupplierCountry = supplierCountry;
         SellMode = sellMode;
         IsPublished = isPublished;
-        HasVariation = hasVariation;
     }
 
     public void AddImage(ProductImage productImage)

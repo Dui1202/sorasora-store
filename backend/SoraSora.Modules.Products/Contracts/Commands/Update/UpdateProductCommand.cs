@@ -13,10 +13,10 @@ public sealed record UpdateProductCommand
     public SupplierCountry SupplierCountry { get; init; }
     public SellMode SellMode { get; init; }
     public bool IsPublished { get; init; }
-    public bool HasVariation { get; init; }
     public IReadOnlyCollection<CreateProductImageCommand> NewImages { get; init; } = [];
     public IReadOnlyCollection<RetainedProductImageCommand> RetainedImages { get; init; } = [];
     public IReadOnlyCollection<CreateProductVariantCommand> NewProductVariants { get; init; } = [];
     public IReadOnlyCollection<RetainedProductVariantCommand> RetainedProductVariants { get; init; } =
     [];
+    public IReadOnlyCollection<UpdateVariationCommand> Variations { get; init; } = [];
 }

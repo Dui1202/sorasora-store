@@ -20,16 +20,41 @@ public sealed class Variation : IAuditable
 
     public static Variation Create(string name, int position)
     {
+        ValidateDetails(name, position);
         return new Variation { Name = name, Position = position };
+    }
+
+    public void UpdateDetails(string name, int position)
+    {
+        ValidateDetails(name, position);
+        Name = name;
+        Position = position;
     }
 
     public void AddOption(VariationOption option)
     {
+        option.AttachTo(this);
         _variationOptions.Add(option);
     }
 
     public void RemoveOption(VariationOption option)
     {
         _variationOptions.Remove(option);
+    }
+
+    private static void ValidateDetails(string name, int position)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ProductDomainException("Variation name is required.", nameof(name));
+        }
+
+        if (position < 0)
+        {
+            throw new ProductDomainException(
+                "Variation position cannot be negative.",
+                nameof(position)
+            );
+        }
     }
 }

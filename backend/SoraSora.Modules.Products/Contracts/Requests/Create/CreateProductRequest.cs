@@ -11,7 +11,6 @@ public sealed record CreateProductRequest
 
     // public DateTime? PreorderReleaseAt { get; init; }
     public bool IsPublished { get; init; }
-    public bool HasVariation { get; init; }
     public string? BaseSku { get; init; }
     public int? BaseCostPrice { get; init; }
     public int? BaseSellingPrice { get; init; }

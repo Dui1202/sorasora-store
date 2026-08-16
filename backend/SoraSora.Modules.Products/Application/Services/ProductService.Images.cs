@@ -1,8 +1,7 @@
-using SoraSora.Modules.Media.Domain.Upload;
+using SoraSora.Modules.Media.Contracts.Upload;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Domain;
-using SoraSora.Modules.Products.Infrastructure.Storage;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
@@ -21,9 +20,9 @@ public sealed partial class ProductService
         foreach (var image in command.ProductImages)
         {
             var imageUploadJob = new ImageUploadJob(
-                File: image.File,
-                BuildPath: contentType =>
-                    ProductImagePathBuilder.BuildProductImagePath(product.Id, contentType)
+                file: image.File,
+                target: new MediaStorageTarget.ProductImage(product.Id),
+                alt: image.Alt
             );
 
             jobs.Add(
@@ -41,13 +40,9 @@ public sealed partial class ProductService
             var variantCommand = createdVariant.Command;
 
             var imageUploadJob = new ImageUploadJob(
-                File: variantCommand.ProductVariantImage.File,
-                BuildPath: contentType =>
-                    ProductImagePathBuilder.BuildProductVariantImagePath(
-                        product.Id,
-                        variant.Id,
-                        contentType
-                    )
+                file: variantCommand.ProductVariantImage.File,
+                target: new MediaStorageTarget.ProductVariantImage(product.Id, variant.Id),
+                alt: variantCommand.ProductVariantImage.Alt
             );
 
             jobs.Add(
@@ -76,9 +71,9 @@ public sealed partial class ProductService
         foreach (var newImage in command.NewImages)
         {
             var job = new ImageUploadJob(
-                File: newImage.File,
-                BuildPath: contentType =>
-                    ProductImagePathBuilder.BuildProductImagePath(product.Id, contentType)
+                file: newImage.File,
+                target: new MediaStorageTarget.ProductImage(product.Id),
+                alt: newImage.Alt
             );
 
             productImageJobs.Add(
@@ -96,13 +91,9 @@ public sealed partial class ProductService
             var variantCommand = updatedVariant.Command;
 
             var job = new ImageUploadJob(
-                File: variantCommand.NewImage!.File,
-                BuildPath: contentType =>
-                    ProductImagePathBuilder.BuildProductVariantImagePath(
-                        product.Id,
-                        variant.Id,
-                        contentType
-                    )
+                file: variantCommand.NewImage!.File,
+                target: new MediaStorageTarget.ProductVariantImage(product.Id, variant.Id),
+                alt: variantCommand.NewImage.Alt
             );
 
             productImageJobs.Add(
@@ -120,13 +111,9 @@ public sealed partial class ProductService
             var variantCommand = createdVariant.Command;
 
             var imageUploadJob = new ImageUploadJob(
-                File: variantCommand.ProductVariantImage.File,
-                BuildPath: contentType =>
-                    ProductImagePathBuilder.BuildProductVariantImagePath(
-                        product.Id,
-                        variant.Id,
-                        contentType
-                    )
+                file: variantCommand.ProductVariantImage.File,
+                target: new MediaStorageTarget.ProductVariantImage(product.Id, variant.Id),
+                alt: variantCommand.ProductVariantImage.Alt
             );
 
             productImageJobs.Add(

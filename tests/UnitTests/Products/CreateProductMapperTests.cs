@@ -10,7 +10,7 @@ public sealed class CreateProductMapperTests
     [Fact]
     public void MapsBaseSkuToImplicitVariant()
     {
-        var request = CreateRequest(hasVariation: false);
+        var request = CreateRequest();
 
         var command = CreateProductDtoMapper.ToCreateProductCommand(request);
 
@@ -20,11 +20,29 @@ public sealed class CreateProductMapperTests
     [Fact]
     public void MapsExplicitVariantSku()
     {
-        var request = CreateRequest(hasVariation: true) with
+        var request = CreateRequest() with
         {
             BaseSku = null,
             BaseCostPrice = null,
             BaseSellingPrice = null,
+            Variations =
+            [
+                new CreateVariationRequest
+                {
+                    ClientId = "flavor",
+                    Name = "Flavor",
+                    Position = 0,
+                    VariationOptions =
+                    [
+                        new CreateVariationOptionRequest
+                        {
+                            ClientId = "strawberry",
+                            Value = "Strawberry",
+                            Position = 0,
+                        },
+                    ],
+                },
+            ],
             ProductVariants =
             [
                 new CreateProductVariantRequest
@@ -47,14 +65,13 @@ public sealed class CreateProductMapperTests
         Assert.Equal("STRAWBERRY-SKU", Assert.Single(command.ProductVariants).Sku);
     }
 
-    private static CreateProductRequest CreateRequest(bool hasVariation)
+    private static CreateProductRequest CreateRequest()
     {
         return new CreateProductRequest
         {
             Name = "Pocky",
             SupplierCountry = SupplierCountry.JAPAN,
             SellMode = SellMode.IN_STOCK,
-            HasVariation = hasVariation,
             BaseSku = "BASE-SKU",
             BaseCostPrice = 100,
             BaseSellingPrice = 150,

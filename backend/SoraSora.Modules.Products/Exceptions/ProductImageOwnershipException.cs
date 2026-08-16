@@ -2,8 +2,8 @@ using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Products.Exceptions;
 
-public sealed class ProductImageOwnershipException(string imagePath, string productId)
+public sealed class ProductImageOwnershipException(string mediaAssetId, string productId)
     : BadRequestException(
-        $"Image with path {imagePath} does not belong to product {productId}.",
+        $"Media asset {mediaAssetId} does not belong to product {productId}.",
         ProductErrorCodes.ImageNotOwned
     );

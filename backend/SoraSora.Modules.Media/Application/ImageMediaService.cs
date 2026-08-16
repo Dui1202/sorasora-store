@@ -7,12 +7,17 @@ using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Domain;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Infrastructure.Persistence.Extensions;
+using SoraSora.Modules.Media.Contracts.Upload;
 using SoraSora.Modules.Media.Domain;
 using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Media.Infrastructure;
+using SoraSora.Modules.Media.Infrastructure.Storage;
 
 namespace SoraSora.Modules.Media.Application
 {
+    /// <summary>
+    /// Coordinates image processing, object storage, media metadata, and deferred cleanup.
+    /// </summary>
     public class ImageMediaService(
         SoraSoraDbContext dbContext,
         IDbContextFactory<SoraSoraDbContext> dbContextFactory,
@@ -30,8 +35,24 @@ namespace SoraSora.Modules.Media.Application
         private const int UploadWorkerCount = 2;
         private const int MaxBufferedImages = 2;
 
+        /// <summary>
+        /// Processes and uploads a batch of images, then persists a media asset for each upload.
+        /// </summary>
+        /// <param name="jobs">The image files and storage targets to process.</param>
+        /// <param name="cancellationToken">Cancels processing, uploading, or persistence.</param>
+        /// <returns>
+        /// The job-to-asset mappings for the uploaded images. Result order is not guaranteed.
+        /// </returns>
+        /// <remarks>
+        /// If the pipeline fails, uploaded objects are deleted immediately when possible. Any
+        /// remaining objects are queued for deferred cleanup when possible before the original
+        /// failure is rethrown.
+        /// </remarks>
+        /// <exception cref="OperationCanceledException">
+        /// <paramref name="cancellationToken"/> has been cancelled.
+        /// </exception>
         public async Task<IReadOnlyList<MediaUploadResult>> UploadImagesAsync(
-            IReadOnlyList<ImageUploadJob> jobs,
+            IReadOnlyCollection<ImageUploadJob> jobs,
             CancellationToken cancellationToken
         )
         {
@@ -95,7 +116,11 @@ namespace SoraSora.Modules.Media.Application
 
                 foreach (var upload in successfulUploads)
                 {
-                    var mediaAsset = MediaAsset.Create(upload.Path, upload.ContentType);
+                    var mediaAsset = MediaAsset.Create(
+                        upload.Path,
+                        upload.ContentType,
+                        upload.Job.Alt
+                    );
                     uploadResults.Add(new MediaUploadResult(upload.Job.Id, mediaAsset.Id));
 
                     dbContext.MediaAssets().Add(mediaAsset);
@@ -107,7 +132,7 @@ namespace SoraSora.Modules.Media.Application
             }
             catch
             {
-                await ScheduleFailedUploadCleanupAsync(attemptedUploadPaths.Keys.ToArray());
+                await CleanUpFailedUploadsAsync(attemptedUploadPaths.Keys.ToArray());
 
                 // Prefer the request cancellation when it caused the pipeline failure.
                 cancellationToken.ThrowIfCancellationRequested();
@@ -121,63 +146,22 @@ namespace SoraSora.Modules.Media.Application
             }
         }
 
-        public async Task DeleteImagesAsync(
-            IReadOnlyCollection<string> mediaAssetIds,
-            CancellationToken cancellationToken
-        )
-        {
-            var requestedAssetIds = mediaAssetIds
-                .Where(mediaAssetId => !string.IsNullOrWhiteSpace(mediaAssetId))
-                .ToHashSet(StringComparer.Ordinal);
-
-            if (requestedAssetIds.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                var mediaAssets = await _dbContext
-                    .MediaAssets()
-                    .Where(asset => requestedAssetIds.Contains(asset.Id))
-                    .ToListAsync(cancellationToken);
-                var failedDeletionPaths = new HashSet<string>(StringComparer.Ordinal);
-
-                foreach (var mediaAsset in mediaAssets)
-                {
-                    _dbContext.MediaAssets().Remove(mediaAsset);
-
-                    try
-                    {
-                        await _fileStorageService.DeleteFileAsync(
-                            mediaAsset.Path,
-                            cancellationToken
-                        );
-                    }
-                    catch (Exception exception)
-                    {
-                        failedDeletionPaths.Add(mediaAsset.Path);
-                        _logger.LogWarning(
-                            exception,
-                            "Failed to delete media asset {MediaAssetId} at {ObjectPath}; scheduling cleanup",
-                            mediaAsset.Id,
-                            mediaAsset.Path
-                        );
-                    }
-                }
-
-                await AddCleanupTasksAsync(
-                    _dbContext,
-                    failedDeletionPaths,
-                    cancellationToken
-                );
-            }
-            catch
-            {
-                await ScheduleImageDeletionAsync(requestedAssetIds, CancellationToken.None);
-            }
-        }
-
+        /// <summary>
+        /// Adds deferred cleanup tasks for the requested media assets that currently exist.
+        /// </summary>
+        /// <param name="mediaAssetIds">
+        /// The media asset identifiers to schedule. Blank and duplicate values are ignored.
+        /// </param>
+        /// <param name="cancellationToken">Cancels the metadata lookup or cleanup scheduling.</param>
+        /// <returns>A task that completes when the cleanup tasks have been added to the context.</returns>
+        /// <remarks>
+        /// This method does not save changes. The caller must save the injected database context
+        /// so cleanup scheduling participates in the caller's transaction. Missing assets are
+        /// logged and skipped.
+        /// </remarks>
+        /// <exception cref="OperationCanceledException">
+        /// <paramref name="cancellationToken"/> has been cancelled.
+        /// </exception>
         public async Task ScheduleImageDeletionAsync(
             IReadOnlyCollection<string> mediaAssetIds,
             CancellationToken cancellationToken
@@ -212,7 +196,50 @@ namespace SoraSora.Modules.Media.Application
             await AddCleanupTasksAsync(_dbContext, mediaAssetPathsById.Values, cancellationToken);
         }
 
-        private async Task ScheduleFailedUploadCleanupAsync(
+        /// <summary>
+        /// Updates alt text for existing media assets tracked by the caller's database context.
+        /// </summary>
+        /// <remarks>This method does not save changes.</remarks>
+        public async Task UpdateImageAltTextsAsync(
+            IReadOnlyDictionary<string, string?> altTextByMediaAssetId,
+            CancellationToken cancellationToken
+        )
+        {
+            if (altTextByMediaAssetId.Count == 0)
+            {
+                return;
+            }
+
+            var mediaAssetIds = altTextByMediaAssetId.Keys.ToHashSet(StringComparer.Ordinal);
+            var mediaAssetsById = await _dbContext
+                .MediaAssets()
+                .Where(asset => mediaAssetIds.Contains(asset.Id))
+                .ToDictionaryAsync(asset => asset.Id, StringComparer.Ordinal, cancellationToken);
+
+            if (mediaAssetsById.Count != mediaAssetIds.Count)
+            {
+                throw new InvalidOperationException(
+                    "Cannot update image alt text because media metadata is missing."
+                );
+            }
+
+            foreach (var (mediaAssetId, alt) in altTextByMediaAssetId)
+            {
+                mediaAssetsById[mediaAssetId].UpdateAlt(alt);
+            }
+        }
+
+        /// <summary>
+        /// Compensates for a failed upload pipeline by deleting uploaded objects, removing any
+        /// matching metadata, and scheduling deferred cleanup for objects that remain.
+        /// </summary>
+        /// <param name="attemptedUploadPaths">The storage paths touched by the failed pipeline.</param>
+        /// <returns>A task that completes after all available cleanup strategies have run.</returns>
+        /// <remarks>
+        /// Cleanup is deliberately independent of request cancellation. Failures are logged and
+        /// suppressed so the original upload failure can be rethrown.
+        /// </remarks>
+        private async Task CleanUpFailedUploadsAsync(
             IReadOnlyCollection<string> attemptedUploadPaths
         )
         {
@@ -221,15 +248,39 @@ namespace SoraSora.Modules.Media.Application
                 return;
             }
 
+            var pathsNeedingScheduledCleanup = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var objectPath in attemptedUploadPaths)
+            {
+                try
+                {
+                    await _fileStorageService.DeleteFileAsync(objectPath, CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    pathsNeedingScheduledCleanup.Add(objectPath);
+                    _logger.LogWarning(
+                        exception,
+                        "Failed to delete uploaded storage object {ObjectPath}; scheduling cleanup",
+                        objectPath
+                    );
+                }
+            }
+
             try
             {
                 await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
                     CancellationToken.None
                 );
+                var mediaAssets = await dbContext
+                    .MediaAssets()
+                    .Where(asset => attemptedUploadPaths.Contains(asset.Path))
+                    .ToListAsync(CancellationToken.None);
 
+                dbContext.MediaAssets().RemoveRange(mediaAssets);
                 await AddCleanupTasksAsync(
                     dbContext,
-                    attemptedUploadPaths,
+                    pathsNeedingScheduledCleanup,
                     CancellationToken.None
                 );
                 await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -240,16 +291,30 @@ namespace SoraSora.Modules.Media.Application
             {
                 _logger.LogError(
                     exception,
-                    "Failed to schedule cleanup for uploaded objects {ObjectPaths}; falling back to direct deletion",
+                    "Failed to remove media metadata or schedule remaining cleanup for uploaded objects {ObjectPaths}",
                     attemptedUploadPaths
                 );
             }
 
-            await DeleteUnscheduledUploadsAsync(attemptedUploadPaths);
+            await ScheduleCleanupWithNewContextAsync(attemptedUploadPaths);
         }
 
+        /// <summary>
+        /// Processes upload jobs sequentially and writes the resulting images to the bounded
+        /// upload channel.
+        /// </summary>
+        /// <param name="jobs">The image upload jobs to process.</param>
+        /// <param name="writer">The channel used to hand processed images to upload workers.</param>
+        /// <param name="bufferedImageSlots">
+        /// Limits the number of processed images retained in memory.
+        /// </param>
+        /// <param name="failures">Collects the failure that stops the pipeline.</param>
+        /// <param name="pipelineCancellation">Cancels the remaining pipeline on failure.</param>
+        /// <param name="cancellationToken">Cancels image processing and channel writes.</param>
+        /// <returns>A task that completes after all jobs are produced or the pipeline stops.</returns>
+        /// <remarks>The writer is always completed before the method exits.</remarks>
         private async Task ProduceProcessedImagesAsync(
-            IReadOnlyList<ImageUploadJob> jobs,
+            IReadOnlyCollection<ImageUploadJob> jobs,
             ChannelWriter<ProcessedImageUpload> writer,
             SemaphoreSlim bufferedImageSlots,
             ConcurrentQueue<Exception> failures,
@@ -263,7 +328,7 @@ namespace SoraSora.Modules.Media.Application
                 {
                     await bufferedImageSlots.WaitAsync(cancellationToken);
 
-                    //producer owns the semaphore permit
+                    // The producer owns the slot until the channel accepts the item.
                     var handedToConsumer = false;
 
                     try
@@ -276,22 +341,18 @@ namespace SoraSora.Modules.Media.Application
                             cancellationToken
                         );
 
-                        var path = job.BuildPath(
-                            ImageContentType.ToImageContentType(processedImage.Format)
-                        );
+                        var path = ImageStoragePathBuilder.Build(job, processedImage.Format);
 
                         await writer.WriteAsync(
                             new ProcessedImageUpload(job, processedImage, path),
                             cancellationToken
                         );
 
-                        //After the producer successfully writes the item into the channel,
-                        //now the consumer will own the permit, and handle the Release() call instead of producer
+                        // Once queued, the consumer is responsible for releasing the slot.
                         handedToConsumer = true;
                     }
                     finally
                     {
-                        //Producer handles the permit and call Release()
                         if (!handedToConsumer)
                             bufferedImageSlots.Release();
                     }
@@ -310,11 +371,25 @@ namespace SoraSora.Modules.Media.Application
             }
             finally
             {
-                //Close the write channel
                 writer.TryComplete();
             }
         }
 
+        /// <summary>
+        /// Reads processed images from the channel and uploads them to object storage.
+        /// </summary>
+        /// <param name="reader">The channel containing processed images ready for upload.</param>
+        /// <param name="bufferedImageSlots">
+        /// Tracks processed-image capacity released after each consumed item.
+        /// </param>
+        /// <param name="attemptedUploadPaths">
+        /// Records storage paths touched by the pipeline and rejects duplicate paths.
+        /// </param>
+        /// <param name="successfulUploads">Collects uploads ready for media asset persistence.</param>
+        /// <param name="failures">Collects the failure that stops the pipeline.</param>
+        /// <param name="pipelineCancellation">Cancels the remaining pipeline on failure.</param>
+        /// <param name="cancellationToken">Cancels channel reads and storage uploads.</param>
+        /// <returns>A task that completes when the channel closes or the pipeline stops.</returns>
         private async Task ConsumeProcessedImageAsync(
             ChannelReader<ProcessedImageUpload> reader,
             SemaphoreSlim bufferedImageSlots,
@@ -375,6 +450,16 @@ namespace SoraSora.Modules.Media.Application
             }
         }
 
+        /// <summary>
+        /// Adds cleanup tasks for storage paths that are not already persisted or tracked locally.
+        /// </summary>
+        /// <param name="dbContext">The context that queries and tracks cleanup tasks.</param>
+        /// <param name="objectPaths">
+        /// The storage paths to schedule. Blank and duplicate values are ignored.
+        /// </param>
+        /// <param name="cancellationToken">Cancels the existing-task lookup.</param>
+        /// <returns>A task that completes when missing cleanup tasks are tracked.</returns>
+        /// <remarks>This method does not save changes.</remarks>
         private static async Task AddCleanupTasksAsync(
             SoraSoraDbContext dbContext,
             IEnumerable<string> objectPaths,
@@ -407,51 +492,35 @@ namespace SoraSora.Modules.Media.Application
             }
         }
 
-        private async Task DeleteUnscheduledUploadsAsync(IReadOnlyCollection<string> objectPaths)
+        /// <summary>
+        /// Uses a fresh database context to persist cleanup tasks when the primary cleanup path
+        /// cannot complete.
+        /// </summary>
+        /// <param name="objectPaths">The storage paths that still require cleanup.</param>
+        /// <returns>A task that completes after the fallback scheduling attempt.</returns>
+        /// <remarks>
+        /// This last-resort operation ignores request cancellation and logs rather than rethrows
+        /// failures so it cannot replace the original upload error.
+        /// </remarks>
+        private async Task ScheduleCleanupWithNewContextAsync(
+            IReadOnlyCollection<string> objectPaths
+        )
         {
-            var deletedPaths = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var objectPath in objectPaths)
-            {
-                try
-                {
-                    await _fileStorageService.DeleteFileAsync(objectPath, CancellationToken.None);
-                    deletedPaths.Add(objectPath);
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogCritical(
-                        exception,
-                        "Failed to delete unscheduled storage object {ObjectPath}",
-                        objectPath
-                    );
-                }
-            }
-
-            if (deletedPaths.Count == 0)
-            {
-                return;
-            }
-
             try
             {
                 await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
                     CancellationToken.None
                 );
-                var mediaAssets = await dbContext
-                    .MediaAssets()
-                    .Where(asset => deletedPaths.Contains(asset.Path))
-                    .ToListAsync(CancellationToken.None);
 
-                dbContext.MediaAssets().RemoveRange(mediaAssets);
+                await AddCleanupTasksAsync(dbContext, objectPaths, CancellationToken.None);
                 await dbContext.SaveChangesAsync(CancellationToken.None);
             }
             catch (Exception exception)
             {
                 _logger.LogCritical(
                     exception,
-                    "Deleted storage objects but failed to remove matching media metadata for {ObjectPaths}",
-                    deletedPaths
+                    "Failed to schedule cleanup for uploaded objects {ObjectPaths}",
+                    objectPaths
                 );
             }
         }

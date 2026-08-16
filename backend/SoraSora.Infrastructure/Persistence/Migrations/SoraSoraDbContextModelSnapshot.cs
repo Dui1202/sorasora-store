@@ -271,6 +271,10 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<string>("Alt")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("text");

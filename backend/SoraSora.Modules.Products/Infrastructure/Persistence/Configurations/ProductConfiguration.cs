@@ -29,6 +29,5 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .Property(x => x.SellMode)
             .HasConversion<string>()
             .HasDefaultValue(SellMode.IN_STOCK);
-        builder.Property(x => x.HasVariation).IsRequired().HasDefaultValue(false);
     }
 }

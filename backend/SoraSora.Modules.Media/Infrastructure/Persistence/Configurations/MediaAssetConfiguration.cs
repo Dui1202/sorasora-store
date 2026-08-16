@@ -15,6 +15,7 @@ namespace SoraSora.Modules.Media.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Path).IsRequired();
 
             builder.Property(x => x.ContentType).IsRequired();
+            builder.Property(x => x.Alt).HasMaxLength(MediaAsset.MaxAltLength).IsRequired(false);
         }
     }
 }

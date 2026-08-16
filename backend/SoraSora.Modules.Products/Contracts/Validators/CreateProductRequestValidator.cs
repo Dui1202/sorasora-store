@@ -34,7 +34,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         RuleForEach(x => x.Variations).SetValidator(createVariationRequestValidator);
 
         When(
-            request => !request.HasVariation,
+            request => request.Variations is { Count: 0 },
             () =>
             {
                 RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
@@ -45,7 +45,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         );
 
         When(
-            request => request.HasVariation,
+            request => request.Variations is { Count: > 0 },
             () =>
             {
                 RuleFor(request => request.ProductVariants)

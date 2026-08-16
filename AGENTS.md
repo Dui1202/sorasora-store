@@ -773,6 +773,13 @@ Use practical enforcement where possible:
 
 Because the codebase is in transition, these rules are especially important.
 
+## Database Migration Ownership
+
+- Codex must not create, edit, remove, regenerate, or apply database migration files
+- Codex must not run schema-mutating migration commands such as `dotnet ef migrations add`, `dotnet ef database update`, or `prisma migrate`
+- when a model or schema change requires a migration, make the requested source/configuration changes, report exactly what must be migrated, and leave migration generation and application to the user
+- inspecting existing migrations and reporting migration requirements is allowed, but migration files must remain untouched unless the user explicitly requests otherwise
+
 ## Default Direction
 
 - new backend features should be implemented in .NET first

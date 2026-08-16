@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Products.Application.Services.Loggers;
+using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
@@ -24,9 +25,14 @@ public sealed partial class ProductService
             await _dbContext
                 .Products()
                 .Where(x => !x.IsArchived)
+                .AsSplitQuery()
                 .Include(x => x.ProductImages)
                 .Include(x => x.ProductVariants)
                     .ThenInclude(x => x.ProductVariantImage)
+                .Include(x => x.ProductVariants)
+                    .ThenInclude(x => x.ProductVariantOptions)
+                .Include(x => x.Variations)
+                    .ThenInclude(x => x.VariationOptions)
                 .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
             ?? throw new ProductNotFoundException(command.Id);
 
@@ -47,8 +53,7 @@ public sealed partial class ProductService
                     command.Description,
                     command.SupplierCountry,
                     command.SellMode,
-                    command.IsPublished,
-                    command.HasVariation
+                    command.IsPublished
                 );
                 product.AdvanceVersion();
 
@@ -58,6 +63,12 @@ public sealed partial class ProductService
                 );
 
                 RemoveProductVariantsFromProduct(product, command, imageAssetIdsToRemove);
+
+                var variationOptionsByVariationClientId = await ReconcileVariationGraphAsync(
+                    product,
+                    command,
+                    cancellationToken
+                );
 
                 await UpdateProductVariantPositions(
                     product,
@@ -73,6 +84,14 @@ public sealed partial class ProductService
                     imageAssetIdsToRemove,
                     out var updatedProductVariants,
                     out var createdProductVariants
+                );
+
+                AttachProductVariantOptions(
+                    product,
+                    command,
+                    existingProductVariantsById,
+                    createdProductVariants,
+                    variationOptionsByVariationClientId
                 );
 
                 await UpdateProductImagePositionsAsync(
@@ -100,7 +119,7 @@ public sealed partial class ProductService
                     uploadedMediaAssetIds
                 );
 
-                await _imageMediaService.DeleteImagesAsync(
+                await _imageMediaService.ScheduleImageDeletionAsync(
                     imageAssetIdsToRemove,
                     cancellationToken
                 );
@@ -116,29 +135,7 @@ public sealed partial class ProductService
         }
         catch (Exception ex)
         {
-            // A rollback does not reset EF Core's tracked entity states. Detach the rolled-back
-            // product changes so the cleanup save cannot accidentally persist them.
-            _dbContext.ChangeTracker.Clear();
-
-            try
-            {
-                if (uploadedMediaAssetIds.Count > 0)
-                {
-                    await _imageMediaService.DeleteImagesAsync(
-                        uploadedMediaAssetIds,
-                        CancellationToken.None
-                    );
-
-                    await _dbContext.SaveChangesAsync(CancellationToken.None);
-                }
-            }
-            catch (Exception cleanupException)
-            {
-                foreach (var mediaAssetId in uploadedMediaAssetIds)
-                {
-                    _logger.ProductImageCleanupFailed(cleanupException, mediaAssetId);
-                }
-            }
+            await TryScheduleUploadedMediaCleanupAsync(uploadedMediaAssetIds);
 
             if (ex is DbUpdateConcurrencyException)
             {
@@ -293,6 +290,242 @@ public sealed partial class ProductService
         }
     }
 
+    private async Task<
+        Dictionary<string, Dictionary<string, VariationOption>>
+    > ReconcileVariationGraphAsync(
+        Product product,
+        UpdateProductCommand command,
+        CancellationToken cancellationToken
+    )
+    {
+        var existingVariationsById = product.Variations.ToDictionary(
+            variation => variation.Id,
+            StringComparer.Ordinal
+        );
+
+        ValidateVariationOwnership(product, command, existingVariationsById);
+
+        //Remove all product variant options
+        foreach (var productVariant in product.ProductVariants)
+        {
+            foreach (var selection in productVariant.ProductVariantOptions.ToList())
+            {
+                productVariant.RemoveProductVariantOption(selection);
+            }
+        }
+
+        var retainedVariationIds = command
+            .Variations.Where(x => x.Id is not null)
+            .Select(x => x.Id!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Remove unretained variations
+        foreach (
+            var variation in product
+                .Variations.Where(x => !retainedVariationIds.Contains(x.Id))
+                .ToList()
+        )
+        {
+            product.RemoveVariation(variation);
+        }
+
+        //Updating existing variations
+        foreach (var variationCommand in command.Variations.Where(x => x.Id is not null))
+        {
+            var variation = existingVariationsById[variationCommand.Id!];
+            var retainedOptionIds = variationCommand
+                .VariationOptions.Where(x => x.Id is not null)
+                .Select(x => x.Id!)
+                .ToHashSet(StringComparer.Ordinal);
+
+            //Remove unretained variation options
+            foreach (
+                var option in variation
+                    .VariationOptions.Where(x => !retainedOptionIds.Contains(x.Id))
+                    .ToList()
+            )
+            {
+                variation.RemoveOption(option);
+            }
+
+            
+            variation.UpdateDetails(CreateTemporaryUniqueValue("variation"), variation.Position);
+            foreach (var option in variation.VariationOptions)
+            {
+                option.UpdateDetails(CreateTemporaryUniqueValue("option"), option.Position);
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var optionsByVariationClientId = new Dictionary<
+            string,
+            Dictionary<string, VariationOption>
+        >(StringComparer.Ordinal);
+
+        foreach (var variationCommand in command.Variations)
+        {
+            var variation = variationCommand.Id is null
+                ? Variation.Create(variationCommand.Name, variationCommand.Position)
+                : existingVariationsById[variationCommand.Id];
+
+            if (variationCommand.Id is null)
+            {
+                product.AddVariation(variation);
+                _dbContext.Set<Variation>().Add(variation);
+            }
+            else
+            {
+                variation.UpdateDetails(variationCommand.Name, variationCommand.Position);
+            }
+
+            var existingOptionsById = variation.VariationOptions.ToDictionary(
+                option => option.Id,
+                StringComparer.Ordinal
+            );
+            var optionsByClientId = new Dictionary<string, VariationOption>(StringComparer.Ordinal);
+
+            foreach (var optionCommand in variationCommand.VariationOptions)
+            {
+                var option = optionCommand.Id is null
+                    ? VariationOption.Create(optionCommand.Value, optionCommand.Position)
+                    : existingOptionsById[optionCommand.Id];
+
+                if (optionCommand.Id is null)
+                {
+                    variation.AddOption(option);
+                    _dbContext.Set<VariationOption>().Add(option);
+                }
+                else
+                {
+                    option.UpdateDetails(optionCommand.Value, optionCommand.Position);
+                }
+
+                optionsByClientId.Add(optionCommand.ClientId, option);
+            }
+
+            optionsByVariationClientId.Add(variationCommand.ClientId, optionsByClientId);
+        }
+
+        return optionsByVariationClientId;
+    }
+
+    private static void ValidateVariationOwnership(
+        Product product,
+        UpdateProductCommand command,
+        IReadOnlyDictionary<string, Variation> existingVariationsById
+    )
+    {
+        foreach (var variationCommand in command.Variations)
+        {
+            Variation? variation = null;
+            if (
+                variationCommand.Id is not null
+                && !existingVariationsById.TryGetValue(variationCommand.Id, out variation)
+            )
+            {
+                throw new ProductVariationOwnershipException(variationCommand.Id, product.Id);
+            }
+
+            foreach (var optionCommand in variationCommand.VariationOptions)
+            {
+                if (optionCommand.Id is null)
+                {
+                    continue;
+                }
+
+                if (
+                    variation is null
+                    || variation.VariationOptions.All(x => x.Id != optionCommand.Id)
+                )
+                {
+                    throw new ProductVariationOptionOwnershipException(
+                        optionCommand.Id,
+                        variationCommand.Id ?? variationCommand.ClientId
+                    );
+                }
+            }
+        }
+    }
+
+    private static void AttachProductVariantOptions(
+        Product product,
+        UpdateProductCommand command,
+        IReadOnlyDictionary<string, ProductVariant> existingProductVariantsById,
+        IReadOnlyCollection<CreatedProductVariant> createdProductVariants,
+        IReadOnlyDictionary<string, Dictionary<string, VariationOption>> optionsByVariationClientId
+    )
+    {
+        foreach (var variantCommand in command.RetainedProductVariants)
+        {
+            if (!existingProductVariantsById.TryGetValue(variantCommand.Id, out var productVariant))
+            {
+                throw new ProductVariantOwnershipException(variantCommand.Id, product.Id);
+            }
+
+            AttachProductVariantOptions(
+                product,
+                productVariant,
+                variantCommand.ProductVariantOptions,
+                optionsByVariationClientId
+            );
+        }
+
+        foreach (var createdProductVariant in createdProductVariants)
+        {
+            AttachProductVariantOptions(
+                product,
+                createdProductVariant.ProductVariant,
+                createdProductVariant.Command.ProductVariantOptions,
+                optionsByVariationClientId
+            );
+        }
+    }
+
+    private static void AttachProductVariantOptions(
+        Product product,
+        ProductVariant productVariant,
+        IReadOnlyCollection<CreateProductVariantOptionCommand> selections,
+        IReadOnlyDictionary<string, Dictionary<string, VariationOption>> optionsByVariationClientId
+    )
+    {
+        foreach (var selection in selections)
+        {
+            if (
+                !optionsByVariationClientId.TryGetValue(
+                    selection.VariationClientId,
+                    out var optionsByClientId
+                )
+            )
+            {
+                throw new ProductVariationOwnershipException(
+                    selection.VariationClientId,
+                    product.Id
+                );
+            }
+
+            if (
+                !optionsByClientId.TryGetValue(
+                    selection.VariationOptionClientId,
+                    out var variationOption
+                )
+            )
+            {
+                throw new ProductVariationOptionOwnershipException(
+                    selection.VariationOptionClientId,
+                    selection.VariationClientId
+                );
+            }
+
+            productVariant.AddProductVariantOption(
+                ProductVariantOption.Create(productVariant, variationOption)
+            );
+        }
+    }
+
+    private static string CreateTemporaryUniqueValue(string prefix) =>
+        $"__{prefix}_update_{Guid.NewGuid():N}";
+
     private async Task UpdateProductImagePositionsAsync(
         Product product,
         UpdateProductCommand command,
@@ -346,6 +579,7 @@ public sealed partial class ProductService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         //Update product images
+        var altTextByMediaAssetId = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var image in command.RetainedImages)
         {
             if (
@@ -359,7 +593,10 @@ public sealed partial class ProductService
             }
 
             productImage.UpdateDetails(position: image.Position);
+            altTextByMediaAssetId.Add(image.MediaAssetId, image.Alt);
         }
+
+        await _imageMediaService.UpdateImageAltTextsAsync(altTextByMediaAssetId, cancellationToken);
     }
 
     private static List<int> AllocateTemporaryPositions(

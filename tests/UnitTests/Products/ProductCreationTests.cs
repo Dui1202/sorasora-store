@@ -1,5 +1,7 @@
 using SoraSora.Modules.Products.Contracts.Commands.Create;
+using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Domain;
 
 namespace UnitTests.Products;
@@ -27,6 +29,16 @@ public sealed class ProductCreationTests
     }
 
     [Fact]
+    public void ProductContractsDoNotExposeHasVariation()
+    {
+        Assert.Null(typeof(CreateProductRequest).GetProperty("HasVariation"));
+        Assert.Null(typeof(CreateProductCommand).GetProperty("HasVariation"));
+        Assert.Null(typeof(UpdateProductRequest).GetProperty("HasVariation"));
+        Assert.Null(typeof(UpdateProductCommand).GetProperty("HasVariation"));
+        Assert.Null(typeof(Product).GetProperty("HasVariation"));
+    }
+
+    [Fact]
     public void CreateProductVariantCommandDoesNotExposeArchiveState()
     {
         Assert.Null(
@@ -42,8 +54,7 @@ public sealed class ProductCreationTests
             description: null,
             supplierCountry: SupplierCountry.JAPAN,
             sellMode: SellMode.IN_STOCK,
-            isPublished: false,
-            hasVariation: false
+            isPublished: false
         );
 
         Assert.False(product.IsArchived);

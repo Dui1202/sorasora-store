@@ -5,8 +5,6 @@ namespace SoraSora.Modules.Products.Domain;
 
 public sealed class ProductImage
 {
-    public const int MaxAltLength = 255;
-
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string ProductId { get; private set; } = null!;
     public string MediaAssetId { get; private set; } = null!;

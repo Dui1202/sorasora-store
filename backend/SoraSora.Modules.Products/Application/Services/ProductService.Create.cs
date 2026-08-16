@@ -24,14 +24,15 @@ public sealed partial class ProductService
                 description: command.Description,
                 supplierCountry: command.SupplierCountry,
                 sellMode: command.SellMode,
-                isPublished: command.IsPublished,
-                hasVariation: command.HasVariation
+                isPublished: command.IsPublished
             );
         }
         catch (ProductDomainException exception)
         {
             throw new ProductValidationException(exception.Message, exception);
         }
+
+        var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
 
         try
         {
@@ -50,7 +51,11 @@ public sealed partial class ProductService
                 createdProductVariants
             );
 
-            await HandleProductMediaAsset(productImageUploadJobs, cancellationToken);
+            await HandleProductMediaAsset(
+                productImageUploadJobs,
+                uploadedMediaAssetIds,
+                cancellationToken
+            );
 
             _dbContext.Products().Add(product);
 
@@ -58,6 +63,8 @@ public sealed partial class ProductService
         }
         catch (Exception exception)
         {
+            await TryScheduleUploadedMediaCleanupAsync(uploadedMediaAssetIds);
+
             if (exception is ProductDomainException domainException)
             {
                 throw new ProductValidationException(domainException.Message, domainException);
@@ -179,16 +186,10 @@ public sealed partial class ProductService
 
     private async Task HandleProductMediaAsset(
         IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
+        ISet<string> uploadedMediaAssetIds,
         CancellationToken cancellationToken
     )
     {
-        Dictionary<string, Action<string>> attachMediaByUploadIds =
-            productImageUploadJobs.ToDictionary(
-                productJob => productJob.Job.Id,
-                productJob => productJob.Attach,
-                StringComparer.Ordinal
-            );
-
         var imageUploadJobs = productImageUploadJobs.Select(x => x.Job).ToList();
 
         var mediaUploadResults = await _imageMediaService.UploadImagesAsync(
@@ -196,16 +197,10 @@ public sealed partial class ProductService
             cancellationToken
         );
 
-        foreach (var result in mediaUploadResults)
-        {
-            if (!attachMediaByUploadIds.TryGetValue(result.JobId, out var attach))
-            {
-                throw new InvalidOperationException(
-                    "This media upload result is not from the original upload job"
-                );
-            }
-
-            attach(result.AssetId);
-        }
+        AttachUploadedMedia(
+            productImageUploadJobs,
+            mediaUploadResults,
+            uploadedMediaAssetIds
+        );
     }
 }
