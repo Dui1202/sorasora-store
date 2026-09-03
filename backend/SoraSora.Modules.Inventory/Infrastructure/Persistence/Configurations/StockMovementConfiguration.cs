@@ -1,0 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SoraSora.Modules.Inventory.Domain;
+
+public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement>
+{
+    public void Configure(EntityTypeBuilder<StockMovement> builder)
+    {
+        builder.ToTable("StockMovements");
+
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Id).IsRequired();
+        builder
+            .Property(x => x.StockMovementType)
+            .HasConversion<string>()
+            .HasDefaultValue(StockMovementType.Adjustment);
+
+        builder.Property(x => x.OnHandedDelta).HasDefaultValue(0);
+        builder.Property(x => x.ReservedDelta).HasDefaultValue(0);
+        builder.Property(x => x.Description).IsRequired(false);
+
+        builder
+            .HasOne(x => x.Stock)
+            .WithMany(x => x.StockMovements)
+            .HasForeignKey(x => x.StockId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => x.StockId).IsUnique();
+    }
+}

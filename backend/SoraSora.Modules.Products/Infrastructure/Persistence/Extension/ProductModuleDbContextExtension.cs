@@ -15,4 +15,14 @@ public static class ProductsModuleDbContextExtension
     {
         return dbContext.Set<ProductVariant>();
     }
+
+    public static DbSet<Variation> Variations(this SoraSoraDbContext dbContext)
+    {
+        return dbContext.Set<Variation>();
+    }
+
+    public static DbSet<VariationOption> VariationOptions(this SoraSoraDbContext dbContext)
+    {
+        return dbContext.Set<VariationOption>();
+    }
 }

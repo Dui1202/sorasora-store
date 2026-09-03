@@ -7,4 +7,5 @@ public static class ApiRoute
     public const string AuthApiRoute = ApiRoot + "/auth";
     public const string RolesApiRoute = AuthApiRoute + "/roles";
     public const string UsersApiRoute = AuthApiRoute + "/users";
+    public const string InventoryApiRoute = ApiRoot + "/inventory";
 }

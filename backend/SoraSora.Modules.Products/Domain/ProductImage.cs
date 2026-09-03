@@ -1,5 +1,6 @@
 using Amazon.S3.Model;
 using NUlid;
+using SoraSora.Modules.Products.Exceptions;
 
 namespace SoraSora.Modules.Products.Domain;
 

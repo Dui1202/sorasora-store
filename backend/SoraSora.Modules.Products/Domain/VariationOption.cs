@@ -1,4 +1,5 @@
 using NUlid;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Shared.Interface;
 
 namespace SoraSora.Modules.Products.Domain;

@@ -8,6 +8,8 @@ namespace SoraSora.Modules.Media.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<MediaAsset> builder)
         {
+            builder.ToTable("MediaAssets");
+
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedNever();
 

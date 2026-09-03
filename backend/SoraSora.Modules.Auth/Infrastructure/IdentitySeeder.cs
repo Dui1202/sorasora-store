@@ -1,8 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.CodeAnalysis;
-using Microsoft.IdentityModel.Tokens;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Auth.Application.Extensions;
 using SoraSora.Modules.Auth.Authorization;

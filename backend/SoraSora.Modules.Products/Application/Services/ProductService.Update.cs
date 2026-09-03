@@ -348,7 +348,6 @@ public sealed partial class ProductService
                 variation.RemoveOption(option);
             }
 
-            
             variation.UpdateDetails(CreateTemporaryUniqueValue("variation"), variation.Position);
             foreach (var option in variation.VariationOptions)
             {
@@ -372,7 +371,7 @@ public sealed partial class ProductService
             if (variationCommand.Id is null)
             {
                 product.AddVariation(variation);
-                _dbContext.Set<Variation>().Add(variation);
+                _dbContext.Variations().Add(variation);
             }
             else
             {
@@ -394,7 +393,7 @@ public sealed partial class ProductService
                 if (optionCommand.Id is null)
                 {
                     variation.AddOption(option);
-                    _dbContext.Set<VariationOption>().Add(option);
+                    _dbContext.VariationOptions().Add(option);
                 }
                 else
                 {

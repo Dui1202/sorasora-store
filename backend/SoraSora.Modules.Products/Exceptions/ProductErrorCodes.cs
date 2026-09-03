@@ -2,6 +2,7 @@ namespace SoraSora.Modules.Products.Exceptions;
 
 public static class ProductErrorCodes
 {
+    public const string DomainException = "PRODUCT_DOMAIN_EXCEPTION";
     public const string NotFound = "PRODUCT_NOT_FOUND";
     public const string ValidationFailed = "PRODUCT_VALIDATION_FAILED";
     public const string VariantNotOwned = "PRODUCT_VARIANT_NOT_OWNED";
