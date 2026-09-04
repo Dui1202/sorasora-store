@@ -1,6 +1,5 @@
 name: Feature
 description: Add or extend user-visible or system behavior
-title: ""
 labels:
   - enhancement
 body:

@@ -1,6 +1,5 @@
 name: Technical debt
 description: Record a known compromise that should be addressed later
-title: ""
 labels:
   - tech-debt
 body:

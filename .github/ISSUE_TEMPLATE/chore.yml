@@ -1,6 +1,5 @@
 name: Chore
 description: Maintenance, tooling, configuration, dependency, or infrastructure work
-title: ""
 labels:
   - chore
 body:

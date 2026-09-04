@@ -1,6 +1,5 @@
 name: Investigation
 description: Time-bounded research needed before making an implementation decision
-title: ""
 labels:
   - investigation
 body:

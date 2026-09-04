@@ -1,6 +1,5 @@
 name: Refactor
 description: Improve internal design without intentionally changing behavior
-title: ""
 labels:
   - refactor
 body:
