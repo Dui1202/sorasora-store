@@ -16,9 +16,12 @@ namespace SoraSora.Modules.Inventory.Domain
 
         private Stock() { }
 
-        public static Stock Create(string warehouseId)
+        public static Stock Create(string warehouseId, int receiveQuantity = 0)
         {
-            return new Stock { WarehouseId = warehouseId };
+            var stock = new Stock { WarehouseId = warehouseId };
+            stock.Receive(receiveQuantity, "Stock initialization");
+
+            return stock;
         }
 
         public void Receive(int quantity, string? description = null)

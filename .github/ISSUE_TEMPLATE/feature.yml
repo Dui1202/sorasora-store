@@ -1,0 +1,52 @@
+name: Feature
+description: Add or extend user-visible or system behavior
+title: ""
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this issue achieve?
+      placeholder: Allow inventory items to be created for product variants.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed? Describe the relevant existing behavior or design.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: State the rules and constraints the implementation must satisfy.
+      placeholder: |
+        - ProductVariant must exist
+        - Only one InventoryItem may exist per ProductVariant
+        - Initial quantity must not be negative
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Define objectively verifiable conditions for completion.
+      placeholder: |
+        - [ ] InventoryItem can be created successfully
+        - [ ] Duplicate creation is rejected
+        - [ ] Relevant tests pass
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional implementation constraints, related issues, or architectural considerations.

@@ -12,6 +12,7 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
 
         builder.Property(x => x.Id).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(Warehouse.MaxNameLength).IsRequired();
+        builder.Property(x => x.IsDefault).HasDefaultValue(false).IsRequired();
 
         builder.HasIndex(x => x.Name).IsUnique();
     }

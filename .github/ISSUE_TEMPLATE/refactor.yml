@@ -1,0 +1,47 @@
+name: Refactor
+description: Improve internal design without intentionally changing behavior
+title: ""
+labels:
+  - refactor
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: Target
+      description: What code or design should be changed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Current problem
+      description: What concrete maintainability or design problem exists?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired state
+      description: What should the design look like after the refactor?
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Behavior or interfaces that must remain unchanged.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Existing externally observable behavior is unchanged
+        - [ ] Existing tests continue to pass
+        - [ ] Identified design problem is removed
+        - [ ] No unrelated architectural changes are introduced
+    validations:
+      required: true

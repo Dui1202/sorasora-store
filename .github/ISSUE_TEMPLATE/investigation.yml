@@ -1,0 +1,64 @@
+name: Investigation
+description: Time-bounded research needed before making an implementation decision
+title: ""
+labels:
+  - investigation
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What specific question must this investigation answer?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why does this decision matter?
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options to investigate
+      placeholder: |
+        - Option A
+        - Option B
+        - Option C
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision criteria
+      description: What factors should determine the answer?
+      placeholder: |
+        - Correctness
+        - Complexity
+        - Performance
+        - Maintainability
+        - Development cost
+    validations:
+      required: true
+
+  - type: input
+    id: timebox
+    attributes:
+      label: Timebox
+      description: Maximum amount of time to spend investigating.
+      placeholder: 2 hours
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Done when
+      placeholder: |
+        - [ ] Relevant options have been evaluated
+        - [ ] Decision and reasoning are documented
+        - [ ] Follow-up implementation issue is created if necessary
+    validations:
+      required: true

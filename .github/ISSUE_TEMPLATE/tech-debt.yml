@@ -1,0 +1,46 @@
+name: Technical debt
+description: Record a known compromise that should be addressed later
+title: ""
+labels:
+  - tech-debt
+body:
+  - type: textarea
+    id: debt
+    attributes:
+      label: Technical debt
+      description: What compromise or deficiency currently exists?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why it exists
+      description: Why was this compromise originally accepted?
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What problems does this cause or risk causing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired state
+      description: What would resolving the debt look like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Underlying compromise is removed
+        - [ ] Relevant tests are preserved or added
+        - [ ] No regression is introduced
+    validations:
+      required: true
