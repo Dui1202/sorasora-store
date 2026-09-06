@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Shared.Exceptions;
@@ -21,8 +22,20 @@ public sealed partial class InventoryService : IInventoryService
             );
         }
 
+        var doesProductVariantExist = await _productVariantLookupService.ExistsAsync(
+            command.ProductVariantId,
+            cancellationToken
+        );
+
+        if (doesProductVariantExist)
+        {
+            throw new NotFoundException(
+                "Product variant for this inventory item has already existed."
+            );
+        }
+
         var defaultWarehouse =
-            await _dbContext.Warehouses().SingleOrDefaultAsync(x => x.IsDefault)
+            await _dbContext.Warehouses().SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
             ?? throw new InvalidOperationException("The default warehouse is missing");
 
         var defaultStock = Stock.Create(defaultWarehouse.Id, command.InitialQuantity);
@@ -32,7 +45,23 @@ public sealed partial class InventoryService : IInventoryService
 
         _dbContext.InventoryItems().Add(inventoryItem);
 
-        await _dbContext.SaveChangesAsync();
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+            when (ex.InnerException
+                    is PostgresException
+                    {
+                        SqlState: PostgresErrorCodes.UniqueViolation,
+                        ConstraintName: "UX_InventoryItems_ProductVariantId"
+                    }
+            )
+        {
+            throw new ConflictException(
+                "Inventory item for this product variant has already existed."
+            );
+        }
 
         return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
     }

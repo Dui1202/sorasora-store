@@ -26,6 +26,7 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Receive(int quantity, string? description = null)
         {
+            ValidateQuantity(quantity);
             OnHandedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -39,6 +40,8 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Reserve(int quantity, string? description = null)
         {
+            ValidateQuantity(quantity);
+
             ReservedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -52,6 +55,8 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Release(int quantity, string? description = null)
         {
+            ValidateQuantity(quantity);
+
             ReservedQuantity -= quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -65,6 +70,8 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Sale(int quantity, string? description = null)
         {
+            ValidateQuantity(quantity);
+
             OnHandedQuantity -= quantity;
             ReservedQuantity -= quantity;
             _stockMovements.Add(
@@ -79,6 +86,8 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Return(int quantity, string description)
         {
+            ValidateQuantity(quantity);
+
             OnHandedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -114,6 +123,17 @@ namespace SoraSora.Modules.Inventory.Domain
                     description: description
                 )
             );
+        }
+
+        public void ValidateQuantity(int quantity)
+        {
+            if (quantity < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "Stock quantity cannot be negative",
+                    nameof(quantity)
+                );
+            }
         }
     }
 }

@@ -13,5 +13,15 @@ namespace SoraSora.Modules.Inventory.Domain
         {
             return new Warehouse { Name = name };
         }
+
+        public void UpdateDetails(string name)
+        {
+            Name = name;
+        }
+
+        public void SetDefault(bool isDefault)
+        {
+            IsDefault = isDefault;
+        }
     }
 }

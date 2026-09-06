@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Shared.Exceptions;
@@ -13,7 +12,7 @@ public sealed partial class InventoryService : IInventoryService
             .InventoryItems()
             .AsNoTracking()
             .Select(x => InventoryItemDtoMapper.ToInventoryItemResponse(x))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<InventoryItemResponse> GetInventoryItemByIdAsync(
@@ -22,7 +21,10 @@ public sealed partial class InventoryService : IInventoryService
     )
     {
         var inventoryItem =
-            await _dbContext.InventoryItems().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id)
+            await _dbContext
+                .InventoryItems()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException("The inventory item is not found");
 
         return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);

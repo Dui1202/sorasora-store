@@ -17,7 +17,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -288,7 +288,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.HasIndex("Path")
                         .IsUnique();
 
-                    b.ToTable("MediaAsset");
+                    b.ToTable("MediaAssets", (string)null);
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
@@ -344,11 +344,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("FranchiseId")
                         .HasColumnType("text");
-
-                    b.Property<bool>("HasVariation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
@@ -526,7 +521,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -561,7 +555,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")

@@ -16,6 +16,7 @@ public static class ProductsModuleServiceCollectionExtension
 
         services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductVariantLookupService, ProductVariantLookupService>();
 
         services.AddControllers().AddApplicationPart(typeof(ProductsController).Assembly);
 
