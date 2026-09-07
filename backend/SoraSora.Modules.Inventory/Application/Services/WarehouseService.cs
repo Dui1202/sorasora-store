@@ -79,7 +79,7 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
             return;
         }
 
-        var stocks = _dbContext.Set<Stock>().Where(x => x.WarehouseId == id);
+        var stocks = _dbContext.Entry(warehouse).Collection(x => x.Stocks).Query();
 
         if (await stocks.AnyAsync(
                 x => x.OnHandedQuantity != 0 || x.ReservedQuantity != 0,
@@ -99,9 +99,19 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
         }
         else
         {
-            // Stocks have no warehouse foreign key, so remove them explicitly.
-            // The restrictive movement foreign key also protects concurrent history writes.
+            // Restrict requires deleting empty stocks before their warehouse.
+            // The movement foreign key protects concurrent history writes.
             await stocks.ExecuteDeleteAsync(cancellationToken);
+
+            // Bulk deletion bypasses tracking; discard deleted dependents before removing the principal.
+            var trackedStocks = _dbContext.ChangeTracker.Entries<Stock>()
+                .Where(x => x.Entity.WarehouseId == id)
+                .ToList();
+            foreach (var stockEntry in trackedStocks)
+            {
+                stockEntry.State = EntityState.Detached;
+            }
+
             _dbContext.Warehouses().Remove(warehouse);
         }
 

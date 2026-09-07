@@ -10,6 +10,7 @@ public sealed partial class InventoryService : IInventoryService
     {
         return await _dbContext
             .InventoryItems()
+            .Include(x => x.Stocks)
             .AsNoTracking()
             .Select(x => InventoryItemDtoMapper.ToInventoryItemResponse(x))
             .ToListAsync(cancellationToken);
@@ -23,6 +24,7 @@ public sealed partial class InventoryService : IInventoryService
         var inventoryItem =
             await _dbContext
                 .InventoryItems()
+                .Include(x => x.Stocks)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException("The inventory item is not found");

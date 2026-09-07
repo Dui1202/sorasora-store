@@ -1,0 +1,187 @@
+using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using SoraSora.Modules.Inventory.Application.Services;
+using SoraSora.Modules.Inventory.Domain;
+using SoraSora.Shared.Exceptions;
+
+public sealed partial class InventoryService : IInventoryService
+{
+    public Task<StockResponse> ReceiveStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.Receive(amount, note),
+            cancellationToken
+        );
+
+    public Task<StockResponse> ReserveStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.Reserve(amount, note),
+            cancellationToken
+        );
+
+    public Task<StockResponse> ReleaseStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.Release(amount, note),
+            cancellationToken
+        );
+
+    public Task<StockResponse> SaleStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.Sale(amount, note),
+            cancellationToken
+        );
+
+    public Task<StockResponse> ReturnStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.Return(amount, note),
+            cancellationToken
+        );
+
+    public Task<StockResponse> AdjustOnHandedStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.AdjustOnHanded(amount, note),
+            cancellationToken,
+            allowNegativeQuantity: true
+        );
+
+    public Task<StockResponse> AdjustReservedStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            inventoryId,
+            quantity,
+            description,
+            static (stock, amount, note) => stock.AdjustReserved(amount, note),
+            cancellationToken,
+            allowNegativeQuantity: true
+        );
+
+    private async Task<StockResponse> UpdateStockAsync(
+        string inventoryId,
+        int quantity,
+        string? description,
+        Action<Stock, int, string?> updateStock,
+        CancellationToken cancellationToken,
+        bool allowNegativeQuantity = false
+    )
+    {
+        if (!allowNegativeQuantity && quantity < 0)
+        {
+            throw new InventoryDomainException(
+                "Stock quantity cannot be negative.",
+                nameof(quantity)
+            );
+        }
+
+        if (description?.Length > StockMovement.MaxDescriptionLength)
+        {
+            throw new InventoryDomainException(
+                $"Stock movement description cannot exceed {StockMovement.MaxDescriptionLength} characters.",
+                nameof(description)
+            );
+        }
+
+        try
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken
+            );
+
+            var defaultWarehouse =
+                await _dbContext
+                    .Warehouses()
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
+                ?? throw new InvalidOperationException("The default warehouse is missing");
+
+            var inventoryItem =
+                await _dbContext
+                    .InventoryItems()
+                    .Include(x => x.Stocks)
+                    .SingleOrDefaultAsync(x => x.Id == inventoryId, cancellationToken)
+                ?? throw new NotFoundException("The inventory item is not found");
+
+            var stock =
+                inventoryItem.Stocks.SingleOrDefault(x => x.WarehouseId == defaultWarehouse.Id)
+                ?? throw new NotFoundException("Stock in the default warehouse is not found.");
+
+            // Use the transaction's snapshot even if this context already tracked the stock.
+            await _dbContext.Entry(stock).ReloadAsync(cancellationToken);
+            if (_dbContext.Entry(stock).State == EntityState.Detached)
+            {
+                throw new NotFoundException("Stock in the default warehouse is not found.");
+            }
+
+            updateStock(stock, quantity, description);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            var response = InventoryItemDtoMapper.ToStockResponse(stock);
+            await transaction.CommitAsync(cancellationToken);
+
+            return response;
+        }
+        catch (Exception ex)
+            when (ex.GetBaseException()
+                    is PostgresException { SqlState: PostgresErrorCodes.SerializationFailure }
+            )
+        {
+            throw new ConflictException(
+                "Stock changed concurrently. Retry the operation.",
+                InventoryErrorCodes.StockUpdateConflict,
+                ex
+            );
+        }
+    }
+}

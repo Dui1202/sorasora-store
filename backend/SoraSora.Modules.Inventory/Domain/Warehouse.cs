@@ -4,11 +4,13 @@ namespace SoraSora.Modules.Inventory.Domain
 {
     public class Warehouse
     {
+        private readonly List<Stock> _stocks = [];
         public const int MaxNameLength = 100;
         public string Id { get; private set; } = Ulid.NewUlid().ToString();
         public string Name { get; private set; } = null!;
         public bool IsDefault { get; private set; } = false;
         public bool IsArchive { get; private set; } = false;
+        public IReadOnlyCollection<Stock> Stocks => _stocks;
 
         public void Archive()
         {

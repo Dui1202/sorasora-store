@@ -22,18 +22,6 @@ public sealed partial class InventoryService : IInventoryService
             );
         }
 
-        var doesProductVariantExist = await _productVariantLookupService.ExistsAsync(
-            command.ProductVariantId,
-            cancellationToken
-        );
-
-        if (doesProductVariantExist)
-        {
-            throw new NotFoundException(
-                "Product variant for this inventory item has already existed."
-            );
-        }
-
         var defaultWarehouse =
             await _dbContext.Warehouses().SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
             ?? throw new InvalidOperationException("The default warehouse is missing");

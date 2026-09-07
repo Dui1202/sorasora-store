@@ -22,6 +22,14 @@ public class StockConfiguration : IEntityTypeConfiguration<Stock>
             .HasForeignKey(x => x.InventoryItemId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder
+            .HasOne(x => x.Warehouse)
+            .WithMany(x => x.Stocks)
+            .HasForeignKey(x => x.WarehouseId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.WarehouseId);
         builder.HasIndex(x => new { x.InventoryItemId, x.WarehouseId }).IsUnique();
     }
 }
