@@ -318,6 +318,8 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("WarehouseId");
+
                     b.HasIndex("InventoryItemId", "WarehouseId")
                         .IsUnique();
 
@@ -360,8 +362,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StockId")
-                        .IsUnique();
+                    b.HasIndex("StockId");
 
                     b.ToTable("StockMovements", (string)null);
                 });
@@ -370,6 +371,11 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsArchive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDefault")
                         .ValueGeneratedOnAdd()
@@ -775,7 +781,15 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SoraSora.Modules.Inventory.Domain.Warehouse", "Warehouse")
+                        .WithMany("Stocks")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("InventoryItem");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.StockMovement", b =>
@@ -783,7 +797,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.HasOne("SoraSora.Modules.Inventory.Domain.Stock", "Stock")
                         .WithMany("StockMovements")
                         .HasForeignKey("StockId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Stock");
@@ -878,6 +892,11 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
                 {
                     b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Warehouse", b =>
+                {
+                    b.Navigation("Stocks");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
