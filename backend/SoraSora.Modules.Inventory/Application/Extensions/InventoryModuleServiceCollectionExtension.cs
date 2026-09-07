@@ -3,17 +3,20 @@ using Microsoft.Extensions.DependencyInjection;
 using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Infrastructure.Persistence;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Seeding;
 
 public static class InventoryModuleServiceCollectionExtension
 {
     public static IServiceCollection AddInventoryModule(this IServiceCollection services)
     {
         services.AddSingleton<IModelBuilderContributor, InventoryModuleModelBuilderContributor>();
+        services.AddScoped<IDbSeeder, WarehouseSeeder>();
 
-        // services.AddValidatorsFromAssemblyContaining<>();
+        services.AddValidatorsFromAssemblyContaining<CreateWarehouseRequestValidator>();
         services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<IWarehouseService, WarehouseService>();
 
-        // services.AddControllers().AddApplicationPart(typeof(ProductsController).Assembly);
+        services.AddControllers().AddApplicationPart(typeof(WarehousesController).Assembly);
 
         return services;
     }

@@ -55,25 +55,24 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
 
     public async Task DeleteWarehouseByIdAsync(string id, CancellationToken cancellationToken)
     {
-        var warehouse = await _dbContext
+        int deletedCount = await _dbContext
             .Warehouses()
-            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .Where(x => x.Id == id && !x.IsDefault)
+            .ExecuteDeleteAsync(cancellationToken);
 
-        if (warehouse is null)
+        if (deletedCount > 0)
         {
             return;
         }
 
-        if (warehouse.IsDefault)
+        bool isDefault = await _dbContext
+            .Warehouses()
+            .AnyAsync(x => x.Id == id && x.IsDefault, cancellationToken);
+
+        if (isDefault)
         {
             throw new BadRequestException("You cannot delete default warehouse.");
         }
-
-        _dbContext.Warehouses().Remove(warehouse);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return;
     }
 
     public async Task<IReadOnlyCollection<WarehouseResponse>?> GetAllWarehousesAsync(

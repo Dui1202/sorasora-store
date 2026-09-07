@@ -6,6 +6,7 @@
     <UserSecretsId>7329d247-98da-4817-8b1e-6ac7ad68620b</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../SoraSora.Modules.Inventory/SoraSora.Modules.Inventory.csproj" />
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Products\SoraSora.Modules.Products.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Media\SoraSora.Modules.Media.csproj" />

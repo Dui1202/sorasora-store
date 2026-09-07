@@ -14,8 +14,7 @@ public class StockConfiguration : IEntityTypeConfiguration<Stock>
         builder.Property(x => x.InventoryItemId).IsRequired();
         builder.Property(x => x.WarehouseId).IsRequired();
         builder.Property(x => x.OnHandedQuantity).IsRequired().HasDefaultValue(0);
-        builder.Property(x => x.ReservedQuantity).IsRequired().HasDefaultValue();
-        builder.Property(x => x.StockMovements);
+        builder.Property(x => x.ReservedQuantity).IsRequired().HasDefaultValue(0);
 
         builder
             .HasOne(x => x.InventoryItem)

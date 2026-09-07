@@ -1,1 +1,1 @@
-public sealed record UpdateWarehouseRequest(string Name, bool IsDefault);
+public sealed record UpdateWarehouseRequest(string Id, string Name, bool IsDefault);

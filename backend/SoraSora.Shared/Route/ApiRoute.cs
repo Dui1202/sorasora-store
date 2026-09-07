@@ -8,4 +8,5 @@ public static class ApiRoute
     public const string RolesApiRoute = AuthApiRoute + "/roles";
     public const string UsersApiRoute = AuthApiRoute + "/users";
     public const string InventoryApiRoute = ApiRoot + "/inventory";
+    public const string WarehouseApiRoute = ApiRoot + "/warehouse";
 }

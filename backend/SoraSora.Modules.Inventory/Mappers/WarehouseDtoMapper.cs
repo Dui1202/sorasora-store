@@ -4,6 +4,10 @@ public static class WarehouseDtoMapper
 {
     public static WarehouseResponse ToWarehouseResponse(Warehouse warehouse)
     {
-        return new WarehouseResponse(Name: warehouse.Name, IsDefault: warehouse.IsDefault);
+        return new WarehouseResponse(
+            Id: warehouse.Id,
+            Name: warehouse.Name,
+            IsDefault: warehouse.IsDefault
+        );
     }
 }

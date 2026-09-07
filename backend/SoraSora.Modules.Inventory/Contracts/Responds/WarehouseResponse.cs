@@ -1,1 +1,1 @@
-public sealed record WarehouseResponse(string Name, bool IsDefault);
+public sealed record WarehouseResponse(string Id, string Name, bool IsDefault);
