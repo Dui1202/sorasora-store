@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc.Diagnostics;
 using SoraSora.Modules.Inventory.Domain;
 
 public static class InventoryItemDtoMapper
@@ -6,12 +5,13 @@ public static class InventoryItemDtoMapper
     public static InventoryItemResponse ToInventoryItemResponse(InventoryItem inventoryItem)
     {
         return new InventoryItemResponse(
+            Id: inventoryItem.Id,
             ProductVariantId: inventoryItem.ProductVariantId,
             Stocks: inventoryItem.Stocks.Select(x => ToStockResponse(x)).ToArray()
         );
     }
 
-    private static StockResponse ToStockResponse(Stock stock)
+    public static StockResponse ToStockResponse(Stock stock)
     {
         return new StockResponse(
             WarehouseId: stock.WarehouseId,

@@ -10,6 +10,7 @@ namespace SoraSora.Modules.Inventory.Domain
         public int ReservedQuantity { get; private set; } = 0;
         public InventoryItem InventoryItem { get; private set; } = null!;
         public string InventoryItemId { get; private set; } = null!;
+        public Warehouse Warehouse { get; private set; } = null!;
         public string WarehouseId { get; private set; } = null!;
         public IReadOnlyCollection<StockMovement> StockMovements => _stockMovements;
         public int AvailableQuantity => OnHandedQuantity - ReservedQuantity;
@@ -26,6 +27,7 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Receive(int quantity, string? description = null)
         {
+            ValidatePositiveQuantity(quantity);
             OnHandedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -39,6 +41,8 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Reserve(int quantity, string? description = null)
         {
+            ValidatePositiveQuantity(quantity);
+
             ReservedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -52,6 +56,9 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Release(int quantity, string? description = null)
         {
+            ValidatePositiveQuantity(quantity);
+            ValidateReservedQuantity(quantity);
+
             ReservedQuantity -= quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -65,6 +72,10 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void Sale(int quantity, string? description = null)
         {
+            ValidatePositiveQuantity(quantity);
+            ValidateReservedQuantity(quantity);
+            ValidateOnHandedQuantity(quantity);
+            
             OnHandedQuantity -= quantity;
             ReservedQuantity -= quantity;
             _stockMovements.Add(
@@ -77,21 +88,28 @@ namespace SoraSora.Modules.Inventory.Domain
             );
         }
 
-        public void Return(int quantity, string description)
+        public void Return(int quantity, string? description = null)
         {
+            ValidatePositiveQuantity(quantity);
+
             OnHandedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
                     stockMovementType: StockMovementType.Return,
-                    onHandedDelta: 0,
-                    reservedDelta: -quantity,
+                    onHandedDelta: quantity,
+                    reservedDelta: 0,
                     description: description
                 )
             );
         }
 
-        public void AdjustOnHanded(int quantity, string description)
+        public void AdjustOnHanded(int quantity, string? description = null)
         {
+            if (quantity < -0)
+            {
+                ValidateOnHandedQuantity(Math.Abs(quantity));
+            }
+
             OnHandedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -103,8 +121,12 @@ namespace SoraSora.Modules.Inventory.Domain
             );
         }
 
-        public void AdjustReserved(int quantity, string description)
+        public void AdjustReserved(int quantity, string? description = null)
         {
+            if (quantity < -0)
+            {
+                ValidateReservedQuantity(Math.Abs(quantity));
+            }
             ReservedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -114,6 +136,37 @@ namespace SoraSora.Modules.Inventory.Domain
                     description: description
                 )
             );
+        }
+
+        public void ValidatePositiveQuantity(int quantity)
+        {
+            if (quantity < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "Stock quantity cannot be negative",
+                    nameof(quantity)
+                );
+            }
+        }
+
+        public void ValidateReservedQuantity(int quantity)
+        {
+            if (ReservedQuantity < quantity)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "The quantity to be subtracted cannot be greater than reserved quantity."
+                );
+            }
+        }
+
+        public void ValidateOnHandedQuantity(int quantity)
+        {
+            if (ReservedQuantity < quantity)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "The quantity to be subtracted cannot be greater than on-handed quantity."
+                );
+            }
         }
     }
 }

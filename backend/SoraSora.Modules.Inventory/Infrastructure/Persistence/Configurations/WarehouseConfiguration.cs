@@ -13,7 +13,14 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(x => x.Id).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(Warehouse.MaxNameLength).IsRequired();
         builder.Property(x => x.IsDefault).HasDefaultValue(false).IsRequired();
+        builder.Property(x => x.IsArchive).HasDefaultValue(false).IsRequired();
 
         builder.HasIndex(x => x.Name).IsUnique();
+
+        builder
+            .HasIndex(x => x.IsDefault)
+            .HasDatabaseName("UX_Warehouses_SingleDefault")
+            .IsUnique()
+            .HasFilter("\"IsDefault\" = TRUE");
     }
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using NUlid;
 using SoraSora.Shared.Interface;
 
@@ -5,6 +6,7 @@ namespace SoraSora.Modules.Inventory.Domain
 {
     public class StockMovement : IAuditable
     {
+        public const int MaxDescriptionLength = 2000;
         public string Id { get; private set; } = Ulid.NewUlid().ToString();
         public StockMovementType StockMovementType { get; private set; }
         public int OnHandedDelta { get; private set; }
@@ -24,6 +26,8 @@ namespace SoraSora.Modules.Inventory.Domain
             string? description = null
         )
         {
+            ValidateDetails(stockMovementType, description);
+
             return new StockMovement()
             {
                 StockMovementType = stockMovementType,
@@ -31,6 +35,27 @@ namespace SoraSora.Modules.Inventory.Domain
                 ReservedDelta = reservedDelta,
                 Description = description,
             };
+        }
+
+        private static void ValidateDetails(
+            StockMovementType stockMovementType,
+            string? description
+        )
+        {
+            if (!Enum.IsDefined(stockMovementType))
+            {
+                throw new ArgumentOutOfRangeException(
+                    "Stock movement type is invalid.",
+                    nameof(stockMovementType)
+                );
+            }
+            if (description?.Length > MaxDescriptionLength)
+            {
+                throw new ArgumentException(
+                    $"Stock movement description cannot exceed {MaxDescriptionLength} characters.",
+                    nameof(description)
+                );
+            }
         }
     }
 }

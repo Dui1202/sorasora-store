@@ -16,6 +16,10 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
         builder.Property(x => x.Sku).IsRequired(false);
         builder.Property(x => x.ProductVariantId).IsRequired();
 
-        builder.HasIndex(x => x.ProductVariantId).IsUnique();
+        builder
+            .HasIndex(x => x.ProductVariantId)
+            .IsUnique()
+            .HasDatabaseName("UX_InventoryItems_ProductVariantId");
+        ;
     }
 }

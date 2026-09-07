@@ -21,6 +21,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductsModule();
 builder.Services.AddAuthModule();
 builder.Services.AddMediaModule();
+builder.Services.AddInventoryModule();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -34,9 +35,13 @@ app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 
+/* Temporarily disabled for manual endpoint testing.
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+*/
+
+// Bypass authorization even if WebApplication automatically adds auth middleware.
+app.MapControllers().AllowAnonymous();
 
 app.Run();

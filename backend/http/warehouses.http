@@ -1,0 +1,74 @@
+# Run: dotnet run --project backend/SoraSora.Api --launch-profile http
+# For the https profile, use https://localhost:7161 instead.
+# Send requests individually in an HTTP client such as VS Code REST Client or Rider.
+# After creating a warehouse, copy its response id into warehouseId below.
+# Use a disposable warehouse; the final requests delete it.
+#
+# The API must be running with a configured, reachable database.
+# Update uses the URL id; the form also supplies it for the current request model.
+
+@baseUrl = http://localhost:5000
+@warehouseId = 01M1WVH5SPJPZ7M540TH055EJ9
+@warehouseName = Manual HTTP Test Warehouse
+@missingWarehouseId = 00000000000000000000000000
+
+### List warehouses — 200
+GET {{baseUrl}}/api/warehouse
+Accept: application/json
+
+### Create a non-default warehouse — 201
+# Change warehouseName if this name already exists.
+POST {{baseUrl}}/api/warehouse
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+Name={{warehouseName}}&IsDefault=false
+
+### Get the created warehouse — 200
+GET {{baseUrl}}/api/warehouse/{{warehouseId}}
+Accept: application/json
+
+### Update the created warehouse — 200
+PUT {{baseUrl}}/api/warehouse/{{warehouseId}}
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+Id={{warehouseId}}&Name={{warehouseName}} Updated&IsDefault=false
+
+### Duplicate name — 409
+# Run after the update above, before deleting the warehouse.
+POST {{baseUrl}}/api/warehouse
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+Name={{warehouseName}} Updated&IsDefault=false
+
+### Missing name — 400 validation response
+POST {{baseUrl}}/api/warehouse
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+Name=&IsDefault=false
+
+### Missing update name — 400 validation response
+PUT {{baseUrl}}/api/warehouse/{{warehouseId}}
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+Id={{warehouseId}}&Name=&IsDefault=false
+
+### Get a nonexistent warehouse — 404 (assuming this id does not exist)
+GET {{baseUrl}}/api/warehouse/{{missingWarehouseId}}
+Accept: application/json
+
+### Delete the disposable non-default warehouse — 204
+DELETE {{baseUrl}}/api/warehouse/{{warehouseId}}
+Accept: application/json
+
+### Repeat deletion — 204 (idempotent)
+DELETE {{baseUrl}}/api/warehouse/{{warehouseId}}
+Accept: application/json
+
+### Confirm deletion — 404
+GET {{baseUrl}}/api/warehouse/{{warehouseId}}
+Accept: application/json
