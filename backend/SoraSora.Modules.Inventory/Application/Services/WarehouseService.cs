@@ -55,24 +55,58 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
 
     public async Task DeleteWarehouseByIdAsync(string id, CancellationToken cancellationToken)
     {
-        int deletedCount = await _dbContext
-            .Warehouses()
-            .Where(x => x.Id == id && !x.IsDefault)
-            .ExecuteDeleteAsync(cancellationToken);
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable,
+            cancellationToken
+        );
 
-        if (deletedCount > 0)
+        var warehouse = await _dbContext
+            .Warehouses()
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (warehouse is null)
         {
             return;
         }
 
-        bool isDefault = await _dbContext
-            .Warehouses()
-            .AnyAsync(x => x.Id == id && x.IsDefault, cancellationToken);
-
-        if (isDefault)
+        if (warehouse.IsDefault)
         {
             throw new BadRequestException("You cannot delete default warehouse.");
         }
+
+        if (warehouse.IsArchive)
+        {
+            return;
+        }
+
+        var stocks = _dbContext.Set<Stock>().Where(x => x.WarehouseId == id);
+
+        if (await stocks.AnyAsync(
+                x => x.OnHandedQuantity != 0 || x.ReservedQuantity != 0,
+                cancellationToken
+            ))
+        {
+            throw new ConflictException(
+                "Warehouse can only be deleted or archived when all stock quantities are zero.",
+                "WAREHOUSE_HAS_STOCK_QUANTITIES"
+            );
+        }
+
+        // Any movement, including a zero-delta movement, is history that must be retained.
+        if (await stocks.AnyAsync(x => x.StockMovements.Any(), cancellationToken))
+        {
+            warehouse.Archive();
+        }
+        else
+        {
+            // Stocks have no warehouse foreign key, so remove them explicitly.
+            // The restrictive movement foreign key also protects concurrent history writes.
+            await stocks.ExecuteDeleteAsync(cancellationToken);
+            _dbContext.Warehouses().Remove(warehouse);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<WarehouseResponse>?> GetAllWarehousesAsync(
@@ -82,6 +116,7 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
         return await _dbContext
             .Warehouses()
             .AsNoTracking()
+            .Where(x => !x.IsArchive)
             .OrderBy(x => x.Name)
             .Select(x => WarehouseDtoMapper.ToWarehouseResponse(x))
             .ToListAsync(cancellationToken);
@@ -125,6 +160,14 @@ public sealed partial class WarehouseService(SoraSoraDbContext dbContext) : IWar
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(
             cancellationToken
         );
+
+        if (warehouse.IsArchive)
+        {
+            throw new ConflictException(
+                "Archived warehouses cannot be updated.",
+                "WAREHOUSE_ARCHIVED"
+            );
+        }
 
         warehouse.UpdateDetails(name: command.Name);
 

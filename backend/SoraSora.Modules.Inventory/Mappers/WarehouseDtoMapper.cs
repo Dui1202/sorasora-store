@@ -7,7 +7,8 @@ public static class WarehouseDtoMapper
         return new WarehouseResponse(
             Id: warehouse.Id,
             Name: warehouse.Name,
-            IsDefault: warehouse.IsDefault
+            IsDefault: warehouse.IsDefault,
+            IsArchive: warehouse.IsArchive
         );
     }
 }

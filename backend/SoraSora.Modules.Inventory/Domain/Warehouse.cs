@@ -8,6 +8,17 @@ namespace SoraSora.Modules.Inventory.Domain
         public string Id { get; private set; } = Ulid.NewUlid().ToString();
         public string Name { get; private set; } = null!;
         public bool IsDefault { get; private set; } = false;
+        public bool IsArchive { get; private set; } = false;
+
+        public void Archive()
+        {
+            if (IsDefault)
+            {
+                throw new InvalidOperationException("You cannot archive default warehouse.");
+            }
+
+            IsArchive = true;
+        }
 
         public static Warehouse Create(string name)
         {
