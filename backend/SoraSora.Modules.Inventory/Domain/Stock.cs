@@ -42,6 +42,7 @@ namespace SoraSora.Modules.Inventory.Domain
         public void Reserve(int quantity, string? description = null)
         {
             ValidatePositiveQuantity(quantity);
+            ValidateAvailableQuantity(quantity);
 
             ReservedQuantity += quantity;
             _stockMovements.Add(
@@ -75,7 +76,7 @@ namespace SoraSora.Modules.Inventory.Domain
             ValidatePositiveQuantity(quantity);
             ValidateReservedQuantity(quantity);
             ValidateOnHandedQuantity(quantity);
-            
+
             OnHandedQuantity -= quantity;
             ReservedQuantity -= quantity;
             _stockMovements.Add(
@@ -127,6 +128,11 @@ namespace SoraSora.Modules.Inventory.Domain
             {
                 ValidateReservedQuantity(Math.Abs(quantity));
             }
+            else
+            {
+                ValidateAvailableQuantity(quantity);
+            }
+
             ReservedQuantity += quantity;
             _stockMovements.Add(
                 StockMovement.Create(
@@ -161,10 +167,20 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void ValidateOnHandedQuantity(int quantity)
         {
-            if (ReservedQuantity < quantity)
+            if (OnHandedQuantity < quantity)
             {
                 throw new ArgumentOutOfRangeException(
                     "The quantity to be subtracted cannot be greater than on-handed quantity."
+                );
+            }
+        }
+
+        public void ValidateAvailableQuantity(int quantity)
+        {
+            if (quantity > AvailableQuantity)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "The quantity to be reserved cannot be greater than available quantity."
                 );
             }
         }
