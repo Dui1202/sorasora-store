@@ -124,14 +124,6 @@ public sealed partial class InventoryService : IInventoryService
             );
         }
 
-        if (description?.Length > StockMovement.MaxDescriptionLength)
-        {
-            throw new InventoryDomainException(
-                $"Stock movement description cannot exceed {StockMovement.MaxDescriptionLength} characters.",
-                nameof(description)
-            );
-        }
-
         try
         {
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(
