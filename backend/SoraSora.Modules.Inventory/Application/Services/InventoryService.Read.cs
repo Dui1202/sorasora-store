@@ -31,4 +31,20 @@ public sealed partial class InventoryService : IInventoryService
 
         return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
     }
+
+    public async Task<InventoryItemResponse> GetInventoryItemByProductVariantIdAsync(
+        string productVariantId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var inventoryItem =
+            await _dbContext
+                .InventoryItems()
+                .Include(x => x.Stocks)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ProductVariantId == productVariantId, cancellationToken)
+            ?? throw new NotFoundException("The inventory item is not found");
+
+        return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
+    }
 }

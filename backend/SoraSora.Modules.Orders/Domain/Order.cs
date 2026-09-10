@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Diagnostics;
 using SoraSora.Modules.Orders.Exceptions;
 using SoraSora.Shared.Interface;
 
@@ -54,6 +55,7 @@ public sealed class Order : IAuditable
             ShippingAddress = shippingAddress,
             CustomerNote = customerNote,
             StoreNote = storeNote,
+            Status = OrderStatus.Pending,
         };
     }
 

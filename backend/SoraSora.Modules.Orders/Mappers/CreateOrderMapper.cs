@@ -23,7 +23,7 @@ internal static class CreateOrderDtoMapper
     {
         return new CreateOrderItemCommand
         {
-            InventoryItemId = request.InventoryItemId,
+            ProductVariantId = request.ProductVariantId,
             SellingPrice = request.SellingPrice,
             Quantity = request.Quantity,
         };

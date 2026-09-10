@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Exceptions;
 using SoraSora.Modules.Orders.Mappers;
 using SoraSora.Shared.Exceptions;
 
@@ -85,14 +86,15 @@ public sealed partial class OrderService : IOrderService
 
         foreach (var item in newOrderItemsCommand)
         {
-            if (item.InventoryItemId is null)
+            if (string.IsNullOrWhiteSpace(item.ProductVariantId))
             {
-                throw new InvalidOperationException(
-                    "InventoryItemId of a new order item is empty!"
+                throw new OrderDomainException(
+                    "Product variant ID is required for a new order item.",
+                    nameof(item.ProductVariantId)
                 );
             }
             var newOrderItem = OrderItem.Create(
-                inventoryItemId: item.InventoryItemId,
+                productVariantId: item.ProductVariantId,
                 sellingPrice: item.SellingPrice,
                 quantity: item.Quantity
             );

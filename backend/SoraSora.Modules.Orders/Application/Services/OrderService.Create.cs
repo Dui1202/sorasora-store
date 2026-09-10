@@ -21,7 +21,7 @@ public sealed partial class OrderService : IOrderService
         foreach (var itemCommand in command.OrderItems)
         {
             var orderItem = OrderItem.Create(
-                inventoryItemId: itemCommand.InventoryItemId,
+                productVariantId: itemCommand.ProductVariantId,
                 sellingPrice: itemCommand.SellingPrice,
                 quantity: itemCommand.Quantity
             );

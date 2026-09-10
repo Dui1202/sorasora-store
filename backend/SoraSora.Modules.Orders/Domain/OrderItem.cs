@@ -5,26 +5,26 @@ public class OrderItem
     public string Id { get; private set; } = NUlid.Ulid.NewUlid().ToString();
     public string OrderId { get; private set; } = null!;
     public Order Order { get; private set; } = null!;
-    public string InventoryItemId { get; private set; } = null!;
+    public string ProductVariantId { get; private set; } = null!;
     public int SellingPrice { get; private set; }
     public int Quantity { get; private set; }
 
     private OrderItem() { }
 
-    public static OrderItem Create(string inventoryItemId, int sellingPrice, int quantity)
+    public static OrderItem Create(string productVariantId, int sellingPrice, int quantity)
     {
-        if (string.IsNullOrWhiteSpace(inventoryItemId))
+        if (string.IsNullOrWhiteSpace(productVariantId))
         {
             throw new OrderDomainException(
-                "Inventory item ID is required.",
-                nameof(inventoryItemId)
+                "Product variant ID is required.",
+                nameof(productVariantId)
             );
         }
         ValidateDetails(sellingPrice, quantity);
 
         return new OrderItem
         {
-            InventoryItemId = inventoryItemId,
+            ProductVariantId = productVariantId,
             SellingPrice = sellingPrice,
             Quantity = quantity,
         };

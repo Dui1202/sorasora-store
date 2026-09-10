@@ -21,6 +21,7 @@ public sealed partial class OrderService : IOrderService
         {
             throw new InvalidOperationException("Cannot cancel a completed order.");
         }
+
         order.SetStatus(OrderStatus.Cancelled);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -51,31 +52,6 @@ public sealed partial class OrderService : IOrderService
         return OrderDtoMapper.ToOrderResponse(order);
     }
 
-    public async Task<OrderResponse> SetInProgressOrderAsync(
-        string orderId,
-        CancellationToken cancellationToken
-    )
-    {
-        var order =
-            await _dbContext
-                .Orders()
-                .Include(x => x.OrderItems)
-                .SingleOrDefaultAsync(x => x.Id == orderId, cancellationToken)
-            ?? throw new NotFoundException("Order is not found.");
-
-        if (order.Status != OrderStatus.Confirmed)
-        {
-            throw new InvalidOperationException(
-                "Cannot set a order that is not confirmed to in progress."
-            );
-        }
-        order.SetStatus(OrderStatus.InProgress);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return OrderDtoMapper.ToOrderResponse(order);
-    }
-
     public async Task<OrderResponse> CompleteOrderAsync(
         string orderId,
         CancellationToken cancellationToken
@@ -88,7 +64,7 @@ public sealed partial class OrderService : IOrderService
                 .SingleOrDefaultAsync(x => x.Id == orderId, cancellationToken)
             ?? throw new NotFoundException("Order is not found.");
 
-        if (order.Status != OrderStatus.InProgress)
+        if (order.Status != OrderStatus.Confirmed)
         {
             throw new InvalidOperationException("Cannot complete an order that is not in progress");
         }

@@ -4,6 +4,6 @@ public sealed record OrderItemResponse(
     string Id,
     int SellingPrice,
     string OrderId,
-    string InventoryItemId,
+    string ProductVariantId,
     int Quantity
 );
