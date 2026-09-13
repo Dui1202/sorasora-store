@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
 using SoraSora.Modules.Orders.Mappers;
 using SoraSora.Shared.Exceptions;
+
+namespace SoraSora.Modules.Orders.Application.Services;
 
 public sealed partial class OrderService : IOrderService
 {

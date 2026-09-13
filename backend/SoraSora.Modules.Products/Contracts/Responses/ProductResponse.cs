@@ -10,5 +10,11 @@ public sealed record ProductResponse
     public string? Description { get; init; }
     public bool IsPublished { get; init; }
     public SupplierCountry SupplierCountry { get; init; }
+    public SellMode SellMode { get; init; }
     public bool IsArchived { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset UpdatedAt { get; init; }
+    public IReadOnlyCollection<ProductImageDto> ProductImages { get; init; } = [];
+    public IReadOnlyCollection<ProductVariantResponse> ProductVariants { get; init; } = [];
+    public IReadOnlyCollection<VariationResponse> Variations { get; init; } = [];
 }

@@ -2,6 +2,8 @@ using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
 using SoraSora.Modules.Orders.Mappers;
 
+namespace SoraSora.Modules.Orders.Application.Services;
+
 public sealed partial class OrderService : IOrderService
 {
     public async Task<OrderResponse> CreateOrderAsync(

@@ -1,11 +1,11 @@
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
 using SoraSora.Modules.Orders.Exceptions;
 using SoraSora.Modules.Orders.Mappers;
 using SoraSora.Shared.Exceptions;
+
+namespace SoraSora.Modules.Orders.Application.Services;
 
 public sealed partial class OrderService : IOrderService
 {
@@ -45,7 +45,7 @@ public sealed partial class OrderService : IOrderService
 
         UpdateRetainedOrderItems(order, command, retainedOrderItemIds);
         CreateNewOrderItems(order, command);
-        RemoveUnretainedOrderItems(order, command, unretainedOrderItemIds);
+        RemoveUnretainedOrderItems(order, unretainedOrderItemIds);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -55,7 +55,7 @@ public sealed partial class OrderService : IOrderService
     private void UpdateRetainedOrderItems(
         Order order,
         UpdateOrderCommand command,
-        HashSet<string> retainedOrderItemIds
+        HashSet<string?> retainedOrderItemIds
     )
     {
         var retainedOrderItemsById = order
@@ -68,7 +68,7 @@ public sealed partial class OrderService : IOrderService
 
         foreach (var itemCommand in retainedOrderItemCommands)
         {
-            if (!retainedOrderItemsById.TryGetValue(itemCommand.Id, out var orderItem))
+            if (!retainedOrderItemsById.TryGetValue(itemCommand.Id!, out var orderItem))
             {
                 throw new NotFoundException("Order item is not found.");
             }
@@ -103,11 +103,7 @@ public sealed partial class OrderService : IOrderService
         }
     }
 
-    private void RemoveUnretainedOrderItems(
-        Order order,
-        UpdateOrderCommand command,
-        HashSet<string> unretainedOrderItemIds
-    )
+    private void RemoveUnretainedOrderItems(Order order, HashSet<string?> unretainedOrderItemIds)
     {
         var orderItemToDelete = order
             .OrderItems.Where(x => unretainedOrderItemIds.Contains(x.Id))

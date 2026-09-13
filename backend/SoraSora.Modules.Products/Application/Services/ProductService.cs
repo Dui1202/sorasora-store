@@ -26,6 +26,14 @@ public sealed partial class ProductService(
 
         try
         {
+            // Creation can participate in a workflow transaction. End it before saving
+            // cleanup tasks, otherwise the caller's rollback would discard those tasks too.
+            if (_dbContext.Database.CurrentTransaction is { } transaction)
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+                await transaction.DisposeAsync();
+            }
+
             // A failed save or rolled-back transaction leaves tracked changes behind. Clear them
             // so saving cleanup tasks cannot accidentally persist the failed product graph.
             _dbContext.ChangeTracker.Clear();

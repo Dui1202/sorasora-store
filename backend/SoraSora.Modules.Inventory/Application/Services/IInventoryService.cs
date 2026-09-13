@@ -16,7 +16,7 @@ public interface IInventoryService
     );
 
     Task<InventoryItemResponse> CreateInventoryItemAsync(
-        CreateInventoryCommand command,
+        CreateInventoryItemCommand command,
         CancellationToken cancellationToken
     );
 

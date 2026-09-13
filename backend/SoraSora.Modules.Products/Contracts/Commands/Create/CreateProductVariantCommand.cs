@@ -1,9 +1,10 @@
-using Amazon.S3.Model;
+using NUlid;
 
 namespace SoraSora.Modules.Products.Contracts.Commands.Create;
 
 public sealed record CreateProductVariantCommand
 {
+    public string? ClientId { get; init; }
     public required string Name { get; init; }
     public string? Sku { get; init; }
     public int CostPrice { get; init; }

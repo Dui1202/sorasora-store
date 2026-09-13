@@ -14,13 +14,22 @@ public sealed partial class ProductService
         CancellationToken cancellationToken = default
     )
     {
-        return await _dbContext
+        var products = await _dbContext
             .Products()
             .AsNoTracking()
             .Where(x => !x.IsArchived)
+            .AsSplitQuery()
+            .Include(x => x.ProductImages)
+            .Include(x => x.ProductVariants)
+                .ThenInclude(x => x.ProductVariantImage)
+            .Include(x => x.ProductVariants)
+                .ThenInclude(x => x.ProductVariantOptions)
+            .Include(x => x.Variations)
+                .ThenInclude(x => x.VariationOptions)
             .OrderBy(x => x.Name)
-            .Select(product => ProductDtoMapper.ToProductResponse(product))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
+
+        return products.Select(ProductDtoMapper.ToProductResponse).ToList();
     }
 
     public async Task<ProductResponse> GetProductByIdAsync(
@@ -33,7 +42,15 @@ public sealed partial class ProductService
                 .Products()
                 .AsNoTracking()
                 .Where(x => !x.IsArchived)
-                .FirstOrDefaultAsync(x => x.Id == id)
+                .AsSplitQuery()
+                .Include(x => x.ProductImages)
+                .Include(x => x.ProductVariants)
+                    .ThenInclude(x => x.ProductVariantImage)
+                .Include(x => x.ProductVariants)
+                    .ThenInclude(x => x.ProductVariantOptions)
+                .Include(x => x.Variations)
+                    .ThenInclude(x => x.VariationOptions)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new ProductNotFoundException(id);
 
         return ProductDtoMapper.ToProductResponse(product);
@@ -49,6 +66,8 @@ public sealed partial class ProductService
                 .ProductVariants()
                 .AsNoTracking()
                 .Where(x => !x.IsArchived && !x.Product.IsArchived)
+                .Include(x => x.ProductVariantImage)
+                .Include(x => x.ProductVariantOptions)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Product variant {id} was not found.");
 
