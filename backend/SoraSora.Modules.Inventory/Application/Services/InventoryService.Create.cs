@@ -7,7 +7,7 @@ using SoraSora.Shared.Exceptions;
 public sealed partial class InventoryService : IInventoryService
 {
     public async Task<InventoryItemResponse> CreateInventoryItemAsync(
-        CreateInventoryCommand command,
+        CreateInventoryItemCommand command,
         CancellationToken cancellationToken
     )
     {

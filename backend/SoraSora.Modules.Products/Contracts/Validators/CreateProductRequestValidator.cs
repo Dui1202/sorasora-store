@@ -1,5 +1,5 @@
 using FluentValidation;
-using SoraSora.Modules.Products.Contracts;
+
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Domain;
 
@@ -17,6 +17,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
         RuleFor(x => x.SupplierCountry).IsInEnum();
         RuleFor(x => x.SellMode).IsInEnum();
+        RuleFor(x => x.BaseQuantity).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ProductImages)
             .Cascade(CascadeMode.Stop)
             .NotNull()

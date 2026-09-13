@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../SoraSora.Modules.Inventory/SoraSora.Modules.Inventory.csproj" />
+    <ProjectReference Include="../SoraSora.Modules.Orders/SoraSora.Modules.Orders.csproj" />
     <ProjectReference Include="..\SoraSora.Infrastructure\SoraSora.Infrastructure.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Products\SoraSora.Modules.Products.csproj" />
     <ProjectReference Include="..\SoraSora.Modules.Media\SoraSora.Modules.Media.csproj" />

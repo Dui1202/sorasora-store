@@ -8,13 +8,13 @@ using SoraSora.Shared.Exceptions;
 public sealed partial class InventoryService : IInventoryService
 {
     public Task<StockResponse> ReceiveStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.Receive(amount, note),
@@ -22,13 +22,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> ReserveStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.Reserve(amount, note),
@@ -36,13 +36,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> ReleaseStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.Release(amount, note),
@@ -50,13 +50,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> SaleStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.Sale(amount, note),
@@ -64,13 +64,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> ReturnStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.Return(amount, note),
@@ -78,13 +78,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> AdjustOnHandedStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.AdjustOnHanded(amount, note),
@@ -93,13 +93,13 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     public Task<StockResponse> AdjustReservedStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
-            inventoryId,
+            productVariantId,
             quantity,
             description,
             static (stock, amount, note) => stock.AdjustReserved(amount, note),
@@ -108,7 +108,7 @@ public sealed partial class InventoryService : IInventoryService
         );
 
     private async Task<StockResponse> UpdateStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description,
         Action<Stock, int, string?> updateStock,
@@ -121,14 +121,6 @@ public sealed partial class InventoryService : IInventoryService
             throw new InventoryDomainException(
                 "Stock quantity cannot be negative.",
                 nameof(quantity)
-            );
-        }
-
-        if (description?.Length > StockMovement.MaxDescriptionLength)
-        {
-            throw new InventoryDomainException(
-                $"Stock movement description cannot exceed {StockMovement.MaxDescriptionLength} characters.",
-                nameof(description)
             );
         }
 
@@ -150,7 +142,10 @@ public sealed partial class InventoryService : IInventoryService
                 await _dbContext
                     .InventoryItems()
                     .Include(x => x.Stocks)
-                    .SingleOrDefaultAsync(x => x.Id == inventoryId, cancellationToken)
+                    .SingleOrDefaultAsync(
+                        x => x.ProductVariantId == productVariantId,
+                        cancellationToken
+                    )
                 ?? throw new NotFoundException("The inventory item is not found");
 
             var stock =

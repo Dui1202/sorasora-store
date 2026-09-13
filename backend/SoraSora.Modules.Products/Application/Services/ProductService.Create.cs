@@ -136,6 +136,7 @@ public sealed partial class ProductService
         foreach (var productVariantCommand in command.ProductVariants)
         {
             var productVariant = ProductVariant.Create(
+                clientId: productVariantCommand.ClientId,
                 name: productVariantCommand.Name,
                 sku: productVariantCommand.Sku,
                 costPrice: productVariantCommand.CostPrice,
@@ -197,10 +198,6 @@ public sealed partial class ProductService
             cancellationToken
         );
 
-        AttachUploadedMedia(
-            productImageUploadJobs,
-            mediaUploadResults,
-            uploadedMediaAssetIds
-        );
+        AttachUploadedMedia(productImageUploadJobs, mediaUploadResults, uploadedMediaAssetIds);
     }
 }

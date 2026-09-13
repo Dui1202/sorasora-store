@@ -26,6 +26,30 @@ public static class AppPermissions
         public const string Read = "Roles.Read";
     }
 
+    public static class Orders
+    {
+        public const string Read = "Orders.Read";
+        public const string Create = "Orders.Create";
+        public const string Update = "Orders.Update";
+        public const string Delete = "Orders.Delete";
+    }
+
+    public static class Warehouses
+    {
+        public const string Read = "Warehouses.Read";
+        public const string Create = "Warehouses.Create";
+        public const string Update = "Warehouses.Update";
+        public const string Delete = "Warehouses.Delete";
+    }
+
+    public static class Inventory
+    {
+        public const string Read = "Inventory.Read";
+        public const string Create = "Inventory.Create";
+        public const string Update = "Inventory.Update";
+        public const string Delete = "Inventory.Delete";
+    }
+
     public static readonly IReadOnlyCollection<string> All =
     [
         Products.Read,
@@ -40,6 +64,18 @@ public static class AppPermissions
         Roles.Create,
         Roles.Delete,
         Roles.Read,
+        Orders.Create,
+        Orders.Read,
+        Orders.Update,
+        Orders.Delete,
+        Warehouses.Create,
+        Warehouses.Read,
+        Warehouses.Update,
+        Warehouses.Delete,
+        Inventory.Create,
+        Inventory.Read,
+        Inventory.Update,
+        Inventory.Delete,
     ];
 
     public static bool IsAppPermission(string permission)

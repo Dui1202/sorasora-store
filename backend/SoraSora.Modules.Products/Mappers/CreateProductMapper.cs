@@ -4,17 +4,18 @@ using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Mappers;
 
-internal static class CreateProductDtoMapper
+public static class CreateProductDtoMapper
 {
     private const int DefaultPosition = 0;
 
-    internal static CreateProductCommand ToCreateProductCommand(CreateProductRequest request)
+    public static CreateProductCommand ToCreateProductCommand(CreateProductRequest request)
     {
         var productImages = request.ProductImages.Select(ToCreateProductImageCommand).ToList();
 
-        var productVariants = request.Variations.Count > 0
-            ? request.ProductVariants.Select(ToCreateProductVariantCommand).ToList()
-            : [ToCreateProductVariantCommand(request)];
+        var productVariants =
+            request.Variations.Count > 0
+                ? request.ProductVariants.Select(ToCreateProductVariantCommand).ToList()
+                : [ToCreateProductVariantCommand(request)];
 
         return new CreateProductCommand
         {

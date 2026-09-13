@@ -9,55 +9,61 @@ public interface IInventoryService
         string id,
         CancellationToken cancellationToken
     );
+
+    Task<InventoryItemResponse> GetInventoryItemByProductVariantIdAsync(
+        string productVariantId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<InventoryItemResponse> CreateInventoryItemAsync(
-        CreateInventoryCommand command,
+        CreateInventoryItemCommand command,
         CancellationToken cancellationToken
     );
 
     Task<StockResponse> ReceiveStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> ReserveStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> ReleaseStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> SaleStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> ReturnStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> AdjustOnHandedStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     );
 
     Task<StockResponse> AdjustReservedStockAsync(
-        string inventoryId,
+        string productVariantId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default

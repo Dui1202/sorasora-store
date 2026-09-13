@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Application.Services;
 using SoraSora.Modules.Products.Contracts;
-using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Exceptions;
@@ -18,27 +17,6 @@ namespace SoraSora.Modules.Products.Application.Controllers;
 public sealed class ProductsController(IProductService productService) : ControllerBase
 {
     private readonly IProductService _productService = productService;
-
-    [HasPermission(AppPermissions.Products.Create)]
-    [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
-    [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
-    [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromForm] CreateProductRequest request,
-        [FromServices] IValidator<CreateProductRequest> validator,
-        CancellationToken cancellationToken
-    )
-    {
-        var validationResult = await validator.ValidateAsync(request, cancellationToken);
-        if (!validationResult.IsValid)
-        {
-            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
-        }
-        var command = CreateProductDtoMapper.ToCreateProductCommand(request);
-        var product = await _productService.CreateProductAsync(command, cancellationToken);
-
-        return Created($"{ApiRoute.ProductsApiRoute}/{product.Id}", product);
-    }
 
     [HasPermission(AppPermissions.Products.Read)]
     [HttpGet]

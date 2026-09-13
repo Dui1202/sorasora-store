@@ -16,6 +16,7 @@ public sealed class CreateProductVariantRequestValidator
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Quantity).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ProductVariantImage).NotNull().SetValidator(imageValidator);
         RuleFor(x => x.ProductVariantOptions)
             .Cascade(CascadeMode.Stop)

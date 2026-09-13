@@ -15,6 +15,13 @@ public interface IProductService
         CancellationToken cancellationToken
     );
     Task DeleteProductAsync(string id, Guid version, CancellationToken cancellationToken);
-    Task<ProductResponse> GetProductByIdAsync(string id);
-    Task<List<ProductResponse>?> GetAllProductsAsync();
+    Task<ProductResponse> GetProductByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    );
+    Task<List<ProductResponse>?> GetAllProductsAsync(CancellationToken cancellationToken = default);
+    Task<ProductVariantResponse> GetProductVariantByIdAsync(
+        string id,
+        CancellationToken cancellationToken
+    );
 }
