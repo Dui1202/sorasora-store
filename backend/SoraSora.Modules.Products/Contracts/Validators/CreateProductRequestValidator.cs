@@ -1,5 +1,5 @@
 using FluentValidation;
-using SoraSora.Modules.Products.Contracts;
+
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Domain;
 
