@@ -1,24 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Prisma } from "../generated/prisma/browser";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
+import { getProductImageUrl } from "@/lib/products/image-url";
 
-type ProductForProductCard = Prisma.ProductGetPayload<{
-  select: {
-    name: true;
-    sellMode: true;
-    preorderReleaseAt: true;
-    variants: {
-      select: {
-        sellingPrice: true;
-      };
-    };
-    productImages: {
-      select: {
-        path: true;
-      };
-    };
-  };
-}>;
+type ProductForProductCard = {
+  name: string;
+  sellMode: "IN_STOCK" | "PREORDER";
+  variants: Array<{ sellingPrice: number }>;
+  productImages: Array<{ path: string }>;
+};
 interface Props {
   product: ProductForProductCard;
 }
@@ -28,7 +16,7 @@ interface Props {
  */
 const ProductCard = ({ product }: Props) => {
   const primaryImage = product.productImages[0]?.path;
-  const publicCoverImageURL = getProductImagePublicUrl(primaryImage);
+  const publicCoverImageURL = primaryImage ? getProductImageUrl(primaryImage) : undefined;
   const primaryVariant = product.variants[0];
 
   return (

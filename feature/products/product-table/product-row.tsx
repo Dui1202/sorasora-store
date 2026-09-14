@@ -2,14 +2,14 @@ import { TypographyMuted } from "@/components/typography";
 import { TypographyH3 } from "@/components/typography/typographyh3";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
-import { ProductWithRelations } from "@/lib/products/schema";
+import { getProductImageUrl } from "@/lib/products/image-url";
+import type { ProductListItem } from "./types";
 import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 import ProductActionButtons from "./product-action-buttons";
 
 type ProductRowProps = {
-  product: ProductWithRelations;
+  product: ProductListItem;
   index: number;
 };
 const ProductRow = ({ product, index }: ProductRowProps) => {
@@ -17,7 +17,7 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
   const primaryProductImage = product.productImages[0];
   const primaryVariant = product.variants[0];
   const coverProductImagePublicUrl = primaryProductImage
-    ? getProductImagePublicUrl(primaryProductImage.path)
+    ? getProductImageUrl(primaryProductImage.path)
     : null;
 
   const hasVariants = product.variants.length > 1;
@@ -74,7 +74,7 @@ const ProductRow = ({ product, index }: ProductRowProps) => {
         hasVariants &&
         product.variants.map((variant) => {
           const variantImageUrl = variant.image
-            ? getProductImagePublicUrl(variant.image.path)
+            ? getProductImageUrl(variant.image.path)
             : null;
           return (
             <TableRow key={variant.id}>

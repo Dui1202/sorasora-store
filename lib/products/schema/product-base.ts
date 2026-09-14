@@ -1,4 +1,4 @@
-import { Prisma, SupplierCountry } from "@/app/generated/prisma/browser";
+import { SupplierCountry } from "@/lib/domain/products/supplier-country";
 
 import { z } from "zod";
 import {
@@ -59,29 +59,3 @@ export type ProductVariationOption = z.infer<
   typeof productVariationOptionBaseSchema
 >;
 export type ProductVariantImage = z.infer<typeof productVariantImageBaseSchema>;
-export type ProductWithRelations = Prisma.ProductGetPayload<{
-  include: {
-    variations: {
-      include: {
-        options: true;
-      };
-    };
-    variants: {
-      include: {
-        image: true;
-        variationOptions: {
-          include: {
-            variation: true;
-            variationOption: true;
-          };
-        };
-        stocks: {
-          include: {
-            warehouse: true;
-          };
-        };
-      };
-    };
-    productImages: true;
-  };
-}>;

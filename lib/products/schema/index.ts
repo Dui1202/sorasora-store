@@ -1,10 +1,4 @@
 export {
-  uploadedProductImageSchema,
-  multipartPayloadCreateProductSchema as multipartPayloadSchema,
-  multipartPayloadCreateProductVariantSchema as multipartPayloadVariantSchema,
-} from "./product-api";
-export type { UploadProductImageResponse } from "./product-api";
-export {
   productImageBaseSchema,
   productVariantImageBaseSchema,
   productVariantBaseSchema,
@@ -20,7 +14,6 @@ export type {
   ProductVariation,
   ProductVariationOption,
   ProductVariantImage,
-  ProductWithRelations,
 } from "./product-base";
 export {
   createProductFormBaseSchema,

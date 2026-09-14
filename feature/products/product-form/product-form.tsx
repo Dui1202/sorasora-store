@@ -22,13 +22,13 @@ import {
 
 type CreateProductFormProps = {
   mode: "create";
-  onSubmit: SubmitHandler<CreateProductFormData>;
+  onSubmit?: SubmitHandler<CreateProductFormData>;
   product?: never;
 };
 
 type UpdateProductFormProps = {
   mode: "update";
-  onSubmit: SubmitHandler<UpdateProductFormData>;
+  onSubmit?: SubmitHandler<UpdateProductFormData>;
   product: UpdateProductFormInputData;
 };
 
@@ -56,11 +56,16 @@ const CreateModeForm = ({ onSubmit }: CreateProductFormProps) => {
 
   return (
     <FormProvider {...methods}>
-      <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
-        <Heading>Add Product</Heading>
-        <Separator className="my-2" />
-        <ProductFormFields mode="create" />
-        <FormButton isSubmitting={isSubmitting} />
+      <form
+        className="p-5"
+        onSubmit={onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()}
+      >
+        <fieldset disabled={!onSubmit}>
+          <Heading>Add Product</Heading>
+          <Separator className="my-2" />
+          <ProductFormFields mode="create" />
+          <FormButton isSubmitting={isSubmitting} />
+        </fieldset>
       </form>
     </FormProvider>
   );
@@ -81,11 +86,16 @@ const UpdateModeForm = ({ onSubmit, product }: UpdateProductFormProps) => {
 
   return (
     <FormProvider {...methods}>
-      <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
-        <Heading>Edit Product</Heading>
-        <Separator className="my-2" />
-        <ProductFormFields mode="update" />
-        <FormButton isSubmitting={isSubmitting} />
+      <form
+        className="p-5"
+        onSubmit={onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()}
+      >
+        <fieldset disabled={!onSubmit}>
+          <Heading>Edit Product</Heading>
+          <Separator className="my-2" />
+          <ProductFormFields mode="update" />
+          <FormButton isSubmitting={isSubmitting} />
+        </fieldset>
       </form>
     </FormProvider>
   );

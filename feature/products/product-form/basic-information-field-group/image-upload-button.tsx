@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
+import { getProductImageUrl } from "@/lib/products/image-url";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
@@ -60,7 +60,7 @@ const ImageUploadButton = ({ mode }: ImageUploadButtonProps) => {
       .map((image) => ({
         id: image.path,
         type: "uploaded" as const,
-        displayUrl: getProductImagePublicUrl(image.path),
+        displayUrl: getProductImageUrl(image.path),
         fileName: image.alt || "",
         path: image.path,
         alt: image.alt,
