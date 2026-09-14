@@ -1,4 +1,4 @@
-import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { SupplierCountry } from "@/lib/domain/products/supplier-country";
 import {
   COUNTRY_CONFIG,
   GLOBAL_COSTS,

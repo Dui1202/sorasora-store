@@ -9,11 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ProductWithRelations } from "@/lib/products/schema";
+import type { ProductListItem } from "./types";
 import ProductRow from "./product-row";
 
 type ProductTableProps = {
-  products: ProductWithRelations[];
+  products: ProductListItem[];
 };
 
 const ProductTable = ({ products }: ProductTableProps) => {

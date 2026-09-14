@@ -1,14 +1,11 @@
+import UnavailableNotice from "@/components/unavailable-notice";
 import ProductTable from "@/feature/products/product-table/product-table";
-import { listProductsService } from "@/lib/products";
 
-const ProductsPage = async () => {
-  const products = await listProductsService();
-
+export default function ProductsPage() {
   return (
-    <div className="p-5">
-      <ProductTable products={products ?? []} />
+    <div className="space-y-4 p-5">
+      <UnavailableNotice feature="Product management" />
+      <ProductTable products={[]} />
     </div>
   );
-};
-
-export default ProductsPage;
+}

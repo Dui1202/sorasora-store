@@ -1,4 +1,4 @@
-import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { SupplierCountry } from "@/lib/domain/products/supplier-country";
 import { describe, expect, it } from "vitest";
 import { createProductFormSchema } from "./create-product-form";
 import { updateProductFormSchema } from "./update-product-form";

@@ -7,15 +7,24 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     files: ["**/*.{js,jsx,ts,tsx,mjs,cjs}"],
-    ignores: ["lib/products/**"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           patterns: [
             {
-              group: ["@/lib/products/*", "@/lib/products/**/*"],
-              message: "Import product APIs from '@/lib/products' only.",
+              group: [
+                "@/app/generated/prisma",
+                "@/app/generated/prisma/**",
+                "@prisma/*",
+                "better-auth",
+                "better-auth/**",
+                "pg",
+                "@supabase/*",
+                "@/lib/infrastructure/**",
+              ],
+              message:
+                "Database, auth, and storage integrations belong in the ASP.NET Core backend.",
             },
           ],
         },

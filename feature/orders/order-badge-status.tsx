@@ -1,4 +1,4 @@
-import { OrderStatus } from "@/app/generated/prisma/enums";
+import { OrderStatus } from "./order-status";
 import { Badge } from "@/components/ui/badge";
 import { cva } from "class-variance-authority";
 import React from "react";

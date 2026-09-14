@@ -1,4 +1,4 @@
-import { SupplierCountry } from "@/app/generated/prisma/enums";
+import { SupplierCountry } from "@/lib/domain/products/supplier-country";
 import {
   Combobox,
   ComboboxContent,
@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   CreateProductFormInputData,
   UpdateProductFormInputData,
@@ -25,27 +24,16 @@ import {
 import { Controller, useFormContext } from "react-hook-form";
 import type { FranchiseDto } from "../../dto/franchises-dto";
 import type { WarehouseDto } from "../../dto/warehouses-dto";
-import { useFranchises } from "./use-franchises";
-import { useWarehouses } from "./use-warehouses";
-import { Button } from "@/components/ui/button";
 
-const SpecificationFieldGroup = () => {
+type Props = {
+  franchises?: FranchiseDto[];
+  warehouses?: WarehouseDto[];
+};
+
+const SpecificationFieldGroup = ({ franchises = [], warehouses = [] }: Props) => {
   const { control } = useFormContext<
     CreateProductFormInputData | UpdateProductFormInputData
   >();
-  const {
-    data: franchises,
-    isLoading: isLoadingFranchises,
-    isError: isFranchisesError,
-    refetch: refetchFranchises,
-  } = useFranchises();
-  const {
-    data: warehouses,
-    isLoading: isLoadingWarehouses,
-    isError: isWarehousesError,
-    refetch: refetchWarehouses,
-  } = useWarehouses();
-
   return (
     <FieldGroup className="flex flex-row">
       <Field>
@@ -78,7 +66,8 @@ const SpecificationFieldGroup = () => {
         <Controller
           render={({ field }) => (
             <Combobox
-              items={franchises ?? []}
+              items={franchises}
+              disabled={franchises.length === 0}
               value={
                 franchises?.find((franchise) => franchise.id === field.value) ??
                 null
@@ -92,28 +81,13 @@ const SpecificationFieldGroup = () => {
               <ComboboxInput placeholder="Select a franchise" />
               <ComboboxContent>
                 <ComboboxEmpty>No franchise found</ComboboxEmpty>
-                {isLoadingFranchises ? (
-                  <Skeleton />
-                ) : isFranchisesError ? (
-                  <div className="p-2 text-sm text-red-600">
-                    Failed to load franchises.
-                    <Button
-                      type="button"
-                      onClick={() => refetchFranchises()}
-                      className="ml-2 underline"
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : (
-                  <ComboboxList>
-                    {(item: FranchiseDto) => (
-                      <ComboboxItem key={item.id} value={item}>
-                        {item.name}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                )}
+                <ComboboxList>
+                  {(item: FranchiseDto) => (
+                    <ComboboxItem key={item.id} value={item}>
+                      {item.name}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
               </ComboboxContent>
             </Combobox>
           )}
@@ -126,7 +100,8 @@ const SpecificationFieldGroup = () => {
         <Controller
           render={({ field }) => (
             <Combobox
-              items={warehouses ?? []}
+              items={warehouses}
+              disabled={warehouses.length === 0}
               value={
                 warehouses?.find((warehouse) => warehouse.id === field.value) ??
                 null
@@ -140,28 +115,13 @@ const SpecificationFieldGroup = () => {
               <ComboboxInput placeholder="Select a warehouse" />
               <ComboboxContent>
                 <ComboboxEmpty>No warehouse found</ComboboxEmpty>
-                {isLoadingWarehouses ? (
-                  <Skeleton />
-                ) : isWarehousesError ? (
-                  <div className="p-2 text-sm text-red-600">
-                    Failed to load warehouses.
-                    <Button
-                      type="button"
-                      onClick={() => refetchWarehouses()}
-                      className="ml-2 underline"
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : (
-                  <ComboboxList>
-                    {(item: WarehouseDto) => (
-                      <ComboboxItem key={item.id} value={item}>
-                        {item.name}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                )}
+                <ComboboxList>
+                  {(item: WarehouseDto) => (
+                    <ComboboxItem key={item.id} value={item}>
+                      {item.name}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
               </ComboboxContent>
             </Combobox>
           )}

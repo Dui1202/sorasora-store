@@ -1,28 +1,13 @@
-"use client";
-
-import axios from "axios";
-import { toCreateProductMultipartFormData } from "@/lib/products/mappers/product-command.mapper";
-import { CreateProductFormData } from "@/lib/products/schema";
+import UnavailableNotice from "@/components/unavailable-notice";
 import ProductForm from "@/feature/products/product-form/product-form";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { routes } from "@/lib/routes";
 
-const CreateNewProductPage = () => {
-  const router = useRouter();
-  const onSubmit = async (data: CreateProductFormData) => {
-    const multipartFormData = toCreateProductMultipartFormData(data);
-    try {
-      await axios.post("/api/products", multipartFormData);
-
-      router.push(routes.admin.products);
-      toast.success("Product created successfully.");
-    } catch (error) {
-      toast.error("Failed to create product. Please try again.");
-    }
-  };
-
-  return <ProductForm mode="create" onSubmit={onSubmit} />;
-};
-
-export default CreateNewProductPage;
+export default function CreateNewProductPage() {
+  return (
+    <>
+      <div className="px-5 pt-5">
+        <UnavailableNotice feature="Product creation" />
+      </div>
+      <ProductForm mode="create" />
+    </>
+  );
+}

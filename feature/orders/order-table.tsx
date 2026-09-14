@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderStatus } from "@/app/generated/prisma/enums";
+import { OrderStatus } from "./order-status";
 import { Card } from "@/components/ui/card";
 import {
   Table,

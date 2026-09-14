@@ -1,6 +1,6 @@
 import { ImagePlus } from "lucide-react";
 import Image from "next/image";
-import { getProductImagePublicUrl } from "@/lib/infrastructure/storage/browser/get-product-image-public-url";
+import { getProductImageUrl } from "@/lib/products/image-url";
 import { VariantDraftRow } from "./use-variant-combinations";
 import {
   getImageGroupKey,
@@ -21,7 +21,7 @@ const VariantImageInput = ({
   const previewSrc = row.imagePreviewUrl
     ? row.imagePreviewUrl
     : row.imagePath
-      ? getProductImagePublicUrl(row.imagePath)
+      ? getProductImageUrl(row.imagePath)
       : null;
   const hasImage = Boolean(row.imageFile || row.imagePath);
 
