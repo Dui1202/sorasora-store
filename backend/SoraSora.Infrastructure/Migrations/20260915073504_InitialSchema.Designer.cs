@@ -9,18 +9,18 @@ using SoraSora.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SoraSora.Infrastructure.Persistence.Migrations
+namespace SoraSora.Infrastructure.Migrations
 {
     [DbContext(typeof(SoraSoraDbContext))]
-    [Migration("20260816083726_AddMediaAssetAlt")]
-    partial class AddMediaAssetAlt
+    [Migration("20260915073504_InitialSchema")]
+    partial class InitialSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -160,6 +160,89 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Order", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CustomerNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("CustomerPhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<string>("StoreNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("OrderItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProductVariantId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SellingPrice")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OrderItems_Quantity", "\"Quantity\" > 0");
+
+                            t.HasCheckConstraint("CK_OrderItems_SellingPrice", "\"SellingPrice\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("SoraSora.Infrastructure.Domain.StorageCleanupTask", b =>
                 {
                     b.Property<string>("Id")
@@ -269,6 +352,140 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.InventoryItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProductVariantId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sku")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductVariantId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_InventoryItems_ProductVariantId");
+
+                    b.ToTable("InventoryItems", (string)null);
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InventoryItemId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("OnHandedQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("ReservedQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("InventoryItemId", "WarehouseId")
+                        .IsUnique();
+
+                    b.ToTable("Stocks", (string)null);
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.StockMovement", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OnHandedDelta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("ReservedDelta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("StockId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StockMovementType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Adjustment");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StockId");
+
+                    b.ToTable("StockMovements", (string)null);
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Warehouse", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsArchive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Warehouses_SingleDefault")
+                        .HasFilter("\"IsDefault\" = TRUE");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Warehouses", (string)null);
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Media.Domain.MediaAsset", b =>
                 {
                     b.Property<string>("Id")
@@ -291,7 +508,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.HasIndex("Path")
                         .IsUnique();
 
-                    b.ToTable("MediaAsset");
+                    b.ToTable("MediaAssets", (string)null);
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>
@@ -347,11 +564,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("FranchiseId")
                         .HasColumnType("text");
-
-                    b.Property<bool>("HasVariation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
@@ -429,6 +641,9 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientId")
                         .HasColumnType("text");
 
                     b.Property<int>("CostPrice")
@@ -529,7 +744,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Variation", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -564,7 +778,6 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.VariationOption", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -649,6 +862,47 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("OrderItem", b =>
+                {
+                    b.HasOne("Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
+                {
+                    b.HasOne("SoraSora.Modules.Inventory.Domain.InventoryItem", "InventoryItem")
+                        .WithMany("Stocks")
+                        .HasForeignKey("InventoryItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoraSora.Modules.Inventory.Domain.Warehouse", "Warehouse")
+                        .WithMany("Stocks")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("InventoryItem");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.StockMovement", b =>
+                {
+                    b.HasOne("SoraSora.Modules.Inventory.Domain.Stock", "Stock")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("StockId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Stock");
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Product", b =>
                 {
                     b.HasOne("SoraSora.Modules.Products.Domain.Franchise", null)
@@ -728,6 +982,26 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Variation");
+                });
+
+            modelBuilder.Entity("Order", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.InventoryItem", b =>
+                {
+                    b.Navigation("Stocks");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
+                {
+                    b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Warehouse", b =>
+                {
+                    b.Navigation("Stocks");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>

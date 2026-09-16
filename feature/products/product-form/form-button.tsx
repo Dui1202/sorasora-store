@@ -58,9 +58,9 @@ const FormButton = ({ isSubmitting }: FormButtonProps) => {
   return (
     <Card className="flex flex-row justify-end gap-3 sticky bottom-0 p-5">
       <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="secondary">Cancel</Button>
-        </AlertDialogTrigger>
+        <AlertDialogTrigger
+          render={<Button variant="secondary">Cancel</Button>}
+        />
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmation</AlertDialogTitle>

@@ -21,6 +21,19 @@ builder.Host.UseSerilog(
     }
 );
 
+const string FrontendCorsPolicy = "Frontend";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        FrontendCorsPolicy,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod();
+        }
+    );
+});
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductsModule();
 builder.Services.AddOrdersModule();
@@ -38,11 +51,15 @@ app.UseExceptionHandler();
 
 app.UseSerilogRequestLogging();
 
+app.UseCors(FrontendCorsPolicy);
+
 app.UseHttpsRedirection();
 
-/* Temporarily disabled for manual endpoint testing.
 app.UseAuthentication();
 app.UseAuthorization();
+
+/* Temporarily disabled for manual endpoint testing.
+
 app.MapControllers();
 */
 

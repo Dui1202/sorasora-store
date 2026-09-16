@@ -7,7 +7,6 @@ import { PriceFieldGroup } from "@/feature/products/product-form/price-field-gro
 import { SpecificationFieldGroup } from "@/feature/products/product-form/specification-field-group";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Heading } from "@radix-ui/themes";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import FormButton from "./form-button";
 import BasicInformationFieldGroup from "./basic-information-field-group/basic-information-field-group";
@@ -58,10 +57,12 @@ const CreateModeForm = ({ onSubmit }: CreateProductFormProps) => {
     <FormProvider {...methods}>
       <form
         className="p-5"
-        onSubmit={onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()}
+        onSubmit={
+          onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()
+        }
       >
         <fieldset disabled={!onSubmit}>
-          <Heading>Add Product</Heading>
+          <h1>Add Product</h1>
           <Separator className="my-2" />
           <ProductFormFields mode="create" />
           <FormButton isSubmitting={isSubmitting} />
@@ -88,10 +89,12 @@ const UpdateModeForm = ({ onSubmit, product }: UpdateProductFormProps) => {
     <FormProvider {...methods}>
       <form
         className="p-5"
-        onSubmit={onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()}
+        onSubmit={
+          onSubmit ? handleSubmit(onSubmit) : (event) => event.preventDefault()
+        }
       >
         <fieldset disabled={!onSubmit}>
-          <Heading>Edit Product</Heading>
+          <h1>Edit Product</h1>
           <Separator className="my-2" />
           <ProductFormFields mode="update" />
           <FormButton isSubmitting={isSubmitting} />

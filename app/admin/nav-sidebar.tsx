@@ -11,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Box, Container } from "@radix-ui/themes";
 import {
   CircleQuestionMark,
   HeartPlus,
@@ -36,9 +35,9 @@ type LinkObject = {
 };
 const NavSidebar = () => {
   return (
-    <Container>
+    <div>
       <NavLinks />
-    </Container>
+    </div>
   );
 };
 
@@ -61,7 +60,7 @@ const NavLinks = () => {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Box className="flex justify-center">
+        <div className="flex justify-center">
           <Image
             src={logo}
             alt="Sora Sora Store Logo"
@@ -69,7 +68,7 @@ const NavLinks = () => {
             height="860"
             className="h-20 w-auto max-w-none shrink-0"
           />
-        </Box>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup className="border-t-2">
@@ -82,7 +81,7 @@ const NavLinks = () => {
                   pathName.startsWith(`${item.href}/`));
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive}>
+                  <SidebarMenuButton isActive={isActive}>
                     <Link href={item.href} className="flex items-center gap">
                       {item.icon} <span>{item.title}</span>
                     </Link>
@@ -97,11 +96,10 @@ const NavLinks = () => {
           <SidebarMenu>
             {supportLinks.map((item) => {
               const isActive =
-                pathName === item.href ||
-                pathName.startsWith(`${item.href}/`);
+                pathName === item.href || pathName.startsWith(`${item.href}/`);
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive}>
+                  <SidebarMenuButton isActive={isActive}>
                     <Link href={item.href} className="flex items-center gap">
                       {item.icon} <span>{item.title}</span>
                     </Link>

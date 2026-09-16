@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SoraSora.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SoraSora.Infrastructure.Persistence.Migrations
+namespace SoraSora.Infrastructure.Migrations
 {
     [DbContext(typeof(SoraSoraDbContext))]
-    [Migration("20260907023012_FixInventoryConfig")]
-    partial class FixInventoryConfig
+    partial class SoraSoraDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -158,6 +155,89 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Order", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CustomerNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("CustomerPhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<string>("StoreNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("OrderItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProductVariantId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SellingPrice")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OrderItems_Quantity", "\"Quantity\" > 0");
+
+                            t.HasCheckConstraint("CK_OrderItems_SellingPrice", "\"SellingPrice\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("SoraSora.Infrastructure.Domain.StorageCleanupTask", b =>
@@ -321,6 +401,8 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("WarehouseId");
+
                     b.HasIndex("InventoryItemId", "WarehouseId")
                         .IsUnique();
 
@@ -363,8 +445,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StockId")
-                        .IsUnique();
+                    b.HasIndex("StockId");
 
                     b.ToTable("StockMovements", (string)null);
                 });
@@ -373,6 +454,11 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsArchive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDefault")
                         .ValueGeneratedOnAdd()
@@ -552,6 +638,9 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.ProductVariant", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientId")
                         .HasColumnType("text");
 
                     b.Property<int>("CostPrice")
@@ -770,6 +859,17 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("OrderItem", b =>
+                {
+                    b.HasOne("Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
                 {
                     b.HasOne("SoraSora.Modules.Inventory.Domain.InventoryItem", "InventoryItem")
@@ -778,7 +878,15 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SoraSora.Modules.Inventory.Domain.Warehouse", "Warehouse")
+                        .WithMany("Stocks")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("InventoryItem");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.StockMovement", b =>
@@ -786,7 +894,7 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.HasOne("SoraSora.Modules.Inventory.Domain.Stock", "Stock")
                         .WithMany("StockMovements")
                         .HasForeignKey("StockId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Stock");
@@ -873,6 +981,11 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
                     b.Navigation("Variation");
                 });
 
+            modelBuilder.Entity("Order", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.InventoryItem", b =>
                 {
                     b.Navigation("Stocks");
@@ -881,6 +994,11 @@ namespace SoraSora.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Stock", b =>
                 {
                     b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("SoraSora.Modules.Inventory.Domain.Warehouse", b =>
+                {
+                    b.Navigation("Stocks");
                 });
 
             modelBuilder.Entity("SoraSora.Modules.Products.Domain.Franchise", b =>

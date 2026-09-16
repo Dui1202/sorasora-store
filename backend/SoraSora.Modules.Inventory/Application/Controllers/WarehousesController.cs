@@ -11,7 +11,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromForm] CreateWarehouseRequest request,
+        [FromBody] CreateWarehouseRequest request,
         [FromServices] IValidator<CreateWarehouseRequest> validator,
         CancellationToken cancellationToken
     )
