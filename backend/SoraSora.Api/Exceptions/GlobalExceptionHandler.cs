@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Shared.Exceptions;
@@ -39,7 +40,13 @@ public sealed class GlobalExceptionHandler(
                 "Conflict",
                 exception.Message
             ),
-
+            JsonException => CreateProblemDetails(
+                httpContext,
+                errorCode,
+                StatusCodes.Status400BadRequest,
+                "The payload contains invalid Json",
+                exception.Message
+            ),
             BadRequestException => CreateProblemDetails(
                 httpContext,
                 errorCode,

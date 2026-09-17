@@ -8,12 +8,12 @@ using SoraSora.Modules.Products.Exceptions;
 
 namespace SoraSora.Api.Application.Workflow;
 
-public sealed class CreateProductWorkflow(
+public sealed class ProductWorkflow(
     SoraSoraDbContext dbContext,
     IProductService productService,
     IInventoryService inventoryService,
     IImageMediaService imageMediaService,
-    ILogger<CreateProductWorkflow> logger
+    ILogger<ProductWorkflow> logger
 )
 {
     public async Task<ProductResponse> CreateProductAsync(
@@ -44,7 +44,10 @@ public sealed class CreateProductWorkflow(
                     variant,
                     variantCommand
                 );
-                await inventoryService.CreateInventoryItemAsync(inventoryCommand, cancellationToken);
+                await inventoryService.CreateInventoryItemAsync(
+                    inventoryCommand,
+                    cancellationToken
+                );
             }
 
             if (variantsByClientId.Count > 0)
@@ -95,8 +98,10 @@ public sealed class CreateProductWorkflow(
         );
         foreach (var variant in command.ProductVariants)
         {
-            if (string.IsNullOrWhiteSpace(variant.ClientId)
-                || !variantsByClientId.TryAdd(variant.ClientId, variant))
+            if (
+                string.IsNullOrWhiteSpace(variant.ClientId)
+                || !variantsByClientId.TryAdd(variant.ClientId, variant)
+            )
             {
                 throw new ProductValidationException(
                     "Product variant client IDs must be nonempty and unique."
@@ -141,15 +146,20 @@ public sealed class CreateProductWorkflow(
                 return;
             }
 
-            var mediaAssetIds = product.ProductImages
-                .Select(image => image.MediaAssetId)
-                .Concat(product.ProductVariants
-                    .Where(variant => variant.ProductVariantImage is not null)
-                    .Select(variant => variant.ProductVariantImage!.MediaAssetId))
+            var mediaAssetIds = product
+                .ProductImages.Select(image => image.MediaAssetId)
+                .Concat(
+                    product
+                        .ProductVariants.Where(variant => variant.ProductVariantImage is not null)
+                        .Select(variant => variant.ProductVariantImage!.MediaAssetId)
+                )
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
 
-            await imageMediaService.ScheduleImageDeletionAsync(mediaAssetIds, CancellationToken.None);
+            await imageMediaService.ScheduleImageDeletionAsync(
+                mediaAssetIds,
+                CancellationToken.None
+            );
             await dbContext.SaveChangesAsync(CancellationToken.None);
         }
         catch (Exception exception)

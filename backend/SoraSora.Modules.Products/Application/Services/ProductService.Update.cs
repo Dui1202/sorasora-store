@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
@@ -617,42 +616,5 @@ public sealed partial class ProductService
         }
 
         return temporaryPositions;
-    }
-
-    private static void AttachUploadedMedia(
-        IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
-        IReadOnlyList<MediaUploadResult> mediaUploadResults,
-        ISet<string> uploadedMediaAssetIds
-    )
-    {
-        var attachMediaByUploadIds = productImageUploadJobs.ToDictionary(
-            productJob => productJob.Job.Id,
-            productJob => productJob.Attach,
-            StringComparer.Ordinal
-        );
-
-        foreach (var result in mediaUploadResults)
-        {
-            uploadedMediaAssetIds.Add(result.AssetId);
-        }
-
-        if (mediaUploadResults.Count != productImageUploadJobs.Count)
-        {
-            throw new InvalidOperationException(
-                "The media service did not return a result for every upload job"
-            );
-        }
-
-        foreach (var result in mediaUploadResults)
-        {
-            if (!attachMediaByUploadIds.TryGetValue(result.JobId, out var attach))
-            {
-                throw new InvalidOperationException(
-                    "This media upload result is not from the original upload job"
-                );
-            }
-
-            attach(result.AssetId);
-        }
     }
 }

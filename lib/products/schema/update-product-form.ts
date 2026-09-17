@@ -8,7 +8,7 @@ import {
   productImageBaseSchema,
   productVariantBaseSchema,
   productVariantImageBaseSchema,
-} from "./product-base";
+} from "./domain/product-base";
 import {
   productVariationBaseSchema,
   validateVariationConfiguration,

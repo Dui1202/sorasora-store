@@ -1,5 +1,4 @@
 using FluentValidation;
-
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Domain;
 
@@ -27,7 +26,9 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                 $"A product can contain at most {ProductUploadLimits.MaxProductImages} images."
             )
             .Must(HaveUniquePositions)
-            .WithMessage("Product image positions must be unique.");
+            .WithMessage("Product image positions must be unique.")
+            .Must(HaveUniqueProductImageClientIds)
+            .WithMessage("Product image client ids must be unique.");
         RuleFor(x => x.ProductVariants).NotNull();
         RuleFor(x => x.Variations).NotNull();
         RuleForEach(x => x.ProductImages).SetValidator(createProductImageRequestValidator);
@@ -60,6 +61,8 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                     )
                     .Must(HaveUniqueVariantPositions)
                     .WithMessage("Product variant positions must be unique.")
+                    .Must(HaveUniqueVariantImageClientIds)
+                    .WithMessage("Product variant image client ids must be unique.")
                     .Must(
                         (request, variants) => HaveValidVariantOptionSelections(request, variants)
                     )
@@ -85,6 +88,27 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                     .WithMessage("Variation option client ids must be unique across the product.");
             }
         );
+    }
+
+    private static bool HaveUniqueProductImageClientIds(
+        IReadOnlyCollection<CreateProductImageRequest> images
+    )
+    {
+        return images.Select(image => image.ClientId).Distinct(StringComparer.Ordinal).Count()
+            == images.Count;
+    }
+
+    private static bool HaveUniqueVariantImageClientIds(
+        IReadOnlyCollection<CreateProductVariantRequest> variants
+    )
+    {
+        // Missing images are reported by the variant validator.
+        var imageClientIds = variants
+            .Where(variant => variant.ProductVariantImage is not null)
+            .Select(variant => variant.ProductVariantImage.ClientId)
+            .ToList();
+
+        return imageClientIds.Distinct(StringComparer.Ordinal).Count() == imageClientIds.Count;
     }
 
     private static bool HaveUniquePositions(IReadOnlyCollection<CreateProductImageRequest> images)

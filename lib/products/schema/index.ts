@@ -4,7 +4,7 @@ export {
   productVariantBaseSchema,
   productBaseSchema,
   supplierCountrySchema,
-} from "./product-base";
+} from "./domain/product-base";
 export {
   productVariationBaseSchema,
   productVariationOptionBaseSchema,
@@ -14,7 +14,7 @@ export type {
   ProductVariation,
   ProductVariationOption,
   ProductVariantImage,
-} from "./product-base";
+} from "./domain/product-base";
 export {
   createProductFormBaseSchema,
   localProductImageSchema,

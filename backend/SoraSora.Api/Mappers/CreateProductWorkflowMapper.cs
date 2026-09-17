@@ -9,10 +9,16 @@ namespace SoraSora.Api.Mappers;
 internal static class CreateProductWorkflowMapper
 {
     internal static CreateProductWorkflowCommand ToCreateProductWorkflowCommand(
-        CreateProductRequest request
+        CreateProductRequest request,
+        IDictionary<string, IFormFile> productImageFilesByClientId,
+        IDictionary<string, IFormFile> variantImageFilesByClientId
     )
     {
-        var productCommand = CreateProductDtoMapper.ToCreateProductCommand(request);
+        var productCommand = CreateProductDtoMapper.ToCreateProductCommand(
+            request,
+            productImageFilesByClientId,
+            variantImageFilesByClientId
+        );
         var quantitiesByPosition = request.ProductVariants.ToDictionary(
             variant => variant.Position,
             variant => variant.Quantity

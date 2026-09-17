@@ -8,9 +8,11 @@ namespace SoraSora.Api.Application.Extensions
         public static IServiceCollection AddApiModule(this IServiceCollection services)
         {
             services.AddScoped<OrderWorkflow>();
-            services.AddScoped<CreateProductWorkflow>();
+            services.AddScoped<ProductWorkflow>();
 
-            services.AddControllers().AddApplicationPart(typeof(CreateProductController).Assembly);
+            services
+                .AddControllers()
+                .AddApplicationPart(typeof(ProductWorkflowController).Assembly);
 
             return services;
         }

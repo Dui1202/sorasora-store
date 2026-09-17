@@ -1,4 +1,5 @@
 using SoraSora.Modules.Media.Contracts.Upload;
+using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Domain;
@@ -7,6 +8,18 @@ namespace SoraSora.Modules.Products.Application.Services;
 
 public sealed partial class ProductService
 {
+    private sealed record CreatedProductVariant(
+        ProductVariant ProductVariant,
+        CreateProductVariantCommand Command
+    );
+
+    private sealed record ImageUpdatedProductVariant(
+        ProductVariant ProductVariant,
+        RetainedProductVariantCommand Command
+    );
+
+    private sealed record ProductImageUploadJob(ImageUploadJob Job, Action<string> Attach);
+
     private static IReadOnlyList<ProductImageUploadJob> BuildProductImageUploadJobForCreateCommand(
         Product product,
         CreateProductCommand command,
@@ -128,15 +141,40 @@ public sealed partial class ProductService
         return productImageJobs;
     }
 
-    private sealed record CreatedProductVariant(
-        ProductVariant ProductVariant,
-        CreateProductVariantCommand Command
-    );
+    private static void AttachUploadedMedia(
+        IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
+        IReadOnlyList<MediaUploadResult> mediaUploadResults,
+        ISet<string> uploadedMediaAssetIds
+    )
+    {
+        var attachMediaByUploadIds = productImageUploadJobs.ToDictionary(
+            productJob => productJob.Job.Id,
+            productJob => productJob.Attach,
+            StringComparer.Ordinal
+        );
 
-    private sealed record ImageUpdatedProductVariant(
-        ProductVariant ProductVariant,
-        RetainedProductVariantCommand Command
-    );
+        foreach (var result in mediaUploadResults)
+        {
+            uploadedMediaAssetIds.Add(result.AssetId);
+        }
 
-    private sealed record ProductImageUploadJob(ImageUploadJob Job, Action<string> Attach);
+        if (mediaUploadResults.Count != productImageUploadJobs.Count)
+        {
+            throw new InvalidOperationException(
+                "The media service did not return a result for every upload job"
+            );
+        }
+
+        foreach (var result in mediaUploadResults)
+        {
+            if (!attachMediaByUploadIds.Remove(result.JobId, out var attach))
+            {
+                throw new InvalidOperationException(
+                    "This media upload result is not from the original upload job"
+                );
+            }
+
+            attach(result.AssetId);
+        }
+    }
 }

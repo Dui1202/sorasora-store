@@ -1,14 +1,9 @@
 import z from "zod";
-import {
-  productBaseSchema,
-  productVariantBaseSchema,
-  stockBaseSchema,
-  supplierCountrySchema,
-} from "./product-base";
+
 import {
   productVariationBaseSchema,
   validateVariationConfiguration,
-} from "./variation-contract";
+} from "../variation-contract";
 
 // For image preview before upload, we use a local schema that includes the File object.
 export const localProductImageSchema = z.object({

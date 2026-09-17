@@ -17,20 +17,13 @@ public sealed partial class ProductService
     {
         Product product;
 
-        try
-        {
-            product = Product.Create(
-                name: command.Name,
-                description: command.Description,
-                supplierCountry: command.SupplierCountry,
-                sellMode: command.SellMode,
-                isPublished: command.IsPublished
-            );
-        }
-        catch (ProductDomainException exception)
-        {
-            throw new ProductValidationException(exception.Message, exception);
-        }
+        product = Product.Create(
+            name: command.Name,
+            description: command.Description,
+            supplierCountry: command.SupplierCountry,
+            sellMode: command.SellMode,
+            isPublished: command.IsPublished
+        );
 
         var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
 
@@ -38,20 +31,19 @@ public sealed partial class ProductService
         {
             CreateVariations(product, command, out var variationOptionsByVariationClientId);
 
-            var createdProductVariants = CreateProductVariantsAsync(
+            var createdProductVariants = CreateProductVariants(
                 product,
                 command,
                 variationOptionsByVariationClientId
             );
 
-            //Create ProductImageUploadJobs
             var productImageUploadJobs = BuildProductImageUploadJobForCreateCommand(
                 product,
                 command,
                 createdProductVariants
             );
 
-            await HandleProductMediaAsset(
+            await UploadAndAttachProductImagesAsync(
                 productImageUploadJobs,
                 uploadedMediaAssetIds,
                 cancellationToken
@@ -61,19 +53,12 @@ public sealed partial class ProductService
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (Exception exception)
+        catch
         {
             await TryScheduleUploadedMediaCleanupAsync(uploadedMediaAssetIds);
 
-            if (exception is ProductDomainException domainException)
-            {
-                throw new ProductValidationException(domainException.Message, domainException);
-            }
-
             throw;
         }
-
-        _logger.ProductCreated(product.Name, product.Id);
 
         return ProductDtoMapper.ToProductResponse(product);
     }
@@ -96,6 +81,7 @@ public sealed partial class ProductService
         {
             var variation = Variation.Create(variationCommand.Name, variationCommand.Position);
             var variationOptionsByClientId = new Dictionary<string, VariationOption>();
+
             foreach (var optionCommand in variationCommand.VariationOptions)
             {
                 var option = VariationOption.Create(optionCommand.Value, optionCommand.Position);
@@ -124,7 +110,7 @@ public sealed partial class ProductService
         }
     }
 
-    private IReadOnlyList<CreatedProductVariant> CreateProductVariantsAsync(
+    private static IReadOnlyList<CreatedProductVariant> CreateProductVariants(
         Product product,
         CreateProductCommand command,
         Dictionary<string, Dictionary<string, VariationOption>> variationOptionsByVariationClientId
@@ -132,7 +118,6 @@ public sealed partial class ProductService
     {
         List<CreatedProductVariant> createdProductVariants = [];
 
-        var variationsByClientId = command.Variations.ToDictionary(x => x.ClientId);
         foreach (var productVariantCommand in command.ProductVariants)
         {
             var productVariant = ProductVariant.Create(
@@ -185,7 +170,7 @@ public sealed partial class ProductService
         return createdProductVariants;
     }
 
-    private async Task HandleProductMediaAsset(
+    private async Task UploadAndAttachProductImagesAsync(
         IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
         ISet<string> uploadedMediaAssetIds,
         CancellationToken cancellationToken
