@@ -8,7 +8,7 @@ public sealed record CreateProductWorkflowCommand
     public SupplierCountry SupplierCountry { get; init; }
     public SellMode SellMode { get; init; }
     public bool IsPublished { get; init; }
-    public required IReadOnlyCollection<CreateProductImageCommand> ProductImages { get; init; }
+    public required IReadOnlyCollection<CreateProductImageWorkflowCommand> ProductImages { get; init; }
     public required IReadOnlyCollection<CreateProductVariantWorkflowCommand> ProductVariants { get; init; }
     public IReadOnlyCollection<CreateVariationCommand> Variations { get; init; } = [];
 }

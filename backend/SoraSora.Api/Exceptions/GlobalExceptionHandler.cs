@@ -42,7 +42,7 @@ public sealed class GlobalExceptionHandler(
             ),
             JsonException => CreateProblemDetails(
                 httpContext,
-                errorCode,
+                "INVALID_JSON",
                 StatusCodes.Status400BadRequest,
                 "The payload contains invalid Json",
                 exception.Message

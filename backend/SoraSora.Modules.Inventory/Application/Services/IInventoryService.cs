@@ -22,6 +22,7 @@ public interface IInventoryService
 
     Task<StockResponse> ReceiveStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -29,6 +30,7 @@ public interface IInventoryService
 
     Task<StockResponse> ReserveStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -36,6 +38,7 @@ public interface IInventoryService
 
     Task<StockResponse> ReleaseStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -43,6 +46,7 @@ public interface IInventoryService
 
     Task<StockResponse> SaleStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -50,6 +54,7 @@ public interface IInventoryService
 
     Task<StockResponse> ReturnStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -57,6 +62,7 @@ public interface IInventoryService
 
     Task<StockResponse> AdjustOnHandedStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
@@ -64,6 +70,7 @@ public interface IInventoryService
 
     Task<StockResponse> AdjustReservedStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default

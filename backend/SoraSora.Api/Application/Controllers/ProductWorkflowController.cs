@@ -1,17 +1,13 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
-using Amazon.S3;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
-using SoraSora.Api.Application.Workflow;
+using SoraSora.Api.Application.Workflow.Products;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Contracts;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
 using SoraSora.Modules.Products.Exceptions;
-using SoraSora.Modules.Products.Mappers;
 using SoraSora.Shared.Exceptions;
 using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;
@@ -33,7 +29,7 @@ public sealed class ProductWorkflowController(
     [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromForm] CreateProductWorkflowRequest request,
+        [FromForm] PayloadRequest request,
         [FromServices] IValidator<CreateProductRequest> validator,
         CancellationToken cancellationToken
     )
@@ -50,25 +46,19 @@ public sealed class ProductWorkflowController(
         {
             return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
         }
+
         var files = Request.Form.Files;
 
-        MetadataValidation(payload, files);
+        var (productImageFilesByClientId, variantImageFilesByClientId) = BuildImageFilesDictionary(
+            files
+        );
 
-        var variantImageFilesByClientId = files
-            .Where(file => file.Name.StartsWith(VariantImageFieldPrefix, StringComparison.Ordinal))
-            .ToDictionary(
-                file => file.Name[VariantImageFieldPrefix.Length..],
-                file => file,
-                StringComparer.Ordinal
-            );
-
-        var productImageFilesByClientId = files
-            .Where(file => file.Name.StartsWith(ProductImageFieldPrefix, StringComparison.Ordinal))
-            .ToDictionary(
-                file => file.Name[ProductImageFieldPrefix.Length..],
-                file => file,
-                StringComparer.Ordinal
-            );
+        MetadataValidation(
+            payload,
+            files,
+            productImageFilesByClientId,
+            variantImageFilesByClientId
+        );
 
         var createProductCommand = CreateProductWorkflowMapper.ToCreateProductWorkflowCommand(
             payload,
@@ -81,7 +71,12 @@ public sealed class ProductWorkflowController(
         return Created($"{ApiRoute.ProductsApiRoute}/{product.Id}", product);
     }
 
-    private static void MetadataValidation(CreateProductRequest payload, IFormFileCollection files)
+    private static void MetadataValidation(
+        CreateProductRequest payload,
+        IFormFileCollection files,
+        IDictionary<string, IFormFile> productImages,
+        IDictionary<string, IFormFile> variantImages
+    )
     {
         if (files.Count == 0)
         {
@@ -103,17 +98,70 @@ public sealed class ProductWorkflowController(
             }
         }
 
-        var productVariantImagesMetadata = payload
-            .ProductVariants.Select(x => x.ProductVariantImage)
-            .ToList();
+        var expectedProductImageIds = payload
+            .ProductImages.Select(x => x.ClientId)
+            .ToHashSet(StringComparer.Ordinal);
 
-        var imageCount = payload.ProductImages.Count + productVariantImagesMetadata.Count;
+        var expectedVariantImageIds = payload
+            .ProductVariants.Where(x => x.ProductVariantImage is not null)
+            .Select(x => x.ProductVariantImage!.ClientId)
+            .ToHashSet(StringComparer.Ordinal);
 
-        if (files.Count != imageCount)
+        if (!expectedProductImageIds.SetEquals(productImages.Keys))
         {
             throw new BadRequestException(
-                "The file count is not equal to the images metadata count."
+                "Product image files do not match product image metadata."
             );
         }
+
+        if (!expectedVariantImageIds.SetEquals(variantImages.Keys))
+        {
+            throw new BadRequestException(
+                "Variant image files do not match variant image metadata."
+            );
+        }
+    }
+
+    private static (
+        IDictionary<string, IFormFile> ProductImages,
+        IDictionary<string, IFormFile> VariantImages
+    ) BuildImageFilesDictionary(IFormFileCollection files)
+    {
+        var productImageFilesByClientId = new Dictionary<string, IFormFile>(StringComparer.Ordinal);
+
+        var variantImageFilesByClientId = new Dictionary<string, IFormFile>(StringComparer.Ordinal);
+
+        foreach (var file in files)
+        {
+            Dictionary<string, IFormFile> target;
+            string clientId;
+
+            if (file.Name.StartsWith(ProductImageFieldPrefix, StringComparison.Ordinal))
+            {
+                clientId = file.Name[ProductImageFieldPrefix.Length..];
+                target = productImageFilesByClientId;
+            }
+            else if (file.Name.StartsWith(VariantImageFieldPrefix, StringComparison.Ordinal))
+            {
+                clientId = file.Name[VariantImageFieldPrefix.Length..];
+                target = variantImageFilesByClientId;
+            }
+            else
+            {
+                throw new BadRequestException($"Unknown file field '{file.Name}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                throw new BadRequestException("Image file client ID cannot be empty.");
+            }
+
+            if (!target.TryAdd(clientId, file))
+            {
+                throw new BadRequestException($"Duplicate image client ID '{clientId}'.");
+            }
+        }
+
+        return (productImageFilesByClientId, variantImageFilesByClientId);
     }
 }

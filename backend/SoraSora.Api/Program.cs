@@ -1,12 +1,10 @@
 using Serilog;
-using SoraSora.Api.Application.Workflow;
+using SoraSora.Api.Application.Extensions;
 using SoraSora.Api.Exceptions;
 using SoraSora.Infrastructure.Persistence.Extensions;
-using SoraSora.Infrastructure.Persistence.Interface;
 using SoraSora.Modules.Auth.Application.Extensions;
 using SoraSora.Modules.Media.Application.Extensions;
 using SoraSora.Modules.Orders.Application.Extensions;
-using SoraSora.Modules.Orders.Infrastructure.Persistence;
 using SoraSora.Modules.Products.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +38,7 @@ builder.Services.AddOrdersModule();
 builder.Services.AddAuthModule();
 builder.Services.AddMediaModule();
 builder.Services.AddInventoryModule();
+builder.Services.AddApiModule();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

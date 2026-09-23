@@ -1,12 +1,13 @@
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
+using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
 public interface IProductService
 {
-    Task<ProductResponse> CreateProductAsync(
+    Task<Product> CreateProductAsync(
         CreateProductCommand command,
         CancellationToken cancellationToken
     );

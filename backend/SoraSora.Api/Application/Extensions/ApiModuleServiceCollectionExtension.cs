@@ -1,5 +1,6 @@
 using SoraSora.Api.Application.Controllers;
 using SoraSora.Api.Application.Workflow;
+using SoraSora.Api.Application.Workflow.Products;
 
 namespace SoraSora.Api.Application.Extensions
 {

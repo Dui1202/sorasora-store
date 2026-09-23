@@ -15,6 +15,11 @@ namespace SoraSora.Modules.Media.Application
             CancellationToken cancellationToken
         );
 
+        Task ScheduleFailedUploadCleanupAsync(
+            IReadOnlyCollection<string> mediaAssetIds,
+            CancellationToken cancellationToken
+        );
+
         Task UpdateImageAltTextsAsync(
             IReadOnlyDictionary<string, string?> altTextByMediaAssetId,
             CancellationToken cancellationToken

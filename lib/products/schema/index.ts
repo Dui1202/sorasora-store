@@ -20,7 +20,7 @@ export {
   localProductImageSchema,
   localProductVariantImageSchema,
   createProductFormSchema,
-} from "./create-product-form";
+ma} from "./create-product-form";
 export type {
   CreateProductFormData,
   CreateProductFormInputData,

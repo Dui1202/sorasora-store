@@ -4,7 +4,6 @@ public sealed record ProductVariantResponse
 {
     public required string Id { get; init; }
     public required string ClientId { get; init; }
-
     public required string ProductId { get; init; }
     public required string Name { get; init; }
     public string? Sku { get; init; }

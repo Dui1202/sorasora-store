@@ -9,7 +9,7 @@ public sealed class ProductVariant : IAuditable
     public const int MaxNameLength = 100;
     private readonly List<ProductVariantOption> _productVariantOptions = [];
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
-    public string? ClientId { get; private set; } = null!;
+    public string ClientId { get; private set; } = null!;
     public string ProductId { get; private set; } = null!;
     public string? Sku { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -35,7 +35,7 @@ public sealed class ProductVariant : IAuditable
         int costPrice,
         int sellingPrice,
         int position,
-        string? clientId = null
+        string clientId 
     )
     {
         ValidateDetails(name, sku, costPrice, sellingPrice, position);

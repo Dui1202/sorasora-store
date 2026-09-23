@@ -1,8 +1,7 @@
 using NUlid;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Requests.Create;
-using SoraSora.Modules.Products.Contracts.Responses;
-using SoraSora.Modules.Products.Mappers;
+using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Api.Mappers;
 
@@ -14,56 +13,174 @@ internal static class CreateProductWorkflowMapper
         IDictionary<string, IFormFile> variantImageFilesByClientId
     )
     {
-        var productCommand = CreateProductDtoMapper.ToCreateProductCommand(
-            request,
-            productImageFilesByClientId,
-            variantImageFilesByClientId
-        );
-        var quantitiesByPosition = request.ProductVariants.ToDictionary(
-            variant => variant.Position,
-            variant => variant.Quantity
-        );
-
         return new CreateProductWorkflowCommand
         {
-            Name = productCommand.Name,
-            Description = productCommand.Description,
-            SupplierCountry = productCommand.SupplierCountry,
-            SellMode = productCommand.SellMode,
-            IsPublished = productCommand.IsPublished,
-            ProductImages = productCommand.ProductImages,
-            Variations = productCommand.Variations,
-            ProductVariants = productCommand.ProductVariants
-                .Select(variant => ToCreateProductVariantWorkflowCommand(
-                    variant,
-                    request.Variations.Count == 0
-                        ? request.BaseQuantity ?? 0
-                        : quantitiesByPosition[variant.Position]
-                ))
+            Name = request.Name,
+            Description = request.Description,
+            SupplierCountry = request.SupplierCountry,
+            SellMode = request.SellMode,
+            IsPublished = request.IsPublished,
+            ProductImages = request
+                .ProductImages.Select(image =>
+                    ToCreateProductImageWorkflowCommand(image, productImageFilesByClientId)
+                )
                 .ToList(),
+            Variations = request.Variations.Select(ToCreateVariationCommand).ToList(),
+            ProductVariants =
+                request.Variations.Count == 0
+                    ? [ToCreateBaseProductVariantWorkflowCommand(request, productImageFilesByClientId)]
+                    : request
+                        .ProductVariants.Select(variant =>
+                            ToCreateProductVariantWorkflowCommand(variant, variantImageFilesByClientId)
+                        )
+                        .ToList(),
+        };
+    }
+
+    private static CreateProductImageWorkflowCommand ToCreateProductImageWorkflowCommand(
+        CreateProductImageRequest request,
+        IDictionary<string, IFormFile> productImageFilesByClientId
+    )
+    {
+        return new CreateProductImageWorkflowCommand
+        {
+            ClientId = request.ClientId,
+            File = GetImageFile(request.ClientId, productImageFilesByClientId),
+            Alt = request.Alt,
+            Position = request.Position,
+        };
+    }
+
+    private static CreateProductVariantWorkflowCommand ToCreateBaseProductVariantWorkflowCommand(
+        CreateProductRequest request,
+        IDictionary<string, IFormFile> productImageFilesByClientId
+    )
+    {
+        var baseImage =
+            request.ProductImages.MinBy(image => image.Position)
+            ?? throw new InvalidOperationException(
+                "A product without variations must contain at least one product image."
+            );
+        var costPrice =
+            request.BaseCostPrice
+            ?? throw new InvalidOperationException(
+                "A product without variations must have a base cost price."
+            );
+        var sellingPrice =
+            request.BaseSellingPrice
+            ?? throw new InvalidOperationException(
+                "A product without variations must have a base selling price."
+            );
+
+        return new CreateProductVariantWorkflowCommand
+        {
+            ClientId = Ulid.NewUlid().ToString(),
+            Name = request.Name,
+            Sku = request.BaseSku,
+            CostPrice = costPrice,
+            SellingPrice = sellingPrice,
+            Position = 0,
+            InitialQuantity = request.BaseQuantity ?? 0,
+            ProductVariantImage = new CreateProductVariantImageWorkflowCommand
+            {
+                ClientId = baseImage.ClientId,
+                File = GetImageFile(baseImage.ClientId, productImageFilesByClientId),
+                Alt = baseImage.Alt,
+            },
         };
     }
 
     private static CreateProductVariantWorkflowCommand ToCreateProductVariantWorkflowCommand(
-        CreateProductVariantCommand command,
-        int initialQuantity
+        CreateProductVariantRequest request,
+        IDictionary<string, IFormFile> variantImageFilesByClientId
     )
     {
         return new CreateProductVariantWorkflowCommand
         {
             ClientId = Ulid.NewUlid().ToString(),
-            Name = command.Name,
-            Sku = command.Sku,
-            CostPrice = command.CostPrice,
-            SellingPrice = command.SellingPrice,
-            Position = command.Position,
-            InitialQuantity = initialQuantity,
-            ProductVariantImage = command.ProductVariantImage,
-            ProductVariantOptions = command.ProductVariantOptions,
+            Name = request.Name,
+            Sku = request.Sku,
+            CostPrice = request.CostPrice,
+            SellingPrice = request.SellingPrice,
+            Position = request.Position,
+            InitialQuantity = request.Quantity,
+            ProductVariantImage = ToCreateProductVariantImageWorkflowCommand(
+                request.ProductVariantImage,
+                variantImageFilesByClientId
+            ),
+            ProductVariantOptions = request
+                .ProductVariantOptions.Select(ToCreateProductVariantOptionCommand)
+                .ToList(),
         };
     }
 
-    internal static CreateProductCommand ToCreateProductCommand(CreateProductWorkflowCommand command)
+    private static CreateProductVariantImageWorkflowCommand ToCreateProductVariantImageWorkflowCommand(
+        CreateProductVariantImageRequest request,
+        IDictionary<string, IFormFile> variantImageFilesByClientId
+    )
+    {
+        return new CreateProductVariantImageWorkflowCommand
+        {
+            ClientId = request.ClientId,
+            File = GetImageFile(request.ClientId, variantImageFilesByClientId),
+            Alt = request.Alt,
+        };
+    }
+
+    private static IFormFile GetImageFile(
+        string clientId,
+        IDictionary<string, IFormFile> imageFilesByClientId
+    )
+    {
+        if (!imageFilesByClientId.TryGetValue(clientId, out var file))
+        {
+            throw new InvalidOperationException(
+                "Cannot get the image file with its corresponding client ID."
+            );
+        }
+
+        return file;
+    }
+
+    private static CreateVariationCommand ToCreateVariationCommand(CreateVariationRequest request)
+    {
+        return new CreateVariationCommand
+        {
+            ClientId = request.ClientId,
+            Name = request.Name,
+            Position = request.Position,
+            VariationOptions = request
+                .VariationOptions.Select(ToCreateVariationOptionCommand)
+                .ToList(),
+        };
+    }
+
+    private static CreateVariationOptionCommand ToCreateVariationOptionCommand(
+        CreateVariationOptionRequest request
+    )
+    {
+        return new CreateVariationOptionCommand
+        {
+            ClientId = request.ClientId,
+            Value = request.Value,
+            Position = request.Position,
+        };
+    }
+
+    private static CreateProductVariantOptionCommand ToCreateProductVariantOptionCommand(
+        CreateProductVariantOptionRequest request
+    )
+    {
+        return new CreateProductVariantOptionCommand
+        {
+            VariationClientId = request.VariationClientId,
+            VariationOptionClientId = request.VariationOptionClientId,
+        };
+    }
+
+    internal static CreateProductCommand ToCreateProductCommand(
+        CreateProductWorkflowCommand command
+    )
     {
         return new CreateProductCommand
         {
@@ -72,10 +189,10 @@ internal static class CreateProductWorkflowMapper
             SupplierCountry = command.SupplierCountry,
             SellMode = command.SellMode,
             IsPublished = command.IsPublished,
-            ProductImages = command.ProductImages,
+            ProductImages = command.ProductImages.Select(ToCreateProductImageCommand).ToList(),
             Variations = command.Variations,
-            ProductVariants = command.ProductVariants
-                .Select(variant => new CreateProductVariantCommand
+            ProductVariants = command
+                .ProductVariants.Select(variant => new CreateProductVariantCommand
                 {
                     ClientId = variant.ClientId,
                     Name = variant.Name,
@@ -83,15 +200,35 @@ internal static class CreateProductWorkflowMapper
                     CostPrice = variant.CostPrice,
                     SellingPrice = variant.SellingPrice,
                     Position = variant.Position,
-                    ProductVariantImage = variant.ProductVariantImage,
+                    ProductVariantImage = ToCreateProductVariantImageCommand(
+                        variant.ProductVariantImage
+                    ),
                     ProductVariantOptions = variant.ProductVariantOptions,
                 })
                 .ToList(),
         };
     }
 
+    internal static CreateProductImageCommand ToCreateProductImageCommand(
+        CreateProductImageWorkflowCommand command
+    )
+    {
+        return new CreateProductImageCommand(
+            ClientId: command.ClientId,
+            Alt: command.Alt,
+            Position: command.Position
+        );
+    }
+
+    internal static CreateProductVariantImageCommand ToCreateProductVariantImageCommand(
+        CreateProductVariantImageWorkflowCommand command
+    )
+    {
+        return new CreateProductVariantImageCommand(Alt: command.Alt);
+    }
+
     internal static CreateInventoryItemCommand ToCreateInventoryItemCommand(
-        ProductVariantResponse variant,
+        ProductVariant variant,
         CreateProductVariantWorkflowCommand command
     )
     {

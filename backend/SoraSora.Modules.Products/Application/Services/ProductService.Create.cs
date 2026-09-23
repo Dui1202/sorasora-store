@@ -10,7 +10,7 @@ namespace SoraSora.Modules.Products.Application.Services;
 
 public sealed partial class ProductService
 {
-    public async Task<ProductResponse> CreateProductAsync(
+    public async Task<Product> CreateProductAsync(
         CreateProductCommand command,
         CancellationToken cancellationToken
     )
@@ -25,42 +25,15 @@ public sealed partial class ProductService
             isPublished: command.IsPublished
         );
 
-        var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
+        CreateVariations(product, command, out var variationOptionsByVariationClientId);
 
-        try
-        {
-            CreateVariations(product, command, out var variationOptionsByVariationClientId);
+        CreateProductVariants(product, command, variationOptionsByVariationClientId);
 
-            var createdProductVariants = CreateProductVariants(
-                product,
-                command,
-                variationOptionsByVariationClientId
-            );
+        _dbContext.Products().Add(product);
 
-            var productImageUploadJobs = BuildProductImageUploadJobForCreateCommand(
-                product,
-                command,
-                createdProductVariants
-            );
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await UploadAndAttachProductImagesAsync(
-                productImageUploadJobs,
-                uploadedMediaAssetIds,
-                cancellationToken
-            );
-
-            _dbContext.Products().Add(product);
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch
-        {
-            await TryScheduleUploadedMediaCleanupAsync(uploadedMediaAssetIds);
-
-            throw;
-        }
-
-        return ProductDtoMapper.ToProductResponse(product);
+        return product;
     }
 
     private static void CreateVariations(
@@ -110,14 +83,12 @@ public sealed partial class ProductService
         }
     }
 
-    private static IReadOnlyList<CreatedProductVariant> CreateProductVariants(
+    private static void CreateProductVariants(
         Product product,
         CreateProductCommand command,
         Dictionary<string, Dictionary<string, VariationOption>> variationOptionsByVariationClientId
     )
     {
-        List<CreatedProductVariant> createdProductVariants = [];
-
         foreach (var productVariantCommand in command.ProductVariants)
         {
             var productVariant = ProductVariant.Create(
@@ -158,31 +129,6 @@ public sealed partial class ProductService
             }
 
             product.AddProductVariant(productVariant);
-
-            createdProductVariants.Add(
-                new CreatedProductVariant(
-                    ProductVariant: productVariant,
-                    Command: productVariantCommand
-                )
-            );
         }
-
-        return createdProductVariants;
-    }
-
-    private async Task UploadAndAttachProductImagesAsync(
-        IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
-        ISet<string> uploadedMediaAssetIds,
-        CancellationToken cancellationToken
-    )
-    {
-        var imageUploadJobs = productImageUploadJobs.Select(x => x.Job).ToList();
-
-        var mediaUploadResults = await _imageMediaService.UploadImagesAsync(
-            imageUploadJobs,
-            cancellationToken
-        );
-
-        AttachUploadedMedia(productImageUploadJobs, mediaUploadResults, uploadedMediaAssetIds);
     }
 }

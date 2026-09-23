@@ -3,14 +3,14 @@ using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Mappers;
 
-internal static class ProductDtoMapper
+public static class ProductDtoMapper
 {
-    internal static ProductVariantResponse ToProductVariantResponse(ProductVariant productVariant)
+    private static ProductVariantResponse ToProductVariantResponse(ProductVariant productVariant)
     {
         return new ProductVariantResponse
         {
             Id = productVariant.Id,
-            ClientId = productVariant.ClientId ?? productVariant.Id,
+            ClientId = productVariant.ClientId,
             ProductId = productVariant.ProductId,
             Name = productVariant.Name,
             Sku = productVariant.Sku,
@@ -30,7 +30,7 @@ internal static class ProductDtoMapper
         };
     }
 
-    internal static ProductResponse ToProductResponse(Product product)
+    public static ProductResponse ToProductResponse(Product product)
     {
         return new ProductResponse
         {

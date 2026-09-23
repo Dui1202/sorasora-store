@@ -1,4 +1,4 @@
-public sealed record CreateProductWorkflowRequest
+public sealed record PayloadRequest
 {
     public required string Payload { get; init; }
 }

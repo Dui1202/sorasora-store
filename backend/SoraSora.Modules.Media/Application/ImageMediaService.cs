@@ -112,6 +112,7 @@ namespace SoraSora.Modules.Media.Application
                 await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
                     cancellationToken
                 );
+
                 var uploadResults = new List<MediaUploadResult>(successfulUploads.Count);
 
                 foreach (var upload in successfulUploads)
@@ -194,6 +195,36 @@ namespace SoraSora.Modules.Media.Application
             }
 
             await AddCleanupTasksAsync(_dbContext, mediaAssetPathsById.Values, cancellationToken);
+        }
+
+        public async Task ScheduleFailedUploadCleanupAsync(
+            IReadOnlyCollection<string> mediaAssetIds,
+            CancellationToken cancellationToken
+        )
+        {
+            await using var dbContext = await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken
+            );
+
+            var requestedAssetIds = mediaAssetIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (requestedAssetIds.Count == 0)
+            {
+                return;
+            }
+
+            var mediaAssetPathsById = await dbContext
+                .MediaAssets()
+                .Where(asset => requestedAssetIds.Contains(asset.Id))
+                .ToDictionaryAsync(asset => asset.Id, asset => asset.Path, cancellationToken);
+
+            // same missing-ID logging if desired
+
+            await AddCleanupTasksAsync(dbContext, mediaAssetPathsById.Values, cancellationToken);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>

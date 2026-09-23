@@ -11,13 +11,15 @@ namespace SoraSora.Api.Application.Workflow
         SoraSoraDbContext dbContext,
         IOrderService orderService,
         IProductService productService,
-        IInventoryService inventoryService
+        IInventoryService inventoryService,
+        IWarehouseService warehouseService
     )
     {
         private readonly SoraSoraDbContext _dbContext = dbContext;
         private readonly IOrderService _orderService = orderService;
         private readonly IInventoryService _inventoryService = inventoryService;
         private readonly IProductService _productService = productService;
+        private readonly IWarehouseService _warehouseService = warehouseService;
 
         public async Task<OrderResponse> PlaceOrderAsync(
             PlaceOrderWorkflowCommand command,
@@ -35,10 +37,13 @@ namespace SoraSora.Api.Application.Workflow
 
             var order = await _orderService.CreateOrderAsync(createOrderCommand, cancellationToken);
 
+            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+
             foreach (var orderItem in order.OrderItems)
             {
                 await _inventoryService.ReserveStockAsync(
                     productVariantId: orderItem.ProductVariantId,
+                    warehouseId: warehouseId,
                     quantity: orderItem.Quantity,
                     description: $"Reserve stock for order #{order.Id}.",
                     cancellationToken
@@ -60,10 +65,13 @@ namespace SoraSora.Api.Application.Workflow
             );
             var order = await _orderService.CancelOrderAsync(orderId, cancellationToken);
 
+            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+
             foreach (var orderItem in order.OrderItems)
             {
                 await _inventoryService.ReleaseStockAsync(
                     productVariantId: orderItem.ProductVariantId,
+                    warehouseId: warehouseId,
                     quantity: orderItem.Quantity,
                     description: $"Release stock for cancelled order #{order.Id}",
                     cancellationToken
@@ -85,10 +93,13 @@ namespace SoraSora.Api.Application.Workflow
             );
             var order = await _orderService.CompleteOrderAsync(orderId, cancellationToken);
 
+            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+
             foreach (var orderItem in order.OrderItems)
             {
                 await _inventoryService.SaleStockAsync(
                     productVariantId: orderItem.ProductVariantId,
+                    warehouseId: warehouseId,
                     quantity: orderItem.Quantity,
                     description: "Sale stock for completed order.",
                     cancellationToken: cancellationToken
@@ -98,6 +109,15 @@ namespace SoraSora.Api.Application.Workflow
             await transaction.CommitAsync(cancellationToken);
 
             return order;
+        }
+
+        private async Task<string> GetDefaultWarehouseIdAsync(CancellationToken cancellationToken)
+        {
+            var warehouses = await _warehouseService.GetAllWarehousesAsync(cancellationToken);
+            var defaultWarehouse = warehouses?.SingleOrDefault(warehouse => warehouse.IsDefault)
+                ?? throw new InvalidOperationException("The default warehouse is missing");
+
+            return defaultWarehouse.Id;
         }
 
         private async Task<CreateOrderCommand> InstantiateCreateOrderCommand(

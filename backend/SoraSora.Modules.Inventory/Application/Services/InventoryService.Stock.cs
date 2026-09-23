@@ -9,12 +9,14 @@ public sealed partial class InventoryService : IInventoryService
 {
     public Task<StockResponse> ReceiveStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.Receive(amount, note),
@@ -23,12 +25,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> ReserveStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.Reserve(amount, note),
@@ -37,12 +41,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> ReleaseStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.Release(amount, note),
@@ -51,12 +57,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> SaleStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.Sale(amount, note),
@@ -65,12 +73,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> ReturnStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.Return(amount, note),
@@ -79,12 +89,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> AdjustOnHandedStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.AdjustOnHanded(amount, note),
@@ -94,12 +106,14 @@ public sealed partial class InventoryService : IInventoryService
 
     public Task<StockResponse> AdjustReservedStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description = null,
         CancellationToken cancellationToken = default
     ) =>
         UpdateStockAsync(
             productVariantId,
+            warehouseId,
             quantity,
             description,
             static (stock, amount, note) => stock.AdjustReserved(amount, note),
@@ -109,6 +123,7 @@ public sealed partial class InventoryService : IInventoryService
 
     private async Task<StockResponse> UpdateStockAsync(
         string productVariantId,
+        string warehouseId,
         int quantity,
         string? description,
         Action<Stock, int, string?> updateStock,
@@ -131,13 +146,6 @@ public sealed partial class InventoryService : IInventoryService
                 cancellationToken
             );
 
-            var defaultWarehouse =
-                await _dbContext
-                    .Warehouses()
-                    .AsNoTracking()
-                    .SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
-                ?? throw new InvalidOperationException("The default warehouse is missing");
-
             var inventoryItem =
                 await _dbContext
                     .InventoryItems()
@@ -149,14 +157,14 @@ public sealed partial class InventoryService : IInventoryService
                 ?? throw new NotFoundException("The inventory item is not found");
 
             var stock =
-                inventoryItem.Stocks.SingleOrDefault(x => x.WarehouseId == defaultWarehouse.Id)
-                ?? throw new NotFoundException("Stock in the default warehouse is not found.");
+                inventoryItem.Stocks.SingleOrDefault(x => x.WarehouseId == warehouseId)
+                ?? throw new NotFoundException("Stock in the specified warehouse is not found.");
 
             // Use the transaction's snapshot even if this context already tracked the stock.
             await _dbContext.Entry(stock).ReloadAsync(cancellationToken);
             if (_dbContext.Entry(stock).State == EntityState.Detached)
             {
-                throw new NotFoundException("Stock in the default warehouse is not found.");
+                throw new NotFoundException("Stock in the specified warehouse is not found.");
             }
 
             updateStock(stock, quantity, description);
