@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Products.Contracts.Responses;
+using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Mappers;
@@ -10,7 +11,7 @@ namespace SoraSora.Modules.Products.Application.Services;
 //TODO: Add pagination
 public sealed partial class ProductService
 {
-    public async Task<List<ProductResponse>?> GetAllProductsAsync(
+    public async Task<List<Product>?> GetAllProductsAsync(
         CancellationToken cancellationToken = default
     )
     {
@@ -29,10 +30,10 @@ public sealed partial class ProductService
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
-        return products.Select(ProductDtoMapper.ToProductResponse).ToList();
+        return products;
     }
 
-    public async Task<ProductResponse> GetProductByIdAsync(
+    public async Task<Product> GetProductByIdAsync(
         string id,
         CancellationToken cancellationToken = default
     )
@@ -53,7 +54,7 @@ public sealed partial class ProductService
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new ProductNotFoundException(id);
 
-        return ProductDtoMapper.ToProductResponse(product);
+        return product;
     }
 
     public async Task<ProductVariantResponse> GetProductVariantByIdAsync(

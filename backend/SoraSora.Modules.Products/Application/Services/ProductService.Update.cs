@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Products.Application.Services.Loggers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
@@ -13,13 +14,19 @@ namespace SoraSora.Modules.Products.Application.Services;
 //TODO: Archive product variants instead of deleting them permanently
 public sealed partial class ProductService
 {
-    public async Task<ProductResponse> UpdateProductAsync(
+    private sealed record CreatedProductVariant
+    {
+        public required ProductVariant ProductVariant { get; init; }
+        public required CreateProductVariantCommand Command { get; init; }
+    }
+
+    public async Task<Product> UpdateProductAsync(
         UpdateProductCommand command,
         CancellationToken cancellationToken
     )
     {
-        var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
-        var imageAssetIdsToRemove = new HashSet<string>(StringComparer.Ordinal);
+        // var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
+        // var imageAssetIdsToRemove = new HashSet<string>(StringComparer.Ordinal);
         var product =
             await _dbContext
                 .Products()
@@ -40,125 +47,70 @@ public sealed partial class ProductService
             throw new ProductConcurrencyException(product.Id);
         }
 
-        try
-        {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
-                cancellationToken
-            );
-            try
-            {
-                product.UpdateDetails(
-                    command.Name,
-                    command.Description,
-                    command.SupplierCountry,
-                    command.SellMode,
-                    command.IsPublished
-                );
-                product.AdvanceVersion();
+        product.UpdateDetails(
+            command.Name,
+            command.Description,
+            command.SupplierCountry,
+            command.SellMode,
+            command.IsPublished
+        );
+        product.AdvanceVersion();
 
-                var existingProductVariantsById = product.ProductVariants.ToDictionary(
-                    variant => variant.Id,
-                    StringComparer.Ordinal
-                );
+        var existingProductVariantsById = product.ProductVariants.ToDictionary(
+            variant => variant.Id,
+            StringComparer.Ordinal
+        );
 
-                RemoveProductVariantsFromProduct(product, command, imageAssetIdsToRemove);
+        var createdProductVariants = await HandleProductVariants(
+            product,
+            command,
+            existingProductVariantsById,
+            cancellationToken
+        );
 
-                var variationOptionsByVariationClientId = await ReconcileVariationGraphAsync(
-                    product,
-                    command,
-                    cancellationToken
-                );
+        //Handle variations and variation options update
+        var variationOptionsByVariationClientId = await HandleVariationUpdateAsync(
+            product,
+            command,
+            cancellationToken
+        );
 
-                await UpdateProductVariantPositions(
-                    product,
-                    command,
-                    existingProductVariantsById,
-                    cancellationToken
-                );
+        AttachProductVariantOptions(
+            product,
+            command,
+            createdProductVariants,
+            existingProductVariantsById,
+            variationOptionsByVariationClientId
+        );
 
-                UpdateProductVariants(
-                    product,
-                    command,
-                    existingProductVariantsById,
-                    imageAssetIdsToRemove,
-                    out var updatedProductVariants,
-                    out var createdProductVariants
-                );
-
-                AttachProductVariantOptions(
-                    product,
-                    command,
-                    existingProductVariantsById,
-                    createdProductVariants,
-                    variationOptionsByVariationClientId
-                );
-
-                await UpdateProductImagePositionsAsync(
-                    product,
-                    command,
-                    imageAssetIdsToRemove,
-                    cancellationToken
-                );
-
-                var productImageUploadJobs = BuildProductImageUploadJobForUpdateCommand(
-                    product,
-                    command,
-                    updatedProductVariants,
-                    createdProductVariants
-                );
-
-                var mediaUploadResults = await _imageMediaService.UploadImagesAsync(
-                    productImageUploadJobs.Select(productJob => productJob.Job).ToList(),
-                    cancellationToken
-                );
-
-                AttachUploadedMedia(
-                    productImageUploadJobs,
-                    mediaUploadResults,
-                    uploadedMediaAssetIds
-                );
-
-                await _imageMediaService.ScheduleImageDeletionAsync(
-                    imageAssetIdsToRemove,
-                    cancellationToken
-                );
-
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(CancellationToken.None);
-                throw;
-            }
-        }
-        catch (Exception ex)
-        {
-            await TryScheduleUploadedMediaCleanupAsync(uploadedMediaAssetIds);
-
-            if (ex is DbUpdateConcurrencyException)
-            {
-                throw new ProductConcurrencyException(product.Id, ex);
-            }
-
-            if (ex is ProductDomainException domainException)
-            {
-                throw new ProductValidationException(domainException.Message, domainException);
-            }
-
-            throw;
-        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.ProductUpdated(product.Name, product.Id);
 
-        return ProductDtoMapper.ToProductResponse(product);
+        return product;
     }
 
-    private void RemoveProductVariantsFromProduct(
+    private async Task<IReadOnlyCollection<CreatedProductVariant>> HandleProductVariants(
         Product product,
         UpdateProductCommand command,
-        HashSet<string> imageAssetIdsToRemove
+        IDictionary<string, ProductVariant> existingProductVariantsById,
+        CancellationToken cancellationToken
     )
+    {
+        RemoveUnretainedProductVariants(product, command);
+        UpdateRetainedProductVariants(product, command, existingProductVariantsById);
+        var createdProductVariants = AddNewProductVariants(product, command);
+        await UpdateProductVariantPositions(
+            product,
+            command,
+            existingProductVariantsById,
+            cancellationToken
+        );
+
+        return createdProductVariants;
+    }
+
+    private void RemoveUnretainedProductVariants(Product product, UpdateProductCommand command)
     {
         var retainedProductVariantsId = command
             .RetainedProductVariants.Select(x => x.Id)
@@ -168,14 +120,8 @@ public sealed partial class ProductService
             .ProductVariants.Where(x => !retainedProductVariantsId.Contains(x.Id))
             .ToList();
 
-        //Remove non-retained product variant
         foreach (var productVariant in productVariantsToRemove)
         {
-            if (productVariant.ProductVariantImage is not null)
-            {
-                imageAssetIdsToRemove.Add(productVariant.ProductVariantImage.MediaAssetId);
-            }
-
             product.RemoveProductVariant(productVariant);
         }
     }
@@ -195,6 +141,7 @@ public sealed partial class ProductService
             command.RetainedProductVariants.Count
         );
         var tempIndex = 0;
+
         foreach (var productVariant in command.RetainedProductVariants)
         {
             if (
@@ -213,17 +160,12 @@ public sealed partial class ProductService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private void UpdateProductVariants(
+    private void UpdateRetainedProductVariants(
         Product product,
         UpdateProductCommand command,
-        IDictionary<string, ProductVariant> existingProductVariantsById,
-        HashSet<string> imageAssetIdsToRemove,
-        out List<ImageUpdatedProductVariant> imageUpdatedProductVariants,
-        out List<CreatedProductVariant> createdProductVariants
+        IDictionary<string, ProductVariant> existingProductVariantsById
     )
     {
-        imageUpdatedProductVariants = [];
-        createdProductVariants = [];
         //Update retained product variants
         foreach (var productVariantCommand in command.RetainedProductVariants)
         {
@@ -245,33 +187,20 @@ public sealed partial class ProductService
                 sellingPrice: productVariantCommand.SellingPrice,
                 position: productVariantCommand.Position
             );
-
-            //Update product variant image operation
-            var newImage = productVariantCommand.NewImage;
-
-            ///Skip if the new image command is null
-            if (newImage is null)
-            {
-                continue;
-            }
-
-            ///Delete the original image
-            if (productVariantToUpdate.ProductVariantImage is not null)
-            {
-                imageAssetIdsToRemove.Add(productVariantToUpdate.ProductVariantImage.MediaAssetId);
-            }
-            imageUpdatedProductVariants.Add(
-                new ImageUpdatedProductVariant(
-                    ProductVariant: productVariantToUpdate,
-                    Command: productVariantCommand
-                )
-            );
         }
+    }
 
+    private IReadOnlyCollection<CreatedProductVariant> AddNewProductVariants(
+        Product product,
+        UpdateProductCommand command
+    )
+    {
+        var createdVariants = new List<CreatedProductVariant>();
         //Add new product variant
         foreach (var newProductVariantCommand in command.NewProductVariants)
         {
             var productVariant = ProductVariant.Create(
+                clientId: newProductVariantCommand.ClientId,
                 name: newProductVariantCommand.Name,
                 sku: newProductVariantCommand.Sku,
                 costPrice: newProductVariantCommand.CostPrice,
@@ -280,18 +209,21 @@ public sealed partial class ProductService
             );
 
             product.AddProductVariant(productVariant);
-            createdProductVariants.Add(
-                new CreatedProductVariant(
-                    ProductVariant: productVariant,
-                    Command: newProductVariantCommand
-                )
+
+            createdVariants.Add(
+                new CreatedProductVariant
+                {
+                    ProductVariant = productVariant,
+                    Command = newProductVariantCommand,
+                }
             );
         }
+        return createdVariants;
     }
 
     private async Task<
         Dictionary<string, Dictionary<string, VariationOption>>
-    > ReconcileVariationGraphAsync(
+    > HandleVariationUpdateAsync(
         Product product,
         UpdateProductCommand command,
         CancellationToken cancellationToken
@@ -449,8 +381,8 @@ public sealed partial class ProductService
     private static void AttachProductVariantOptions(
         Product product,
         UpdateProductCommand command,
-        IReadOnlyDictionary<string, ProductVariant> existingProductVariantsById,
         IReadOnlyCollection<CreatedProductVariant> createdProductVariants,
+        IReadOnlyDictionary<string, ProductVariant> existingProductVariantsById,
         IReadOnlyDictionary<string, Dictionary<string, VariationOption>> optionsByVariationClientId
     )
     {

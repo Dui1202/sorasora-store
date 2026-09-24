@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Inventory.Application.Services;
+using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Shared.Exceptions;
+
+namespace SoraSora.Modules.Inventory.Application.Services;
 
 public sealed partial class InventoryService : IInventoryService
 {
-    public async Task<IReadOnlyCollection<InventoryItemResponse>> GetAllInventoryItemsAsync(
+    public async Task<IReadOnlyCollection<InventoryItem>> GetAllInventoryItemsAsync(
         CancellationToken cancellationToken
     )
     {
@@ -12,11 +15,10 @@ public sealed partial class InventoryService : IInventoryService
             .InventoryItems()
             .Include(x => x.Stocks)
             .AsNoTracking()
-            .Select(x => InventoryItemDtoMapper.ToInventoryItemResponse(x))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<InventoryItemResponse> GetInventoryItemByIdAsync(
+    public async Task<InventoryItem> GetInventoryItemByIdAsync(
         string id,
         CancellationToken cancellationToken
     )
@@ -29,10 +31,10 @@ public sealed partial class InventoryService : IInventoryService
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException("The inventory item is not found");
 
-        return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
+        return inventoryItem;
     }
 
-    public async Task<InventoryItemResponse> GetInventoryItemByProductVariantIdAsync(
+    public async Task<InventoryItem> GetInventoryItemByProductVariantIdAsync(
         string productVariantId,
         CancellationToken cancellationToken = default
     )
@@ -45,6 +47,6 @@ public sealed partial class InventoryService : IInventoryService
                 .FirstOrDefaultAsync(x => x.ProductVariantId == productVariantId, cancellationToken)
             ?? throw new NotFoundException("The inventory item is not found");
 
-        return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
+        return inventoryItem;
     }
 }

@@ -20,6 +20,7 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.ClientId).ValueGeneratedNever();
         builder.Property(x => x.ProductId).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(ProductVariant.MaxNameLength).IsRequired();
         builder.Property(x => x.Sku);
@@ -35,5 +36,6 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
+        builder.HasIndex(x => x.ClientId).IsUnique();
     }
 }

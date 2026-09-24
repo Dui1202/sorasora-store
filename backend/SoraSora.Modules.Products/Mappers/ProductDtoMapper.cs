@@ -5,7 +5,7 @@ namespace SoraSora.Modules.Products.Mappers;
 
 public static class ProductDtoMapper
 {
-    private static ProductVariantResponse ToProductVariantResponse(ProductVariant productVariant)
+    public static ProductVariantResponse ToProductVariantResponse(ProductVariant productVariant)
     {
         return new ProductVariantResponse
         {

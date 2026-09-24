@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SoraSora.Modules.Inventory.Application.Services;
+using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Shared.Exceptions;
 
+namespace SoraSora.Modules.Inventory.Application.Services;
+
 public sealed partial class InventoryService : IInventoryService
 {
-    public async Task<InventoryItemResponse> CreateInventoryItemAsync(
+    public async Task<InventoryItem> CreateInventoryItemAsync(
         CreateInventoryItemCommand command,
         CancellationToken cancellationToken
     )
@@ -51,6 +54,6 @@ public sealed partial class InventoryService : IInventoryService
             );
         }
 
-        return InventoryItemDtoMapper.ToInventoryItemResponse(inventoryItem);
+        return inventoryItem;
     }
 }

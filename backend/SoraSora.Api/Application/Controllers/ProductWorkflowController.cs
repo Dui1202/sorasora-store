@@ -6,7 +6,8 @@ using SoraSora.Api.Application.Workflow.Products;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Contracts;
-using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Api.Contracts.Requests.Products.Create;
+using SoraSora.Api.Contracts.Requests.Products.Update;
 using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Shared.Exceptions;
 using SoraSora.Shared.Extension;
@@ -69,6 +70,43 @@ public sealed class ProductWorkflowController(
         var product = await workflow.CreateProductAsync(createProductCommand, cancellationToken);
 
         return Created($"{ApiRoute.ProductsApiRoute}/{product.Id}", product);
+    }
+
+    [HasPermission(AppPermissions.Products.Update)]
+    [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(
+        string id,
+        [FromForm] PayloadRequest request,
+        [FromServices] IValidator<UpdateProductRequest> validator,
+        CancellationToken cancellationToken
+    )
+    {
+        var payload =
+            JsonSerializer.Deserialize<UpdateProductRequest>(
+                request.Payload,
+                jsonOptions.Value.JsonSerializerOptions
+            ) ?? throw new BadRequestException("The payload is empty");
+
+        payload = payload with { Id = id };
+
+        var validationResult = await validator.ValidateAsync(payload, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
+        }
+
+        var files = Request.Form.Files;
+
+        var (productImageFilesByClientId, variantImageFilesByClientId) = BuildImageFilesDictionary(
+            files
+        );
+
+        var product = await workflow.UpdateProductAsync();
+
+        return Ok(product);
     }
 
     private static void MetadataValidation(

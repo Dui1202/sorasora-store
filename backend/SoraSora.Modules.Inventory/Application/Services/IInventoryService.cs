@@ -1,22 +1,27 @@
+using SoraSora.Modules.Inventory.Contracts.Commands;
+using SoraSora.Modules.Inventory.Domain;
+
 namespace SoraSora.Modules.Inventory.Application.Services;
 
 public interface IInventoryService
 {
-    Task<IReadOnlyCollection<InventoryItemResponse>> GetAllInventoryItemsAsync(
+    Task<IReadOnlyCollection<InventoryItem>> GetAllInventoryItemsAsync(
         CancellationToken cancellationToken
     );
-    Task<InventoryItemResponse> GetInventoryItemByIdAsync(
-        string id,
-        CancellationToken cancellationToken
-    );
+    Task<InventoryItem> GetInventoryItemByIdAsync(string id, CancellationToken cancellationToken);
 
-    Task<InventoryItemResponse> GetInventoryItemByProductVariantIdAsync(
+    Task<InventoryItem> GetInventoryItemByProductVariantIdAsync(
         string productVariantId,
         CancellationToken cancellationToken = default
     );
 
-    Task<InventoryItemResponse> CreateInventoryItemAsync(
+    Task<InventoryItem> CreateInventoryItemAsync(
         CreateInventoryItemCommand command,
+        CancellationToken cancellationToken
+    );
+
+    Task<InventoryItem> UpdateInventoryItemAsync(
+        UpdateInventoryItemCommand command,
         CancellationToken cancellationToken
     );
 

@@ -1,13 +1,15 @@
+using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 using NUlid;
+using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
-using SoraSora.Modules.Products.Contracts.Requests.Create;
+using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Api.Mappers;
 
 internal static class CreateProductWorkflowMapper
 {
-    internal static CreateProductWorkflowCommand ToCreateProductWorkflowCommand(
+    public static CreateProductWorkflowCommand ToCreateProductWorkflowCommand(
         CreateProductRequest request,
         IDictionary<string, IFormFile> productImageFilesByClientId,
         IDictionary<string, IFormFile> variantImageFilesByClientId
@@ -28,16 +30,25 @@ internal static class CreateProductWorkflowMapper
             Variations = request.Variations.Select(ToCreateVariationCommand).ToList(),
             ProductVariants =
                 request.Variations.Count == 0
-                    ? [ToCreateBaseProductVariantWorkflowCommand(request, productImageFilesByClientId)]
+                    ?
+                    [
+                        ToCreateBaseProductVariantWorkflowCommand(
+                            request,
+                            productImageFilesByClientId
+                        ),
+                    ]
                     : request
                         .ProductVariants.Select(variant =>
-                            ToCreateProductVariantWorkflowCommand(variant, variantImageFilesByClientId)
+                            ToCreateProductVariantWorkflowCommand(
+                                variant,
+                                variantImageFilesByClientId
+                            )
                         )
                         .ToList(),
         };
     }
 
-    private static CreateProductImageWorkflowCommand ToCreateProductImageWorkflowCommand(
+    public static CreateProductImageWorkflowCommand ToCreateProductImageWorkflowCommand(
         CreateProductImageRequest request,
         IDictionary<string, IFormFile> productImageFilesByClientId
     )
@@ -51,7 +62,7 @@ internal static class CreateProductWorkflowMapper
         };
     }
 
-    private static CreateProductVariantWorkflowCommand ToCreateBaseProductVariantWorkflowCommand(
+    public static CreateProductVariantWorkflowCommand ToCreateBaseProductVariantWorkflowCommand(
         CreateProductRequest request,
         IDictionary<string, IFormFile> productImageFilesByClientId
     )
@@ -90,7 +101,7 @@ internal static class CreateProductWorkflowMapper
         };
     }
 
-    private static CreateProductVariantWorkflowCommand ToCreateProductVariantWorkflowCommand(
+    public static CreateProductVariantWorkflowCommand ToCreateProductVariantWorkflowCommand(
         CreateProductVariantRequest request,
         IDictionary<string, IFormFile> variantImageFilesByClientId
     )
@@ -114,7 +125,7 @@ internal static class CreateProductWorkflowMapper
         };
     }
 
-    private static CreateProductVariantImageWorkflowCommand ToCreateProductVariantImageWorkflowCommand(
+    public static CreateProductVariantImageWorkflowCommand ToCreateProductVariantImageWorkflowCommand(
         CreateProductVariantImageRequest request,
         IDictionary<string, IFormFile> variantImageFilesByClientId
     )
@@ -127,7 +138,7 @@ internal static class CreateProductWorkflowMapper
         };
     }
 
-    private static IFormFile GetImageFile(
+    public static IFormFile GetImageFile(
         string clientId,
         IDictionary<string, IFormFile> imageFilesByClientId
     )
@@ -142,7 +153,7 @@ internal static class CreateProductWorkflowMapper
         return file;
     }
 
-    private static CreateVariationCommand ToCreateVariationCommand(CreateVariationRequest request)
+    public static CreateVariationCommand ToCreateVariationCommand(CreateVariationRequest request)
     {
         return new CreateVariationCommand
         {

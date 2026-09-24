@@ -17,7 +17,7 @@ public sealed record RetainedProductVariantCommand
     public int Position { get; init; }
 
     public CreateProductVariantImageCommand? NewImage { get; init; }
-
+    public RetainedProductVariantImageCommand? RetainedImage { get; init; }
     public IReadOnlyCollection<CreateProductVariantOptionCommand> ProductVariantOptions { get; init; } =
     [];
 }

@@ -1,4 +1,6 @@
+using FluentValidation;
 using SoraSora.Api.Application.Controllers;
+using SoraSora.Api.Contracts.Validators.Products;
 using SoraSora.Api.Application.Workflow;
 using SoraSora.Api.Application.Workflow.Products;
 
@@ -10,6 +12,7 @@ namespace SoraSora.Api.Application.Extensions
         {
             services.AddScoped<OrderWorkflow>();
             services.AddScoped<ProductWorkflow>();
+            services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
 
             services
                 .AddControllers()

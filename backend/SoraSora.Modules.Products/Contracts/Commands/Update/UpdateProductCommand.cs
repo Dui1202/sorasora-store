@@ -1,5 +1,4 @@
 using SoraSora.Modules.Products.Contracts.Commands.Create;
-using SoraSora.Modules.Products.Contracts.Requests.Update;
 using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Modules.Products.Contracts.Commands.Update;

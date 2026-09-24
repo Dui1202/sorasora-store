@@ -5,6 +5,8 @@ using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Shared.Exceptions;
 
+namespace SoraSora.Modules.Inventory.Application.Services;
+
 public sealed partial class InventoryService : IInventoryService
 {
     public Task<StockResponse> ReceiveStockAsync(

@@ -11,16 +11,13 @@ public interface IProductService
         CreateProductCommand command,
         CancellationToken cancellationToken
     );
-    Task<ProductResponse> UpdateProductAsync(
+    Task<Product> UpdateProductAsync(
         UpdateProductCommand command,
         CancellationToken cancellationToken
     );
     Task DeleteProductAsync(string id, Guid version, CancellationToken cancellationToken);
-    Task<ProductResponse> GetProductByIdAsync(
-        string id,
-        CancellationToken cancellationToken = default
-    );
-    Task<List<ProductResponse>?> GetAllProductsAsync(CancellationToken cancellationToken = default);
+    Task<Product> GetProductByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<List<Product>?> GetAllProductsAsync(CancellationToken cancellationToken = default);
     Task<ProductVariantResponse> GetProductVariantByIdAsync(
         string id,
         CancellationToken cancellationToken

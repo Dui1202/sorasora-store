@@ -1,5 +1,7 @@
 using System.IO.Compression;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SoraSora.Modules.Media.Contracts.Upload;
+using SoraSora.Modules.Media.Domain;
 using SoraSora.Modules.Media.Domain.Upload;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Domain;
@@ -64,9 +66,97 @@ public sealed partial class ProductWorkflow
         return jobs;
     }
 
+    private static IReadOnlyCollection<ProductImageUploadJob> BuildProductImageUploadJobsForUpdateCommand(
+        UpdateProductWorkflowCommand command,
+        Product product
+    )
+    {
+        var productImageUploadJobs = new List<ProductImageUploadJob>();
+
+        foreach (var newProductImageCommand in command.NewImages)
+        {
+            var job = new ImageUploadJob(
+                newProductImageCommand.File,
+                new MediaStorageTarget.ProductImage(product.Id),
+                newProductImageCommand.Alt
+            );
+
+            var productImageJob = new ProductImageUploadJob(
+                Job: job,
+                Attach: (mediaAssetId) =>
+                    product.AddImage(
+                        ProductImage.Create(mediaAssetId, newProductImageCommand.Position)
+                    )
+            );
+
+            productImageUploadJobs.Add(productImageJob);
+        }
+
+        var variantsByClientId = product.ProductVariants.ToDictionary(
+            x => x.ClientId,
+            StringComparer.Ordinal
+        );
+
+        foreach (var newVariant in command.NewProductVariants)
+        {
+            if (!variantsByClientId.TryGetValue(newVariant.ClientId, out var variant))
+            {
+                throw new InvalidOperationException(
+                    $"The created variant does not match with the workflow variant."
+                );
+            }
+            var image = newVariant.ProductVariantImage;
+
+            var job = new ImageUploadJob(
+                image.File,
+                new MediaStorageTarget.ProductVariantImage(product.Id, variant.Id),
+                image.Alt
+            );
+
+            var productImageJob = new ProductImageUploadJob(
+                Job: job,
+                Attach: (mediaAssetId) =>
+                    variant.SetProductVariantImage(ProductVariantImage.Create(mediaAssetId))
+            );
+
+            productImageUploadJobs.Add(productImageJob);
+        }
+
+        foreach (var retainedVariant in command.RetainedProductVariants)
+        {
+            if (retainedVariant.NewImage is not null)
+            {
+                if (!variantsByClientId.TryGetValue(retainedVariant.ClientId, out var variant))
+                {
+                    throw new InvalidOperationException(
+                        "The created variant does not match with the workflow variant."
+                    );
+                }
+
+                var image = retainedVariant.NewImage;
+
+                var job = new ImageUploadJob(
+                    image.File,
+                    new MediaStorageTarget.ProductVariantImage(product.Id, variant.Id),
+                    image.Alt
+                );
+
+                var productImageJob = new ProductImageUploadJob(
+                    Job: job,
+                    Attach: (mediaAssetId) =>
+                        variant.SetProductVariantImage(ProductVariantImage.Create(mediaAssetId))
+                );
+
+                productImageUploadJobs.Add(productImageJob);
+            }
+        }
+
+        return productImageUploadJobs;
+    }
+
     private static void AttachUploadedMedia(
-        IReadOnlyList<ProductImageUploadJob> productImageUploadJobs,
-        IReadOnlyList<MediaUploadResult> mediaUploadResults,
+        IReadOnlyCollection<ProductImageUploadJob> productImageUploadJobs,
+        IReadOnlyCollection<MediaUploadResult> mediaUploadResults,
         ISet<string> uploadedMediaAssetIds
     )
     {

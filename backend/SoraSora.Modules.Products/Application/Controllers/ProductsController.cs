@@ -1,13 +1,6 @@
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Application.Services;
-using SoraSora.Modules.Products.Contracts;
-using SoraSora.Modules.Products.Contracts.Requests.Update;
-using SoraSora.Modules.Products.Contracts.Responses;
-using SoraSora.Modules.Products.Exceptions;
-using SoraSora.Modules.Products.Mappers;
-using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;
 
 namespace SoraSora.Modules.Products.Application.Controllers;
@@ -32,31 +25,6 @@ public sealed class ProductsController(IProductService productService) : Control
     public async Task<IActionResult> GetById(string id)
     {
         var product = await _productService.GetProductByIdAsync(id);
-
-        return Ok(product);
-    }
-
-    [HasPermission(AppPermissions.Products.Update)]
-    [RequestSizeLimit(ProductUploadLimits.MaxRequestBytes)]
-    [RequestFormLimits(MultipartBodyLengthLimit = ProductUploadLimits.MaxRequestBytes)]
-    [HttpPut("{id}")]
-    public async Task<ActionResult<ProductResponse>> Update(
-        string id,
-        [FromForm] UpdateProductRequest request,
-        [FromServices] IValidator<UpdateProductRequest> validator,
-        CancellationToken cancellationToken
-    )
-    {
-        request = request with { Id = id };
-
-        var validationResult = await validator.ValidateAsync(request, cancellationToken);
-        if (!validationResult.IsValid)
-        {
-            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
-        }
-
-        var command = UpdateProductMapper.ToUpdateProductCommand(request);
-        var product = await _productService.UpdateProductAsync(command, cancellationToken);
 
         return Ok(product);
     }
