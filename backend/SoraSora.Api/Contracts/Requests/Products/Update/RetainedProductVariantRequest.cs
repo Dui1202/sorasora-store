@@ -22,6 +22,8 @@ public sealed record RetainedProductVariantRequest
 
     public CreateProductVariantImageRequest? NewImage { get; init; }
 
+    public RetainedProductVariantImageRequest? RetainedImage { get; init; }
+
     public IReadOnlyCollection<CreateProductVariantOptionRequest> ProductVariantOptions { get; init; } =
     [];
 }

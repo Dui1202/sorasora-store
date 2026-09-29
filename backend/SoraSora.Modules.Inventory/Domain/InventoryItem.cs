@@ -7,7 +7,6 @@ public sealed class InventoryItem : IAuditable
 {
     private readonly List<Stock> _stocks = [];
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
-    public string? Sku { get; private set; }
     public string ProductVariantId { get; private set; } = null!;
     public IReadOnlyCollection<Stock> Stocks => _stocks;
     public DateTimeOffset CreatedAt { get; private set; }
@@ -18,9 +17,9 @@ public sealed class InventoryItem : IAuditable
 
     private InventoryItem() { }
 
-    public static InventoryItem Create(string productVariantId, string? sku = null)
+    public static InventoryItem Create(string productVariantId)
     {
-        return new InventoryItem { ProductVariantId = productVariantId, Sku = sku };
+        return new InventoryItem { ProductVariantId = productVariantId };
     }
 
     public void AddStock(Stock stock)

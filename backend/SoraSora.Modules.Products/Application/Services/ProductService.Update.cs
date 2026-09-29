@@ -21,27 +21,11 @@ public sealed partial class ProductService
     }
 
     public async Task<Product> UpdateProductAsync(
+        Product product,
         UpdateProductCommand command,
         CancellationToken cancellationToken
     )
     {
-        // var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
-        // var imageAssetIdsToRemove = new HashSet<string>(StringComparer.Ordinal);
-        var product =
-            await _dbContext
-                .Products()
-                .Where(x => !x.IsArchived)
-                .AsSplitQuery()
-                .Include(x => x.ProductImages)
-                .Include(x => x.ProductVariants)
-                    .ThenInclude(x => x.ProductVariantImage)
-                .Include(x => x.ProductVariants)
-                    .ThenInclude(x => x.ProductVariantOptions)
-                .Include(x => x.Variations)
-                    .ThenInclude(x => x.VariationOptions)
-                .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
-            ?? throw new ProductNotFoundException(command.Id);
-
         if (product.Version != command.Version)
         {
             throw new ProductConcurrencyException(product.Id);
@@ -61,7 +45,7 @@ public sealed partial class ProductService
             StringComparer.Ordinal
         );
 
-        var createdProductVariants = await HandleProductVariants(
+        var createdProductVariants = await HandleProductVariantsUpdateAsync(
             product,
             command,
             existingProductVariantsById,
@@ -90,7 +74,7 @@ public sealed partial class ProductService
         return product;
     }
 
-    private async Task<IReadOnlyCollection<CreatedProductVariant>> HandleProductVariants(
+    private async Task<IReadOnlyCollection<CreatedProductVariant>> HandleProductVariantsUpdateAsync(
         Product product,
         UpdateProductCommand command,
         IDictionary<string, ProductVariant> existingProductVariantsById,
@@ -155,6 +139,23 @@ public sealed partial class ProductService
             }
 
             productVariantToUpdate.UpdatePosition(tempPositions[tempIndex++]);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var productVariant in command.RetainedProductVariants)
+        {
+            if (
+                !existingProductVariantsById.TryGetValue(
+                    productVariant.Id,
+                    out var productVariantToUpdate
+                )
+            )
+            {
+                throw new ProductVariantOwnershipException(productVariant.Id, product.Id);
+            }
+
+            productVariantToUpdate.UpdatePosition(productVariant.Position);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -456,78 +457,7 @@ public sealed partial class ProductService
     private static string CreateTemporaryUniqueValue(string prefix) =>
         $"__{prefix}_update_{Guid.NewGuid():N}";
 
-    private async Task UpdateProductImagePositionsAsync(
-        Product product,
-        UpdateProductCommand command,
-        HashSet<string> imageAssetIdsToRemove,
-        CancellationToken cancellationToken
-    )
-    {
-        var existingProductImagesByAssetId = product.ProductImages.ToDictionary(
-            x => x.MediaAssetId,
-            StringComparer.Ordinal
-        );
-        var retainedProductImageAssetIds = command
-            .RetainedImages.Select(x => x.MediaAssetId)
-            .ToHashSet(StringComparer.Ordinal);
-
-        var productImagesToRemove = product
-            .ProductImages.Where(x => !retainedProductImageAssetIds.Contains(x.MediaAssetId))
-            .ToList();
-        //Remove non-retained product images
-        foreach (var image in productImagesToRemove)
-        {
-            imageAssetIdsToRemove.Add(image.MediaAssetId);
-
-            product.RemoveImageByAssetId(image.MediaAssetId);
-        }
-
-        //Apply temporary positions
-        var occupiedPositions = product.ProductImages.Select(x => x.Position).ToList();
-        var finalPositions = command.RetainedImages.Select(x => x.Position).ToList();
-        var tempPositions = AllocateTemporaryPositions(
-            occupiedPositions,
-            finalPositions,
-            command.RetainedImages.Count
-        );
-        var tempIndex = 0;
-
-        foreach (var image in command.RetainedImages)
-        {
-            if (
-                !existingProductImagesByAssetId.TryGetValue(
-                    image.MediaAssetId,
-                    out var productImage
-                )
-            )
-            {
-                throw new ProductImageOwnershipException(image.MediaAssetId, product.Id);
-            }
-
-            productImage.UpdateDetails(position: tempPositions[tempIndex++]);
-        }
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        //Update product images
-        var altTextByMediaAssetId = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var image in command.RetainedImages)
-        {
-            if (
-                !existingProductImagesByAssetId.TryGetValue(
-                    image.MediaAssetId,
-                    out var productImage
-                )
-            )
-            {
-                throw new ProductImageOwnershipException(image.MediaAssetId, product.Id);
-            }
-
-            productImage.UpdateDetails(position: image.Position);
-            altTextByMediaAssetId.Add(image.MediaAssetId, image.Alt);
-        }
-
-        await _imageMediaService.UpdateImageAltTextsAsync(altTextByMediaAssetId, cancellationToken);
-    }
+    
 
     private static List<int> AllocateTemporaryPositions(
         IEnumerable<int> occupiedPositions,

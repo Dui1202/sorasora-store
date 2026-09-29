@@ -28,11 +28,10 @@ public partial class InventoryService : IInventoryService
 
         if (command.Action == InventoryUpdateAction.SetTo)
         {
-            var onHandedQuantityDelta = command.Quantity - stock.OnHandedQuantity;
-            await AdjustOnHandedStockAsync(
+            await SetOnHandedStockAsync(
                 command.ProductVariantId,
                 defaultWarehouse.Id,
-                onHandedQuantityDelta,
+                command.Quantity,
                 "Update onhanded quantity during update operation",
                 cancellationToken
             );

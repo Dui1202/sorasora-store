@@ -3,7 +3,6 @@ using SoraSora.Modules.Products.Contracts.Commands.Create;
 public sealed record RetainedProductVariantWorkflowCommand
 {
     public required string Id { get; init; }
-    public required string ClientId { get; init; }
     public required string Name { get; init; }
     public string? Sku { get; init; }
     public int CostPrice { get; init; }

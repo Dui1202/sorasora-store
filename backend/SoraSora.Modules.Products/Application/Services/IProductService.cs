@@ -12,6 +12,7 @@ public interface IProductService
         CancellationToken cancellationToken
     );
     Task<Product> UpdateProductAsync(
+        Product product,
         UpdateProductCommand command,
         CancellationToken cancellationToken
     );

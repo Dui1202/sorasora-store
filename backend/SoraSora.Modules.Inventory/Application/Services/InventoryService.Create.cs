@@ -31,7 +31,7 @@ public sealed partial class InventoryService : IInventoryService
 
         var defaultStock = Stock.Create(defaultWarehouse.Id, command.InitialQuantity);
 
-        var inventoryItem = InventoryItem.Create(command.ProductVariantId, command.Sku);
+        var inventoryItem = InventoryItem.Create(command.ProductVariantId);
         inventoryItem.AddStock(defaultStock);
 
         _dbContext.InventoryItems().Add(inventoryItem);

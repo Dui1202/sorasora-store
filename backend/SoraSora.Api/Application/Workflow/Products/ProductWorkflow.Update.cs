@@ -1,8 +1,12 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using SoraSora.Api.Mappers;
+using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Mappers;
+using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Api.Application.Workflow.Products;
 
@@ -21,11 +25,31 @@ public sealed partial class ProductWorkflow
         var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var product = await _productService.GetProductByIdAsync(command.Id);
+            var product =
+                await _dbContext
+                    .Products()
+                    .Where(x => !x.IsArchived)
+                    .AsSplitQuery()
+                    .Include(x => x.ProductImages)
+                    .Include(x => x.ProductVariants)
+                        .ThenInclude(x => x.ProductVariantImage)
+                    .Include(x => x.ProductVariants)
+                        .ThenInclude(x => x.ProductVariantOptions)
+                    .Include(x => x.Variations)
+                        .ThenInclude(x => x.VariationOptions)
+                    .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
+                ?? throw new NotFoundException($"Product with Id {command.Id} can't be found.");
 
-            await RemoveUnretainedProductImagesFilesAsync(product, command, cancellationToken);
+            await RemoveUnretainedImageFilesAsync(product, command, cancellationToken);
 
             updatedProduct = await _productService.UpdateProductAsync(
+                product,
+                updateProductCommand,
+                cancellationToken
+            );
+
+            await UpdateProductImagePositionsAsync(
+                product,
                 updateProductCommand,
                 cancellationToken
             );
@@ -82,7 +106,7 @@ public sealed partial class ProductWorkflow
             x => x.ClientId,
             StringComparer.Ordinal
         );
-        
+
         foreach (var variantCommand in command.RetainedProductVariants)
         {
             var updateInventoryItemCommand =
@@ -130,7 +154,7 @@ public sealed partial class ProductWorkflow
         AttachUploadedMedia(productImageUploadJobs, mediaUploadResult, uploadedMediaAssetIds);
     }
 
-    private async Task RemoveUnretainedProductImagesFilesAsync(
+    private async Task RemoveUnretainedImageFilesAsync(
         Product product,
         UpdateProductWorkflowCommand command,
         CancellationToken cancellationToken
@@ -162,6 +186,7 @@ public sealed partial class ProductWorkflow
 
         var unretainedVariantIds = existingVariantIds.Except(retainedVariantIds);
 
+        //Add unretained product variant's image to the deletion list
         foreach (var id in unretainedVariantIds)
         {
             if (!existingVariantByIds.TryGetValue(id, out var variant))
@@ -169,7 +194,10 @@ public sealed partial class ProductWorkflow
                 throw new InvalidOperationException("Cannot find the unretained variant");
             }
 
-            imageAssetIdsToRemove.Add(variant.ProductVariantImage!.MediaAssetId);
+            if (variant.ProductVariantImage is { } existingImage)
+            {
+                imageAssetIdsToRemove.Add(existingImage.MediaAssetId);
+            }
         }
 
         var retainedVariantByIds = command.RetainedProductVariants.ToDictionary(
@@ -177,6 +205,7 @@ public sealed partial class ProductWorkflow
             StringComparer.Ordinal
         );
 
+        //Add retained product variant's image that has been replaced to the deletion list
         foreach (var id in retainedVariantIds)
         {
             if (!retainedVariantByIds.TryGetValue(id, out var retainedVariant))
@@ -184,24 +213,112 @@ public sealed partial class ProductWorkflow
                 throw new InvalidOperationException();
             }
 
-            if (retainedVariant.RetainedImage is null)
+            if (retainedVariant.NewImage is not null)
             {
                 if (!existingVariantByIds.TryGetValue(id, out var variant))
                 {
                     throw new InvalidOperationException();
                 }
 
-                imageAssetIdsToRemove.Add(variant.ProductVariantImage!.MediaAssetId);
+                if (variant.ProductVariantImage is { } existingImage)
+                {
+                    imageAssetIdsToRemove.Add(existingImage.MediaAssetId);
+                }
             }
         }
 
-        imageAssetIdsToRemove
-            .Concat(unretainedProductImagesAssetIds)
-            .ToHashSet(StringComparer.Ordinal);
+        foreach (var assetId in unretainedProductImagesAssetIds.ToList())
+        {
+            product.RemoveImageByAssetId(assetId);
+        }
+
+        imageAssetIdsToRemove.UnionWith(unretainedProductImagesAssetIds);
 
         await _imageMediaService.ScheduleImageDeletionAsync(
             imageAssetIdsToRemove,
             cancellationToken
         );
+    }
+
+    private async Task UpdateProductImagePositionsAsync(
+        Product product,
+        UpdateProductCommand command,
+        CancellationToken cancellationToken
+    )
+    {
+        var existingProductImagesByAssetId = product.ProductImages.ToDictionary(
+            x => x.MediaAssetId,
+            StringComparer.Ordinal
+        );
+        var retainedProductImageAssetIds = command
+            .RetainedImages.Select(x => x.MediaAssetId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        //Apply temporary positions
+        var occupiedPositions = product.ProductImages.Select(x => x.Position).ToList();
+        var finalPositions = command.RetainedImages.Select(x => x.Position).ToList();
+        var tempPositions = AllocateTemporaryPositions(
+            occupiedPositions,
+            finalPositions,
+            command.RetainedImages.Count
+        );
+        var tempIndex = 0;
+
+        foreach (var image in command.RetainedImages)
+        {
+            if (
+                !existingProductImagesByAssetId.TryGetValue(
+                    image.MediaAssetId,
+                    out var productImage
+                )
+            )
+            {
+                throw new InvalidOperationException();
+            }
+
+            productImage.UpdateDetails(position: tempPositions[tempIndex++]);
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        //Update product images
+        var altTextByMediaAssetId = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var image in command.RetainedImages)
+        {
+            if (
+                !existingProductImagesByAssetId.TryGetValue(
+                    image.MediaAssetId,
+                    out var productImage
+                )
+            )
+            {
+                throw new InvalidOperationException();
+            }
+
+            productImage.UpdateDetails(position: image.Position);
+            altTextByMediaAssetId.Add(image.MediaAssetId, image.Alt);
+        }
+
+        await _imageMediaService.UpdateImageAltTextsAsync(altTextByMediaAssetId, cancellationToken);
+    }
+
+    private static List<int> AllocateTemporaryPositions(
+        IEnumerable<int> occupiedPositions,
+        IEnumerable<int> finalPositions,
+        int count
+    )
+    {
+        var unavailablePositions = occupiedPositions.Concat(finalPositions).ToHashSet();
+
+        var temporaryPositions = new List<int>(count);
+
+        for (var candidate = int.MaxValue; temporaryPositions.Count < count; candidate--)
+        {
+            if (unavailablePositions.Add(candidate))
+            {
+                temporaryPositions.Add(candidate);
+            }
+        }
+
+        return temporaryPositions;
     }
 }

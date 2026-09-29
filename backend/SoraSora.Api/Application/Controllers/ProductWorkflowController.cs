@@ -3,11 +3,11 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SoraSora.Api.Application.Workflow.Products;
+using SoraSora.Api.Contracts.Requests.Products.Create;
+using SoraSora.Api.Contracts.Requests.Products.Update;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Contracts;
-using SoraSora.Api.Contracts.Requests.Products.Create;
-using SoraSora.Api.Contracts.Requests.Products.Update;
 using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Shared.Exceptions;
 using SoraSora.Shared.Extension;
@@ -54,7 +54,7 @@ public sealed class ProductWorkflowController(
             files
         );
 
-        MetadataValidation(
+        MetadataValidationForCreate(
             payload,
             files,
             productImageFilesByClientId,
@@ -104,12 +104,25 @@ public sealed class ProductWorkflowController(
             files
         );
 
-        var product = await workflow.UpdateProductAsync();
+        MetadataValidationForUpdate(
+            payload,
+            files,
+            productImageFilesByClientId,
+            variantImageFilesByClientId
+        );
+
+        var command = UpdateProductWorkflowMapper.ToUpdateProductWorkflowCommand(
+            payload,
+            productImageFilesByClientId,
+            variantImageFilesByClientId
+        );
+
+        var product = await workflow.UpdateProductAsync(command, cancellationToken);
 
         return Ok(product);
     }
 
-    private static void MetadataValidation(
+    private static void MetadataValidationForCreate(
         CreateProductRequest payload,
         IFormFileCollection files,
         IDictionary<string, IFormFile> productImages,
@@ -143,6 +156,47 @@ public sealed class ProductWorkflowController(
         var expectedVariantImageIds = payload
             .ProductVariants.Where(x => x.ProductVariantImage is not null)
             .Select(x => x.ProductVariantImage!.ClientId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (!expectedProductImageIds.SetEquals(productImages.Keys))
+        {
+            throw new BadRequestException(
+                "Product image files do not match product image metadata."
+            );
+        }
+
+        if (!expectedVariantImageIds.SetEquals(variantImages.Keys))
+        {
+            throw new BadRequestException(
+                "Variant image files do not match variant image metadata."
+            );
+        }
+    }
+
+    private static void MetadataValidationForUpdate(
+        UpdateProductRequest payload,
+        IFormFileCollection files,
+        IDictionary<string, IFormFile> productImages,
+        IDictionary<string, IFormFile> variantImages
+    )
+    {
+        if (files.Count == 0)
+            return;
+
+        var expectedProductImageIds = payload
+            .NewImages.Select(x => x.ClientId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var expectedImageIdFromNewVariants = payload.NewProductVariants.Select(x =>
+            x.ProductVariantImage.ClientId
+        );
+
+        var expectedImageIdFromRetainedVariants = payload
+            .RetainedProductVariants.Where(x => x.NewImage is not null)
+            .Select(x => x.NewImage!.ClientId);
+
+        var expectedVariantImageIds = expectedImageIdFromNewVariants
+            .Concat(expectedImageIdFromRetainedVariants)
             .ToHashSet(StringComparer.Ordinal);
 
         if (!expectedProductImageIds.SetEquals(productImages.Keys))

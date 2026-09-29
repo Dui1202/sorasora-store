@@ -9,6 +9,23 @@ namespace SoraSora.Modules.Inventory.Application.Services;
 
 public sealed partial class InventoryService : IInventoryService
 {
+    public Task<StockResponse> SetOnHandedStockAsync(
+        string productVariantId,
+        string warehouseId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        UpdateStockAsync(
+            productVariantId,
+            warehouseId,
+            quantity,
+            description,
+            static (stock, target, note) =>
+                stock.AdjustOnHanded(target - stock.OnHandedQuantity, note),
+            cancellationToken
+        );
+
     public Task<StockResponse> ReceiveStockAsync(
         string productVariantId,
         string warehouseId,
@@ -143,23 +160,22 @@ public sealed partial class InventoryService : IInventoryService
 
         try
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
-                IsolationLevel.Serializable,
-                cancellationToken
-            );
-
-            var inventoryItem =
-                await _dbContext
-                    .InventoryItems()
-                    .Include(x => x.Stocks)
-                    .SingleOrDefaultAsync(
-                        x => x.ProductVariantId == productVariantId,
-                        cancellationToken
-                    )
-                ?? throw new NotFoundException("The inventory item is not found");
-
             var stock =
-                inventoryItem.Stocks.SingleOrDefault(x => x.WarehouseId == warehouseId)
+                await _dbContext
+                    .Set<Stock>()
+                    .FromSqlInterpolated(
+                        $"""
+                        SELECT s.*
+                        FROM "Stocks" AS s
+                        INNER JOIN "InventoryItems" AS i
+                            ON i."Id" = s."InventoryItemId"
+                        WHERE i."ProductVariantId" = {productVariantId}
+                          AND s."WarehouseId" = {warehouseId}
+                        FOR UPDATE OF s
+                        """
+                    )
+                    .AsTracking()
+                    .SingleOrDefaultAsync(cancellationToken)
                 ?? throw new NotFoundException("Stock in the specified warehouse is not found.");
 
             // Use the transaction's snapshot even if this context already tracked the stock.
@@ -172,18 +188,18 @@ public sealed partial class InventoryService : IInventoryService
             updateStock(stock, quantity, description);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
             var response = InventoryItemDtoMapper.ToStockResponse(stock);
-            await transaction.CommitAsync(cancellationToken);
 
             return response;
         }
         catch (Exception ex)
             when (ex.GetBaseException()
-                    is PostgresException { SqlState: PostgresErrorCodes.SerializationFailure }
+                    is PostgresException { SqlState: PostgresErrorCodes.DeadlockDetected }
             )
         {
             throw new ConflictException(
-                "Stock changed concurrently. Retry the operation.",
+                "Stock update could not be completed because of a concurrent operation.",
                 InventoryErrorCodes.StockUpdateConflict,
                 ex
             );

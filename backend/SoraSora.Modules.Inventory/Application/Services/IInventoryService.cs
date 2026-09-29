@@ -25,6 +25,15 @@ public interface IInventoryService
         CancellationToken cancellationToken
     );
 
+
+    Task<StockResponse> SetOnHandedStockAsync(
+        string productVariantId,
+        string warehouseId,
+        int quantity,
+        string? description = null,
+        CancellationToken cancellationToken = default
+    );
+
     Task<StockResponse> ReceiveStockAsync(
         string productVariantId,
         string warehouseId,

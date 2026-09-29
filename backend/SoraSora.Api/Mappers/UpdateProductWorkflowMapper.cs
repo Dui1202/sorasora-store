@@ -1,8 +1,8 @@
 using NUlid;
-using SoraSora.Modules.Products.Contracts.Commands.Create;
-using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
+using SoraSora.Modules.Products.Contracts.Commands.Create;
+using SoraSora.Modules.Products.Contracts.Commands.Update;
 
 namespace SoraSora.Api.Mappers;
 
@@ -144,7 +144,6 @@ public static class UpdateProductWorkflowMapper
         return new RetainedProductVariantWorkflowCommand
         {
             Id = request.Id,
-            ClientId = Ulid.NewUlid().ToString(),
             Action = request.Action,
             Quantity = request.Quantity,
             Name = request.Name,
@@ -158,9 +157,23 @@ public static class UpdateProductWorkflowMapper
                     request.NewImage,
                     variantImageFilesByClientId
                 ),
+            RetainedImage = request.RetainedImage is null
+                ? null
+                : ToRetainedProductVariantImageCommand(request.RetainedImage),
             ProductVariantOptions = request
                 .ProductVariantOptions.Select(ToCreateProductVariantOptionCommand)
                 .ToList(),
+        };
+    }
+
+    private static RetainedProductVariantImageCommand ToRetainedProductVariantImageCommand(
+        RetainedProductVariantImageRequest request
+    )
+    {
+        return new RetainedProductVariantImageCommand
+        {
+            MediaAssetId = request.MediaAssetId,
+            Alt = request.Alt,
         };
     }
 

@@ -245,7 +245,6 @@ internal static class CreateProductWorkflowMapper
     {
         return new CreateInventoryItemCommand(
             ProductVariantId: variant.Id,
-            Sku: variant.Sku,
             InitialQuantity: command.InitialQuantity
         );
     }

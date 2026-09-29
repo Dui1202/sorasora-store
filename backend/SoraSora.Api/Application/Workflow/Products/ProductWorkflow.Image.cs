@@ -92,14 +92,19 @@ public sealed partial class ProductWorkflow
             productImageUploadJobs.Add(productImageJob);
         }
 
-        var variantsByClientId = product.ProductVariants.ToDictionary(
+        var existingVariantsByClientId = product.ProductVariants.ToDictionary(
             x => x.ClientId,
+            StringComparer.Ordinal
+        );
+
+        var existingVariantsById = product.ProductVariants.ToDictionary(
+            x => x.Id,
             StringComparer.Ordinal
         );
 
         foreach (var newVariant in command.NewProductVariants)
         {
-            if (!variantsByClientId.TryGetValue(newVariant.ClientId, out var variant))
+            if (!existingVariantsByClientId.TryGetValue(newVariant.ClientId, out var variant))
             {
                 throw new InvalidOperationException(
                     $"The created variant does not match with the workflow variant."
@@ -126,7 +131,7 @@ public sealed partial class ProductWorkflow
         {
             if (retainedVariant.NewImage is not null)
             {
-                if (!variantsByClientId.TryGetValue(retainedVariant.ClientId, out var variant))
+                if (!existingVariantsById.TryGetValue(retainedVariant.Id, out var variant))
                 {
                     throw new InvalidOperationException(
                         "The created variant does not match with the workflow variant."

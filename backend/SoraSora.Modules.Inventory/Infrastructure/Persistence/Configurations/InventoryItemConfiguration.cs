@@ -13,7 +13,6 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).IsRequired();
-        builder.Property(x => x.Sku).IsRequired(false);
         builder.Property(x => x.ProductVariantId).IsRequired();
 
         builder
