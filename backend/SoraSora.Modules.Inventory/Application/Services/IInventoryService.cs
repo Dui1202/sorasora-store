@@ -25,6 +25,15 @@ public interface IInventoryService
         CancellationToken cancellationToken
     );
 
+    Task ArchiveInventoryItemAsync(
+        string productVariantId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task ArchiveInventoryItemsAsync(
+        ISet<string> productVariantIds,
+        CancellationToken cancellationToken = default
+    );
 
     Task<StockResponse> SetOnHandedStockAsync(
         string productVariantId,

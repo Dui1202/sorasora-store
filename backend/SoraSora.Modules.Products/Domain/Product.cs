@@ -111,6 +111,11 @@ public sealed class Product : IAuditable
     {
         IsArchived = true;
         IsPublished = false;
+
+        foreach (var variant in _productVariants)
+        {
+            variant.Archive();
+        }
     }
 
     private static void ValidateDetails(

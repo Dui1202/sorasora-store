@@ -8,7 +8,7 @@ namespace SoraSora.Modules.Products.Application.Services;
 
 public sealed partial class ProductService
 {
-    public async Task DeleteProductAsync(
+    public async Task ArchiveProductAsync(
         string id,
         Guid version,
         CancellationToken cancellationToken
@@ -41,11 +41,6 @@ public sealed partial class ProductService
 
         product.Archive();
         product.AdvanceVersion();
-
-        foreach (var productVariant in product.ProductVariants)
-        {
-            productVariant.Archive();
-        }
 
         _dbContext.RemoveRange(productImages);
         _dbContext.RemoveRange(productVariantImages);

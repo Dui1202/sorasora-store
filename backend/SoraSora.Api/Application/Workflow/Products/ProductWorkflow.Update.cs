@@ -4,6 +4,7 @@ using SoraSora.Api.Mappers;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
+using SoraSora.Modules.Products.Exceptions;
 using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Mappers;
 using SoraSora.Shared.Exceptions;
@@ -40,6 +41,15 @@ public sealed partial class ProductWorkflow
                     .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
                 ?? throw new NotFoundException($"Product with Id {command.Id} can't be found.");
 
+            var retainedProductVariantsId = command
+                .RetainedProductVariants.Select(x => x.Id)
+                .ToHashSet(StringComparer.Ordinal);
+
+            var productVariantsToRemoveId = product
+                .ProductVariants.Where(x => !retainedProductVariantsId.Contains(x.Id))
+                .Select(x => x.Id)
+                .ToHashSet(StringComparer.Ordinal);
+
             await RemoveUnretainedImageFilesAsync(product, command, cancellationToken);
 
             updatedProduct = await _productService.UpdateProductAsync(
@@ -54,6 +64,8 @@ public sealed partial class ProductWorkflow
                 cancellationToken
             );
 
+            await UpdateRetainedImagesAltAsync(product, updateProductCommand, cancellationToken);
+
             await UploadAndAttachProductImageFilesAsync(
                 updatedProduct,
                 command,
@@ -61,7 +73,14 @@ public sealed partial class ProductWorkflow
                 cancellationToken
             );
 
-            await UpdateInventoryItemsAsync(product, command, cancellationToken);
+            await UpdateInventoryItemsAsync(
+                product,
+                command,
+                productVariantsToRemoveId,
+                cancellationToken
+            );
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
             commitAttempted = true;
@@ -81,6 +100,7 @@ public sealed partial class ProductWorkflow
                 uploadedMediaAssetIds,
                 commitAttempted
             );
+
             throw;
         }
         finally
@@ -99,9 +119,11 @@ public sealed partial class ProductWorkflow
     private async Task UpdateInventoryItemsAsync(
         Product product,
         UpdateProductWorkflowCommand command,
+        ISet<string> productVariantsToRemoveId,
         CancellationToken cancellationToken
     )
     {
+        //Update retained inventory items
         var variantsByClientId = product.ProductVariants.ToDictionary(
             x => x.ClientId,
             StringComparer.Ordinal
@@ -118,6 +140,7 @@ public sealed partial class ProductWorkflow
             );
         }
 
+        //Create new inventory items
         foreach (var variantCommand in command.NewProductVariants)
         {
             if (!variantsByClientId.TryGetValue(variantCommand.ClientId, out var variant))
@@ -133,6 +156,12 @@ public sealed partial class ProductWorkflow
                 cancellationToken
             );
         }
+
+        //Archive unretained inventory items
+        await _inventoryService.ArchiveInventoryItemsAsync(
+            productVariantsToRemoveId,
+            cancellationToken
+        );
     }
 
     private async Task UploadAndAttachProductImageFilesAsync(
@@ -250,6 +279,7 @@ public sealed partial class ProductWorkflow
             x => x.MediaAssetId,
             StringComparer.Ordinal
         );
+
         var retainedProductImageAssetIds = command
             .RetainedImages.Select(x => x.MediaAssetId)
             .ToHashSet(StringComparer.Ordinal);
@@ -281,7 +311,6 @@ public sealed partial class ProductWorkflow
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         //Update product images
-        var altTextByMediaAssetId = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var image in command.RetainedImages)
         {
             if (
@@ -295,8 +324,62 @@ public sealed partial class ProductWorkflow
             }
 
             productImage.UpdateDetails(position: image.Position);
-            altTextByMediaAssetId.Add(image.MediaAssetId, image.Alt);
         }
+    }
+
+    private async Task UpdateRetainedImagesAltAsync(
+        Product product,
+        UpdateProductCommand command,
+        CancellationToken cancellationToken
+    )
+    {
+        var variantsById = product.ProductVariants.ToDictionary(
+            variant => variant.Id,
+            StringComparer.Ordinal
+        );
+
+        foreach (var variantCommand in command.RetainedProductVariants)
+        {
+            if (variantCommand.RetainedImage is not { } retainedImage)
+            {
+                continue;
+            }
+
+            if (!variantsById.TryGetValue(variantCommand.Id, out var variant))
+            {
+                throw new ProductVariantOwnershipException(variantCommand.Id, product.Id);
+            }
+
+            if (
+                variant.ProductVariantImage is not { } existingImage
+                || !string.Equals(
+                    existingImage.MediaAssetId,
+                    retainedImage.MediaAssetId,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                throw new ProductVariantImageOwnershipException(
+                    retainedImage.MediaAssetId,
+                    variant.Id
+                );
+            }
+        }
+
+        var retainedProductImageAltTextByMediaAssetId = command.RetainedImages.ToDictionary(
+            x => x.MediaAssetId,
+            x => x.Alt,
+            StringComparer.Ordinal
+        );
+
+        var retainedVariantImageAltTextByMediaAssetId = command
+            .RetainedProductVariants.Where(x => x.RetainedImage is not null)
+            .Select(x => x.RetainedImage!)
+            .ToDictionary(x => x.MediaAssetId, x => x.Alt);
+
+        var altTextByMediaAssetId = retainedProductImageAltTextByMediaAssetId
+            .Concat(retainedVariantImageAltTextByMediaAssetId)
+            .ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
 
         await _imageMediaService.UpdateImageAltTextsAsync(altTextByMediaAssetId, cancellationToken);
     }

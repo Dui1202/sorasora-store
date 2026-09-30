@@ -18,7 +18,7 @@ public sealed class ProductVariant : IAuditable
     public int CostPrice { get; private set; }
     public int SellingPrice { get; private set; }
     public Product Product { get; private set; } = null!;
-    public int Position { get; private set; } = 0;
+    public int? Position { get; private set; }
     public bool IsArchived { get; private set; }
     public ProductVariantImage? ProductVariantImage { get; private set; }
     public IReadOnlyCollection<ProductVariantOption> ProductVariantOptions =>
@@ -65,6 +65,7 @@ public sealed class ProductVariant : IAuditable
         int position
     )
     {
+        EnsureActive();
         ValidateDetails(name, sku, costPrice, sellingPrice, position);
 
         Name = name;
@@ -76,6 +77,7 @@ public sealed class ProductVariant : IAuditable
 
     public void UpdatePosition(int position)
     {
+        EnsureActive();
         ValidatePosition(position);
         Position = position;
     }
@@ -83,6 +85,7 @@ public sealed class ProductVariant : IAuditable
     public void Archive()
     {
         IsArchived = true;
+        Position = null;
     }
 
     public void AddProductVariantOption(ProductVariantOption productVariantOption)
@@ -93,6 +96,17 @@ public sealed class ProductVariant : IAuditable
     public void RemoveProductVariantOption(ProductVariantOption productVariantOption)
     {
         _productVariantOptions.Remove(productVariantOption);
+    }
+
+    private void EnsureActive()
+    {
+        if (IsArchived)
+        {
+            throw new ProductDomainException(
+                "Archived product variants cannot be assigned a position.",
+                nameof(Position)
+            );
+        }
     }
 
     private static void ValidateDetails(

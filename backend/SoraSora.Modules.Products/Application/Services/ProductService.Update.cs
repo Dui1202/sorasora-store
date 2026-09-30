@@ -11,7 +11,6 @@ using SoraSora.Modules.Products.Mappers;
 
 namespace SoraSora.Modules.Products.Application.Services;
 
-//TODO: Archive product variants instead of deleting them permanently
 public sealed partial class ProductService
 {
     private sealed record CreatedProductVariant
@@ -31,43 +30,50 @@ public sealed partial class ProductService
             throw new ProductConcurrencyException(product.Id);
         }
 
-        product.UpdateDetails(
-            command.Name,
-            command.Description,
-            command.SupplierCountry,
-            command.SellMode,
-            command.IsPublished
-        );
-        product.AdvanceVersion();
+        try
+        {
+            product.UpdateDetails(
+                command.Name,
+                command.Description,
+                command.SupplierCountry,
+                command.SellMode,
+                command.IsPublished
+            );
+            product.AdvanceVersion();
 
-        var existingProductVariantsById = product.ProductVariants.ToDictionary(
-            variant => variant.Id,
-            StringComparer.Ordinal
-        );
+            var existingProductVariantsById = product.ProductVariants.ToDictionary(
+                variant => variant.Id,
+                StringComparer.Ordinal
+            );
 
-        var createdProductVariants = await HandleProductVariantsUpdateAsync(
-            product,
-            command,
-            existingProductVariantsById,
-            cancellationToken
-        );
+            var createdProductVariants = await HandleProductVariantsUpdateAsync(
+                product,
+                command,
+                existingProductVariantsById,
+                cancellationToken
+            );
 
-        //Handle variations and variation options update
-        var variationOptionsByVariationClientId = await HandleVariationUpdateAsync(
-            product,
-            command,
-            cancellationToken
-        );
+            //Handle variations and variation options update
+            var variationOptionsByVariationClientId = await HandleVariationUpdateAsync(
+                product,
+                command,
+                cancellationToken
+            );
 
-        AttachProductVariantOptions(
-            product,
-            command,
-            createdProductVariants,
-            existingProductVariantsById,
-            variationOptionsByVariationClientId
-        );
+            AttachProductVariantOptions(
+                product,
+                command,
+                createdProductVariants,
+                existingProductVariantsById,
+                variationOptionsByVariationClientId
+            );
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ProductConcurrencyException(product.Id, ex);
+        }
 
         _logger.ProductUpdated(product.Name, product.Id);
 
@@ -81,7 +87,7 @@ public sealed partial class ProductService
         CancellationToken cancellationToken
     )
     {
-        RemoveUnretainedProductVariants(product, command);
+        ArchiveUnretainedProductVariants(product, command);
         UpdateRetainedProductVariants(product, command, existingProductVariantsById);
         var createdProductVariants = AddNewProductVariants(product, command);
         await UpdateProductVariantPositions(
@@ -94,7 +100,7 @@ public sealed partial class ProductService
         return createdProductVariants;
     }
 
-    private void RemoveUnretainedProductVariants(Product product, UpdateProductCommand command)
+    private void ArchiveUnretainedProductVariants(Product product, UpdateProductCommand command)
     {
         var retainedProductVariantsId = command
             .RetainedProductVariants.Select(x => x.Id)
@@ -106,8 +112,16 @@ public sealed partial class ProductService
 
         foreach (var productVariant in productVariantsToRemove)
         {
-            product.RemoveProductVariant(productVariant);
+            productVariant.Archive();
         }
+
+        var variantImages = productVariantsToRemove
+            .Select(x => x.ProductVariantImage)
+            .OfType<ProductVariantImage>()
+            .ToList()
+            .ToList();
+
+        _dbContext.RemoveRange(variantImages);
     }
 
     private async Task UpdateProductVariantPositions(
@@ -117,7 +131,10 @@ public sealed partial class ProductService
         CancellationToken cancellationToken
     )
     {
-        var occupiedPositions = product.ProductVariants.Select(x => x.Position).ToList();
+        var occupiedPositions = product
+            .ProductVariants.Select(x => x.Position)
+            .OfType<int>()
+            .ToList();
         var finalPositions = command.RetainedProductVariants.Select(x => x.Position).ToList();
         var tempPositions = AllocateTemporaryPositions(
             occupiedPositions,
@@ -456,8 +473,6 @@ public sealed partial class ProductService
 
     private static string CreateTemporaryUniqueValue(string prefix) =>
         $"__{prefix}_update_{Guid.NewGuid():N}";
-
-    
 
     private static List<int> AllocateTemporaryPositions(
         IEnumerable<int> occupiedPositions,

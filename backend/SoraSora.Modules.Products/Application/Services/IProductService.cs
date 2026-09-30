@@ -16,7 +16,7 @@ public interface IProductService
         UpdateProductCommand command,
         CancellationToken cancellationToken
     );
-    Task DeleteProductAsync(string id, Guid version, CancellationToken cancellationToken);
+    Task ArchiveProductAsync(string id, Guid version, CancellationToken cancellationToken);
     Task<Product> GetProductByIdAsync(string id, CancellationToken cancellationToken = default);
     Task<List<Product>?> GetAllProductsAsync(CancellationToken cancellationToken = default);
     Task<ProductVariantResponse> GetProductVariantByIdAsync(

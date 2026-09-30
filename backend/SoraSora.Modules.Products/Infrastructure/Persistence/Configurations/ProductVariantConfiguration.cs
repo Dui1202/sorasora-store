@@ -14,7 +14,11 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
             {
                 table.HasCheckConstraint("CK_ProductVariant_CostPrice", "\"CostPrice\" >= 0");
                 table.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0");
-                table.HasCheckConstraint("CK_ProductVariant_Position", "\"Position\" >= 0");
+                table.HasCheckConstraint(
+                    "CK_ProductVariant_Position",
+                    "(\"IsArchived\" AND \"Position\" IS NULL) OR "
+                        + "(NOT \"IsArchived\" AND \"Position\" IS NOT NULL AND \"Position\" >= 0)"
+                );
             }
         );
 
@@ -27,7 +31,7 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
         builder.Property(x => x.CostPrice).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.SellingPrice).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.IsArchived).IsRequired().HasDefaultValue(false);
-        builder.Property(x => x.Position).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.Position).IsRequired(false);
 
         builder
             .HasOne(v => v.Product)
@@ -35,7 +39,11 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
+        builder
+            .HasIndex(x => new { x.ProductId, x.Position })
+            .IsUnique()
+            .HasFilter("\"IsArchived\" = false");
+        ;
         builder.HasIndex(x => x.ClientId).IsUnique();
     }
 }

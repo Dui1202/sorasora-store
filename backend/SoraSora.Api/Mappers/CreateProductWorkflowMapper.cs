@@ -28,23 +28,11 @@ internal static class CreateProductWorkflowMapper
                 )
                 .ToList(),
             Variations = request.Variations.Select(ToCreateVariationCommand).ToList(),
-            ProductVariants =
-                request.Variations.Count == 0
-                    ?
-                    [
-                        ToCreateBaseProductVariantWorkflowCommand(
-                            request,
-                            productImageFilesByClientId
-                        ),
-                    ]
-                    : request
-                        .ProductVariants.Select(variant =>
-                            ToCreateProductVariantWorkflowCommand(
-                                variant,
-                                variantImageFilesByClientId
-                            )
-                        )
-                        .ToList(),
+            ProductVariants = request
+                .ProductVariants.Select(variant =>
+                    ToCreateProductVariantWorkflowCommand(variant, variantImageFilesByClientId)
+                )
+                .ToList(),
         };
     }
 
@@ -59,45 +47,6 @@ internal static class CreateProductWorkflowMapper
             File = GetImageFile(request.ClientId, productImageFilesByClientId),
             Alt = request.Alt,
             Position = request.Position,
-        };
-    }
-
-    public static CreateProductVariantWorkflowCommand ToCreateBaseProductVariantWorkflowCommand(
-        CreateProductRequest request,
-        IDictionary<string, IFormFile> productImageFilesByClientId
-    )
-    {
-        var baseImage =
-            request.ProductImages.MinBy(image => image.Position)
-            ?? throw new InvalidOperationException(
-                "A product without variations must contain at least one product image."
-            );
-        var costPrice =
-            request.BaseCostPrice
-            ?? throw new InvalidOperationException(
-                "A product without variations must have a base cost price."
-            );
-        var sellingPrice =
-            request.BaseSellingPrice
-            ?? throw new InvalidOperationException(
-                "A product without variations must have a base selling price."
-            );
-
-        return new CreateProductVariantWorkflowCommand
-        {
-            ClientId = Ulid.NewUlid().ToString(),
-            Name = request.Name,
-            Sku = request.BaseSku,
-            CostPrice = costPrice,
-            SellingPrice = sellingPrice,
-            Position = 0,
-            InitialQuantity = request.BaseQuantity ?? 0,
-            ProductVariantImage = new CreateProductVariantImageWorkflowCommand
-            {
-                ClientId = baseImage.ClientId,
-                File = GetImageFile(baseImage.ClientId, productImageFilesByClientId),
-                Alt = baseImage.Alt,
-            },
         };
     }
 

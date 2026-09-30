@@ -180,8 +180,20 @@ public sealed class ProductWorkflowController(
         IDictionary<string, IFormFile> variantImages
     )
     {
-        if (files.Count == 0)
-            return;
+        foreach (var file in files)
+        {
+            if (file.Length == 0)
+            {
+                throw new BadRequestException("Image file cannot be empty.");
+            }
+
+            if (file.Length > ProductUploadLimits.MaxImageBytes)
+            {
+                throw new BadRequestException(
+                    $"Image file cannot exceed {ProductUploadLimits.MaxImageBytes / (1024 * 1024)} MB."
+                );
+            }
+        }
 
         var expectedProductImageIds = payload
             .NewImages.Select(x => x.ClientId)

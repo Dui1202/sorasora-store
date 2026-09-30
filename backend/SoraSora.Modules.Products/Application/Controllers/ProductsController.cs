@@ -37,7 +37,7 @@ public sealed class ProductsController(IProductService productService) : Control
         CancellationToken cancellationToken
     )
     {
-        await _productService.DeleteProductAsync(id, version, cancellationToken);
+        await _productService.ArchiveProductAsync(id, version, cancellationToken);
 
         return NoContent();
     }

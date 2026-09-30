@@ -17,11 +17,12 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         RuleFor(x => x.Description).MaximumLength(Product.MaxDescriptionLength);
         RuleFor(x => x.SupplierCountry).IsInEnum();
         RuleFor(x => x.SellMode).IsInEnum();
-        RuleFor(x => x.BaseQuantity).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ProductImages)
             .Cascade(CascadeMode.Stop)
             .NotNull()
             .NotEmpty()
+            .Must(images => images.All(image => image is not null))
+            .WithMessage("Product images must not contain null entries.")
             .Must(images => images.Count <= ProductUploadLimits.MaxProductImages)
             .WithMessage(
                 $"A product can contain at most {ProductUploadLimits.MaxProductImages} images."
@@ -30,35 +31,42 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
             .WithMessage("Product image positions must be unique.")
             .Must(HaveUniqueProductImageClientIds)
             .WithMessage("Product image client ids must be unique.");
-        RuleFor(x => x.ProductVariants).NotNull();
-        RuleFor(x => x.Variations).NotNull();
+        RuleFor(x => x.ProductVariants)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Must(HaveCompleteVariants)
+            .WithMessage("Product variants and their option selections must not be null or contain null entries.");
+        RuleFor(x => x.Variations)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Must(HaveCompleteVariations)
+            .WithMessage("Variations and their options must not be null or contain null entries.");
         RuleForEach(x => x.ProductImages).SetValidator(createProductImageRequestValidator);
-        RuleForEach(x => x.ProductVariants).SetValidator(createProductVariantRequestValidator);
-        RuleForEach(x => x.Variations).SetValidator(createVariationRequestValidator);
-
         When(
-            request => request.Variations is { Count: 0 },
-            () =>
-            {
-                RuleFor(request => request.BaseCostPrice).NotNull().GreaterThanOrEqualTo(0);
-                RuleFor(request => request.BaseSellingPrice).NotNull().GreaterThanOrEqualTo(0);
-                RuleFor(request => request.ProductVariants).Empty();
-                RuleFor(request => request.Variations).Empty();
-            }
+            request => request.ProductVariants is not null && HaveCompleteVariants(request.ProductVariants),
+            () => RuleForEach(x => x.ProductVariants).SetValidator(createProductVariantRequestValidator)
+        );
+        When(
+            request => request.Variations is not null && HaveCompleteVariations(request.Variations),
+            () => RuleForEach(x => x.Variations).SetValidator(createVariationRequestValidator)
         );
 
         When(
-            request => request.Variations is { Count: > 0 },
+            request => request.ProductVariants is not null
+                && HaveCompleteVariants(request.ProductVariants)
+                && request.Variations is not null
+                && HaveCompleteVariations(request.Variations),
             () =>
             {
                 RuleFor(request => request.ProductVariants)
                     .Cascade(CascadeMode.Stop)
-                    .NotEmpty()
-                    .Must(productVariants =>
-                        productVariants.Count <= ProductUploadLimits.MaxProductVariants
+                    .Must((request, productVariants) =>
+                        request.Variations.Count == 0
+                            ? productVariants.Count == 1
+                            : productVariants.Count is > 0 and <= ProductUploadLimits.MaxProductVariants
                     )
                     .WithMessage(
-                        $"A product can contain at most {ProductUploadLimits.MaxProductVariants} variants."
+                        $"A product without variations must contain exactly one variant; a product with variations must contain between one and {ProductUploadLimits.MaxProductVariants} variants."
                     )
                     .Must(HaveUniqueVariantPositions)
                     .WithMessage("Product variant positions must be unique.")
@@ -68,7 +76,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                         (request, variants) => HaveValidVariantOptionSelections(request, variants)
                     )
                     .WithMessage(
-                        "Each product variant must select exactly one valid option for each variation."
+                        "Each product variant must select exactly one valid option for each variation, or no options when the product has no variations."
                     )
                     .Must(
                         (request, variants) =>
@@ -78,7 +86,6 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 
                 RuleFor(request => request.Variations)
                     .Cascade(CascadeMode.Stop)
-                    .NotEmpty()
                     .Must(HaveUniqueVariationClientIds)
                     .WithMessage("Variation client ids must be unique.")
                     .Must(HaveUniqueVariationPositions)
@@ -89,6 +96,20 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
                     .WithMessage("Variation option client ids must be unique across the product.");
             }
         );
+    }
+
+    private static bool HaveCompleteVariants(IReadOnlyCollection<CreateProductVariantRequest> variants)
+    {
+        return variants.All(variant => variant is not null
+            && variant.ProductVariantOptions is not null
+            && variant.ProductVariantOptions.All(option => option is not null));
+    }
+
+    private static bool HaveCompleteVariations(IReadOnlyCollection<CreateVariationRequest> variations)
+    {
+        return variations.All(variation => variation is not null
+            && variation.VariationOptions is not null
+            && variation.VariationOptions.All(option => option is not null));
     }
 
     private static bool HaveUniqueProductImageClientIds(

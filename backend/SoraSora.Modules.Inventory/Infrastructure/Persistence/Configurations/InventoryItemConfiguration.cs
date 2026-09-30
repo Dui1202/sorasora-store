@@ -13,6 +13,7 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).IsRequired();
+        builder.Property(x => x.IsArchived).HasDefaultValue(false).IsRequired();
         builder.Property(x => x.ProductVariantId).IsRequired();
 
         builder
