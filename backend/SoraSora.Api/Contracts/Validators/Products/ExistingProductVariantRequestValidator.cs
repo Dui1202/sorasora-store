@@ -1,6 +1,7 @@
 using FluentValidation;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
+using SoraSora.Modules.Inventory.Contracts;
 using SoraSora.Modules.Media.Domain;
 using SoraSora.Modules.Products.Domain;
 

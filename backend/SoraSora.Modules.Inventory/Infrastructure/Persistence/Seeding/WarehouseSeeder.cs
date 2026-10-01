@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using SoraSora.Infrastructure.Persistence;
 using SoraSora.Infrastructure.Persistence.Interface;
+using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Inventory.Domain;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Extension;
 
 namespace SoraSora.Modules.Inventory.Infrastructure.Persistence.Seeding;
 

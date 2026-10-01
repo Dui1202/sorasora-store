@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Auth.Application.Extensions;
 

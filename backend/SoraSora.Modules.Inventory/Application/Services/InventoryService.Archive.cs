@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Extension;
 using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Inventory.Application.Services;

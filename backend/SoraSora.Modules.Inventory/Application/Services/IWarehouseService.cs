@@ -1,3 +1,6 @@
+using SoraSora.Modules.Inventory.Contracts.Commands;
+using SoraSora.Modules.Inventory.Contracts.Responds;
+
 namespace SoraSora.Modules.Inventory.Application.Services
 {
     public interface IWarehouseService
@@ -13,6 +16,8 @@ namespace SoraSora.Modules.Inventory.Application.Services
             string id,
             CancellationToken cancellationToken
         );
+
+        Task<WarehouseResponse> GetDefaultWarehouseAsync(CancellationToken cancellationToken);
         Task<WarehouseResponse> UpdateWarehouseAsync(
             UpdateWarehouseCommand command,
             CancellationToken cancellationToken

@@ -1,6 +1,8 @@
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Domain;
 
+namespace SoraSora.Api.Contracts.Commands.ProductWorkflow;
+
 public sealed record CreateProductWorkflowCommand
 {
     public required string Name { get; init; }

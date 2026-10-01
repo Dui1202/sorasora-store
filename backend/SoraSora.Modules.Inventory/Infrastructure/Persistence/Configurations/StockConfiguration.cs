@@ -1,6 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Inventory.Domain;
+
+namespace SoraSora.Modules.Inventory.Infrastructure.Persistence.Configurations;
 
 public class StockConfiguration : IEntityTypeConfiguration<Stock>
 {

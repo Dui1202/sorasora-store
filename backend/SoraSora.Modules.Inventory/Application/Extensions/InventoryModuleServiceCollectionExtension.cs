@@ -1,9 +1,13 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SoraSora.Infrastructure.Persistence.Interface;
+using SoraSora.Modules.Inventory.Application.Controllers;
 using SoraSora.Modules.Inventory.Application.Services;
-using SoraSora.Modules.Inventory.Infrastructure.Persistence;
+using SoraSora.Modules.Inventory.Contracts.Validators;
 using SoraSora.Modules.Inventory.Infrastructure.Persistence.Seeding;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence;
+
+namespace SoraSora.Modules.Inventory.Application.Extensions;
 
 public static class InventoryModuleServiceCollectionExtension
 {

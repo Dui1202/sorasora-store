@@ -1,6 +1,9 @@
 using System.Security.Cryptography.X509Certificates;
 using FluentValidation;
 using SoraSora.Modules.Orders.Contracts.Requests;
+using SoraSora.Modules.Orders.Domain;
+
+namespace SoraSora.Modules.Orders.Contracts.Validators;
 
 public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
 {

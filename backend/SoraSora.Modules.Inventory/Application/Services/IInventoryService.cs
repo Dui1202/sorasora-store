@@ -1,4 +1,5 @@
 using SoraSora.Modules.Inventory.Contracts.Commands;
+using SoraSora.Modules.Inventory.Contracts.Responds;
 using SoraSora.Modules.Inventory.Domain;
 
 namespace SoraSora.Modules.Inventory.Application.Services;

@@ -3,7 +3,7 @@ namespace SoraSora.Modules.Orders.Contracts.Commands;
 public sealed record UpdateOrderCommand
 {
     public string? Id { get; init; }
-
+    public Guid Version { get; init; }
     public required string CustomerName { get; init; }
     public string? CustomerEmail { get; init; }
     public required string CustomerPhoneNumber { get; init; }

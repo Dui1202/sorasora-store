@@ -1,3 +1,4 @@
+using SoraSora.Api.Contracts.Commands.OrderWorkflow;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Orders.Application.Services;
@@ -37,13 +38,11 @@ namespace SoraSora.Api.Application.Workflow
 
             var order = await _orderService.CreateOrderAsync(createOrderCommand, cancellationToken);
 
-            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
-
             foreach (var orderItem in order.OrderItems)
             {
                 await _inventoryService.ReserveStockAsync(
                     productVariantId: orderItem.ProductVariantId,
-                    warehouseId: warehouseId,
+                    warehouseId: command.WarehouseId,
                     quantity: orderItem.Quantity,
                     description: $"Reserve stock for order #{order.Id}.",
                     cancellationToken
@@ -57,15 +56,19 @@ namespace SoraSora.Api.Application.Workflow
 
         public async Task<OrderResponse> CancelOrderAsync(
             string orderId,
+            string warehouseId,
+            Guid version,
             CancellationToken cancellationToken = default
         )
         {
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(
                 cancellationToken
             );
-            var order = await _orderService.CancelOrderAsync(orderId, cancellationToken);
+            var order = await _orderService.CancelOrderAsync(orderId, version, cancellationToken);
 
-            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+            // var defaultWarehouse = await _warehouseService.GetDefaultWarehouseAsync(
+            //     cancellationToken
+            // );
 
             foreach (var orderItem in order.OrderItems)
             {
@@ -85,15 +88,17 @@ namespace SoraSora.Api.Application.Workflow
 
         public async Task<OrderResponse> CompleteOrderAsync(
             string orderId,
+            string warehouseId,
+            Guid version,
             CancellationToken cancellationToken = default
         )
         {
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(
                 cancellationToken
             );
-            var order = await _orderService.CompleteOrderAsync(orderId, cancellationToken);
+            var order = await _orderService.CompleteOrderAsync(orderId, version, cancellationToken);
 
-            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+            // var warehouse = await _warehouseService.GetDefaultWarehouseAsync(cancellationToken);
 
             foreach (var orderItem in order.OrderItems)
             {
@@ -109,15 +114,6 @@ namespace SoraSora.Api.Application.Workflow
             await transaction.CommitAsync(cancellationToken);
 
             return order;
-        }
-
-        private async Task<string> GetDefaultWarehouseIdAsync(CancellationToken cancellationToken)
-        {
-            var warehouses = await _warehouseService.GetAllWarehousesAsync(cancellationToken);
-            var defaultWarehouse = warehouses?.SingleOrDefault(warehouse => warehouse.IsDefault)
-                ?? throw new InvalidOperationException("The default warehouse is missing");
-
-            return defaultWarehouse.Id;
         }
 
         private async Task<CreateOrderCommand> InstantiateCreateOrderCommand(
@@ -136,9 +132,11 @@ namespace SoraSora.Api.Application.Workflow
 
                 var createOrderItemCommand = new CreateOrderItemCommand
                 {
+                    ProductName = productVariant.Name,
                     ProductVariantId = productVariant.Id,
                     Quantity = placeOrderItem.Quantity,
                     SellingPrice = productVariant.SellingPrice,
+                    Sku = productVariant.Sku,
                 };
 
                 createOrderItemCommandList.Add(createOrderItemCommand);
@@ -146,6 +144,7 @@ namespace SoraSora.Api.Application.Workflow
 
             return new CreateOrderCommand
             {
+                WarehouseId = command.WarehouseId,
                 CustomerName = command.CustomerName,
                 CustomerPhoneNumber = command.CustomerPhoneNumber,
                 CustomerEmail = command.CustomerEmail,

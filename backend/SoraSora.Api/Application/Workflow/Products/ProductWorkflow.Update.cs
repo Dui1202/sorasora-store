@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.EntityFrameworkCore;
+using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
@@ -26,20 +27,10 @@ public sealed partial class ProductWorkflow
         var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var product =
-                await _dbContext
-                    .Products()
-                    .Where(x => !x.IsArchived)
-                    .AsSplitQuery()
-                    .Include(x => x.ProductImages)
-                    .Include(x => x.ProductVariants)
-                        .ThenInclude(x => x.ProductVariantImage)
-                    .Include(x => x.ProductVariants)
-                        .ThenInclude(x => x.ProductVariantOptions)
-                    .Include(x => x.Variations)
-                        .ThenInclude(x => x.VariationOptions)
-                    .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
-                ?? throw new NotFoundException($"Product with Id {command.Id} can't be found.");
+            var product = await _productService.GetProductByIdForUpdateAsync(
+                command.Id,
+                cancellationToken
+            );
 
             var retainedProductVariantsId = command
                 .RetainedProductVariants.Select(x => x.Id)
@@ -145,7 +136,9 @@ public sealed partial class ProductWorkflow
         {
             if (!variantsByClientId.TryGetValue(variantCommand.ClientId, out var variant))
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(
+                    $"Cannot create inventory for product {product.Id}: the product service did not create a variant with client ID {variantCommand.ClientId}."
+                );
             }
 
             var createInventoryItemCommand =
@@ -220,7 +213,9 @@ public sealed partial class ProductWorkflow
         {
             if (!existingVariantByIds.TryGetValue(id, out var variant))
             {
-                throw new InvalidOperationException("Cannot find the unretained variant");
+                throw new InvalidOperationException(
+                    $"Cannot schedule image deletion for product {product.Id}: unretained variant {id} is missing from the existing variants."
+                );
             }
 
             if (variant.ProductVariantImage is { } existingImage)
@@ -239,14 +234,16 @@ public sealed partial class ProductWorkflow
         {
             if (!retainedVariantByIds.TryGetValue(id, out var retainedVariant))
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(
+                    $"Cannot process image replacement for product {product.Id}: retained variant {id} is missing from the update command."
+                );
             }
 
             if (retainedVariant.NewImage is not null)
             {
                 if (!existingVariantByIds.TryGetValue(id, out var variant))
                 {
-                    throw new InvalidOperationException();
+                    throw new ProductVariantOwnershipException(id, product.Id);
                 }
 
                 if (variant.ProductVariantImage is { } existingImage)
@@ -303,7 +300,7 @@ public sealed partial class ProductWorkflow
                 )
             )
             {
-                throw new InvalidOperationException();
+                throw new ProductImageOwnershipException(image.MediaAssetId, product.Id);
             }
 
             productImage.UpdateDetails(position: tempPositions[tempIndex++]);
@@ -320,7 +317,7 @@ public sealed partial class ProductWorkflow
                 )
             )
             {
-                throw new InvalidOperationException();
+                throw new ProductImageOwnershipException(image.MediaAssetId, product.Id);
             }
 
             productImage.UpdateDetails(position: image.Position);

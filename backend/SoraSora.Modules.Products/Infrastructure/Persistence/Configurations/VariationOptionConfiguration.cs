@@ -14,7 +14,7 @@ public sealed class VariationOptionConfiguration : IEntityTypeConfiguration<Vari
         builder.HasKey(x => x.Id);
         builder.HasAlternateKey(x => new { x.Id, x.VariationId });
         builder.HasIndex(x => new { x.VariationId, x.Value }).IsUnique();
-        builder.HasIndex(x => new { x.VariationId, x.Position });
+        builder.HasIndex(x => new { x.VariationId, x.Position }).IsUnique();
 
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.VariationId).IsRequired();

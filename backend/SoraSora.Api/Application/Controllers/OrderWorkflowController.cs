@@ -6,6 +6,8 @@ using SoraSora.Modules.Orders.Contracts.Requests;
 using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;
 
+namespace SoraSora.Api.Application.Controllers;
+
 [ApiController]
 [Route(ApiRoute.OrderApiRoute)]
 public sealed class OrderController(OrderWorkflow orderWorkflow) : ControllerBase

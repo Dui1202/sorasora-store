@@ -1,8 +1,12 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Inventory.Application.Services;
+using SoraSora.Modules.Inventory.Contracts.Requests;
+using SoraSora.Modules.Inventory.Mappers;
 using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;
+
+namespace SoraSora.Modules.Inventory.Application.Controllers;
 
 [ApiController]
 [Route(ApiRoute.WarehouseApiRoute)]

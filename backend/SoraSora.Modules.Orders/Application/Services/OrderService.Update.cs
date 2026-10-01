@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Domain;
 using SoraSora.Modules.Orders.Exceptions;
+using SoraSora.Modules.Orders.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Orders.Mappers;
 using SoraSora.Shared.Exceptions;
 
@@ -94,9 +96,11 @@ public sealed partial class OrderService : IOrderService
                 );
             }
             var newOrderItem = OrderItem.Create(
+                productName: item.ProductName!,
                 productVariantId: item.ProductVariantId,
                 sellingPrice: item.SellingPrice,
-                quantity: item.Quantity
+                quantity: item.Quantity,
+                sku: item.Sku!
             );
 
             order.AddOrderItem(newOrderItem);

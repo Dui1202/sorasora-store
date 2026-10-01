@@ -2,8 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SoraSora.Infrastructure.Abstractions;
 using SoraSora.Infrastructure.Domain;
-using SoraSora.Infrastructure.Persistence;
 using SoraSora.Infrastructure.Persistence.Extensions;
+using SoraSora.Infrastructure.Persistence;
+using SoraSora.Modules.Media.Infrastructure.Persistence;
 
 namespace SoraSora.Modules.Media.Infrastructure.Storage;
 

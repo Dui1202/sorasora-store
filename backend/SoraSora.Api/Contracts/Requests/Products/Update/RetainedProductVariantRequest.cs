@@ -1,4 +1,5 @@
 using SoraSora.Api.Contracts.Requests.Products.Create;
+using SoraSora.Modules.Inventory.Contracts;
 
 namespace SoraSora.Api.Contracts.Requests.Products.Update;
 

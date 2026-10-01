@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Domain;
+using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Media.Domain;
 
-namespace SoraSora.Infrastructure.Persistence.Extensions
+namespace SoraSora.Modules.Media.Infrastructure.Persistence
 {
     public static class MediaModuleDbContextExtension
     {

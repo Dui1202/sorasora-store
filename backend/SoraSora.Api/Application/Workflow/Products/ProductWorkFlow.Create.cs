@@ -1,3 +1,4 @@
+using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Responses;

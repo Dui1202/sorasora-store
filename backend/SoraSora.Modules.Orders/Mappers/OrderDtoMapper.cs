@@ -1,4 +1,5 @@
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Domain;
 
 namespace SoraSora.Modules.Orders.Mappers;
 
@@ -8,6 +9,7 @@ internal static class OrderDtoMapper
     {
         return new OrderResponse(
             Id: order.Id,
+            Version: order.Version,
             OrderItems: order.OrderItems.Select(ToOrderItemResponse).ToList(),
             TotalPrice: order.TotalPrice,
             CustomerName: order.CustomerName,

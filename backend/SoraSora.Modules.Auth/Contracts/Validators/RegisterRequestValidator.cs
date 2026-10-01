@@ -1,4 +1,5 @@
 using FluentValidation;
+using SoraSora.Modules.Auth.Contracts.Requests;
 
 namespace SoraSora.Modules.Auth.Contracts.Validators;
 

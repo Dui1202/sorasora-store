@@ -1,8 +1,9 @@
-using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 using NUlid;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
+using SoraSora.Api.Contracts.Commands.ProductWorkflow;
+using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
-using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Api.Mappers;

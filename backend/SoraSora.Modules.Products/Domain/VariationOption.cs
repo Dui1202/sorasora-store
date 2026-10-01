@@ -7,13 +7,13 @@ namespace SoraSora.Modules.Products.Domain;
 public sealed class VariationOption : IAuditable
 {
     private readonly List<ProductVariantOption> _productVariantOptions = [];
-    public string Id { get; set; } = Ulid.NewUlid().ToString();
-    public string VariationId { get; set; } = null!;
-    public string Value { get; set; } = null!;
-    public int Position { get; set; } = 0;
+    public string Id { get; private set; } = Ulid.NewUlid().ToString();
+    public string VariationId { get; private set; } = null!;
+    public string Value { get; private set; } = null!;
+    public int Position { get; private set; } = 0;
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
-    public Variation Variation { get; set; } = null!;
+    public Variation Variation { get; private set; } = null!;
     public IReadOnlyCollection<ProductVariantOption> ProductVariantOptions =>
         _productVariantOptions;
 

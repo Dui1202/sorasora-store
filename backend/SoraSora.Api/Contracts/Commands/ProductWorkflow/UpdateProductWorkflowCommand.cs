@@ -1,6 +1,8 @@
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Domain;
 
+namespace SoraSora.Api.Contracts.Commands.ProductWorkflow;
+
 public sealed record UpdateProductWorkflowCommand
 {
     public string Id { get; init; } = string.Empty;

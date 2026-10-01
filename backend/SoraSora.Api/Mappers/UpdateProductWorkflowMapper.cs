@@ -1,6 +1,8 @@
 using NUlid;
+using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
+using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Commands.Update;
 

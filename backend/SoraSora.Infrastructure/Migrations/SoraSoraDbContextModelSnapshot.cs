@@ -357,11 +357,13 @@ namespace SoraSora.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("ProductVariantId")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Sku")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -641,6 +643,7 @@ namespace SoraSora.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ClientId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("CostPrice")
@@ -661,10 +664,8 @@ namespace SoraSora.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("Position")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("Position")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ProductId")
                         .IsRequired()
@@ -683,14 +684,18 @@ namespace SoraSora.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId", "Position")
+                    b.HasIndex("ClientId")
                         .IsUnique();
+
+                    b.HasIndex("ProductId", "Position")
+                        .IsUnique()
+                        .HasFilter("\"IsArchived\" = false");
 
                     b.ToTable("ProductVariant", null, t =>
                         {
                             t.HasCheckConstraint("CK_ProductVariant_CostPrice", "\"CostPrice\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductVariant_Position", "\"Position\" >= 0");
+                            t.HasCheckConstraint("CK_ProductVariant_Position", "(\"IsArchived\" AND \"Position\" IS NULL) OR (NOT \"IsArchived\" AND \"Position\" IS NOT NULL AND \"Position\" >= 0)");
 
                             t.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0");
                         });
@@ -767,7 +772,8 @@ namespace SoraSora.Infrastructure.Migrations
                     b.HasIndex("ProductId", "Name")
                         .IsUnique();
 
-                    b.HasIndex("ProductId", "Position");
+                    b.HasIndex("ProductId", "Position")
+                        .IsUnique();
 
                     b.ToTable("Variation", (string)null);
                 });
@@ -800,7 +806,8 @@ namespace SoraSora.Infrastructure.Migrations
 
                     b.HasAlternateKey("Id", "VariationId");
 
-                    b.HasIndex("VariationId", "Position");
+                    b.HasIndex("VariationId", "Position")
+                        .IsUnique();
 
                     b.HasIndex("VariationId", "Value")
                         .IsUnique();

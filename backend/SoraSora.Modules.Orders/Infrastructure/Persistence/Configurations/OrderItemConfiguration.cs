@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SoraSora.Modules.Orders.Domain;
 
 namespace SoraSora.Modules.Orders.Infrastructure.Persistence.Configurations;
 

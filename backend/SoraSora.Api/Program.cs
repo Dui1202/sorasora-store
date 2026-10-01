@@ -3,6 +3,7 @@ using SoraSora.Api.Application.Extensions;
 using SoraSora.Api.Exceptions;
 using SoraSora.Infrastructure.Persistence.Extensions;
 using SoraSora.Modules.Auth.Application.Extensions;
+using SoraSora.Modules.Inventory.Application.Extensions;
 using SoraSora.Modules.Media.Application.Extensions;
 using SoraSora.Modules.Orders.Application.Extensions;
 using SoraSora.Modules.Products.Application.Extensions;

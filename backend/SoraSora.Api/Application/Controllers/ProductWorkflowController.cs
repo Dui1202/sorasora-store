@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SoraSora.Api.Application.Workflow.Products;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
+using SoraSora.Api.Contracts.Requests;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Contracts;

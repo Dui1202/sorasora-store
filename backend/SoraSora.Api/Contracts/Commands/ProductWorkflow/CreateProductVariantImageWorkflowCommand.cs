@@ -1,3 +1,5 @@
+namespace SoraSora.Api.Contracts.Commands.ProductWorkflow;
+
 public sealed record CreateProductVariantImageWorkflowCommand
 {
     public required string ClientId { get; init; }

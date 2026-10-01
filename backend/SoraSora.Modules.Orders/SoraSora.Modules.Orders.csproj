@@ -16,7 +16,6 @@
   </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="../SoraSora.Infrastructure/SoraSora.Infrastructure.csproj" />
-      <ProjectReference Include="../SoraSora.Modules.Inventory/SoraSora.Modules.Inventory.csproj" />
       <ProjectReference Include="../SoraSora.Shared/SoraSora.Shared.csproj" />
     </ItemGroup>
 

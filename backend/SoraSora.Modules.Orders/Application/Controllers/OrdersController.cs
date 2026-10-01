@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using SoraSora.Modules.Orders.Application.Services;
 using SoraSora.Shared.Route;
 
+namespace SoraSora.Modules.Orders.Application.Controllers;
+
 [ApiController]
 [Route(ApiRoute.OrderApiRoute)]
 public sealed class OrdersController(IOrderService orderService) : ControllerBase

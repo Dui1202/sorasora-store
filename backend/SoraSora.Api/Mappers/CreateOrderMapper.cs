@@ -1,3 +1,4 @@
+using SoraSora.Api.Contracts.Commands.OrderWorkflow;
 using SoraSora.Modules.Orders.Contracts.Requests;
 
 namespace SoraSora.Api.Mappers;
@@ -8,6 +9,7 @@ public static class PlaceOrderWorkflowMapper
     {
         return new PlaceOrderWorkflowCommand
         {
+            WarehouseId = request.WarehouseId,
             CustomerName = request.CustomerName,
             CustomerEmail = request.CustomerEmail,
             CustomerPhoneNumber = request.CustomerPhoneNumber,

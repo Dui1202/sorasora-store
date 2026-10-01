@@ -6,7 +6,8 @@ namespace SoraSora.Modules.Products.Domain;
 
 public sealed class ProductVariant : IAuditable
 {
-    public const int MaxNameLength = 100;
+    public const int MaxNameLength = 255;
+    public const int MaxSkuLength = 40;
     private readonly List<ProductVariantOption> _productVariantOptions = [];
     public string Id { get; private set; } = Ulid.NewUlid().ToString();
     public string ClientId { get; private set; } = null!;
@@ -35,7 +36,7 @@ public sealed class ProductVariant : IAuditable
         int costPrice,
         int sellingPrice,
         int position,
-        string clientId 
+        string clientId
     )
     {
         ValidateDetails(name, sku, costPrice, sellingPrice, position);
@@ -127,6 +128,14 @@ public sealed class ProductVariant : IAuditable
             throw new ProductDomainException(
                 $"Product variant name cannot exceed {MaxNameLength} characters.",
                 nameof(name)
+            );
+        }
+
+        if (sku?.Length > MaxSkuLength)
+        {
+            throw new ProductDomainException(
+                $"Sku length cannot exceed {MaxSkuLength} characters",
+                nameof(sku)
             );
         }
 

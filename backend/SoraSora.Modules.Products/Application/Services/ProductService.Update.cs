@@ -1,3 +1,4 @@
+using System.Data;
 using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Products.Application.Services.Loggers;
@@ -29,6 +30,11 @@ public sealed partial class ProductService
         {
             throw new ProductConcurrencyException(product.Id);
         }
+
+        var ownTransaction = _dbContext.Database.CurrentTransaction is null;
+        await using var transaction = ownTransaction
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
 
         try
         {
@@ -69,10 +75,23 @@ public sealed partial class ProductService
             );
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
         }
-        catch (DbUpdateConcurrencyException ex)
+        catch (Exception exception)
         {
-            throw new ProductConcurrencyException(product.Id, ex);
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+            }
+
+            if (exception is DbUpdateConcurrencyException)
+            {
+                throw new ProductConcurrencyException(product.Id, exception);
+            }
         }
 
         _logger.ProductUpdated(product.Name, product.Id);

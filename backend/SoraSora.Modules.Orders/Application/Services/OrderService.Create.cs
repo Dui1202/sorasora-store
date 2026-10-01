@@ -1,5 +1,7 @@
 using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Domain;
+using SoraSora.Modules.Orders.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Orders.Mappers;
 
 namespace SoraSora.Modules.Orders.Application.Services;
@@ -23,9 +25,11 @@ public sealed partial class OrderService : IOrderService
         foreach (var itemCommand in command.OrderItems)
         {
             var orderItem = OrderItem.Create(
+                productName: itemCommand.ProductName,
                 productVariantId: itemCommand.ProductVariantId,
                 sellingPrice: itemCommand.SellingPrice,
-                quantity: itemCommand.Quantity
+                quantity: itemCommand.Quantity,
+                sku: itemCommand.Sku
             );
 
             order.AddOrderItem(orderItem);

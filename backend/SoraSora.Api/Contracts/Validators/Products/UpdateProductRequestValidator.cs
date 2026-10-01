@@ -1,7 +1,7 @@
 using FluentValidation;
-using SoraSora.Modules.Products.Contracts;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
+using SoraSora.Modules.Products.Contracts;
 using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Api.Contracts.Validators.Products;

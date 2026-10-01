@@ -1,6 +1,8 @@
 using NUlid;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 
+namespace SoraSora.Api.Contracts.Commands.ProductWorkflow;
+
 public sealed record CreateProductVariantWorkflowCommand
 {
     public required string ClientId { get; init; } = Ulid.NewUlid().ToString();

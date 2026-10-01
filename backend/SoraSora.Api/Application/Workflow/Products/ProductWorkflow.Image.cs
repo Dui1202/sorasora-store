@@ -1,8 +1,9 @@
 using System.IO.Compression;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Modules.Media.Contracts.Upload;
-using SoraSora.Modules.Media.Domain;
 using SoraSora.Modules.Media.Domain.Upload;
+using SoraSora.Modules.Media.Domain;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Domain;
 

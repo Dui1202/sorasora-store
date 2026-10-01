@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Orders.Mappers;
 using SoraSora.Shared.Exceptions;
 
@@ -7,7 +8,7 @@ namespace SoraSora.Modules.Orders.Application.Services;
 
 public sealed partial class OrderService : IOrderService
 {
-    public async Task<IReadOnlyCollection<OrderResponse>?> GetAllOrdersAsync(
+    public async Task<IReadOnlyCollection<OrderResponse>> GetAllOrdersAsync(
         CancellationToken cancellationToken
     )
     {

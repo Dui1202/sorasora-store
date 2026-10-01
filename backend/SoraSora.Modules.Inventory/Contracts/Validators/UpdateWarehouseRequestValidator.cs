@@ -1,5 +1,8 @@
 using FluentValidation;
+using SoraSora.Modules.Inventory.Contracts.Requests;
 using SoraSora.Modules.Inventory.Domain;
+
+namespace SoraSora.Modules.Inventory.Contracts.Validators;
 
 public sealed class UpdateWarehouseRequestValidator : AbstractValidator<UpdateWarehouseRequest>
 {

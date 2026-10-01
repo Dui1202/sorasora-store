@@ -12,7 +12,7 @@ public sealed class VariationConfiguration : IEntityTypeConfiguration<Variation>
         builder.ToTable("Variation");
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => new { x.ProductId, x.Name }).IsUnique();
-        builder.HasIndex(x => new { x.ProductId, x.Position });
+        builder.HasIndex(x => new { x.ProductId, x.Position }).IsUnique();
 
         builder.Property(x => x.Id).ValueGeneratedNever();
 

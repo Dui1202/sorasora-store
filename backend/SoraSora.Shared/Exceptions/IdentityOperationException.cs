@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 
+namespace SoraSora.Shared.Exceptions;
+
 public sealed class IdentityOperationException(
     IEnumerable<IdentityError> errors,
     string message = "Identity operation failed."

@@ -3,6 +3,7 @@ using Npgsql;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Inventory.Domain;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Extension;
 using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Inventory.Application.Services;

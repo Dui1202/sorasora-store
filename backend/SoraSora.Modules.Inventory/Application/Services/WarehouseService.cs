@@ -1,6 +1,12 @@
+using System.Runtime.CompilerServices;
+using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Infrastructure.Persistence;
+using SoraSora.Modules.Inventory.Contracts.Commands;
+using SoraSora.Modules.Inventory.Contracts.Responds;
 using SoraSora.Modules.Inventory.Domain;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Extension;
+using SoraSora.Modules.Inventory.Mappers;
 using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Modules.Inventory.Application.Services
@@ -124,6 +130,20 @@ namespace SoraSora.Modules.Inventory.Application.Services
             await transaction.CommitAsync(cancellationToken);
         }
 
+        public async Task<WarehouseResponse> GetDefaultWarehouseAsync(
+            CancellationToken cancellationToken
+        )
+        {
+            var defaultWarehouse =
+                await _dbContext
+                    .Warehouses()
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(x => x.IsDefault == true, cancellationToken)
+                ?? throw new NotFoundException("Default warehouse is not found.");
+
+            return WarehouseDtoMapper.ToWarehouseResponse(defaultWarehouse);
+        }
+
         public async Task<IReadOnlyCollection<WarehouseResponse>?> GetAllWarehousesAsync(
             CancellationToken cancellationToken
         )
@@ -166,15 +186,15 @@ namespace SoraSora.Modules.Inventory.Application.Services
                 throw new ConflictException("Warehouse name must be unique.");
             }
 
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+                cancellationToken
+            );
+
             var warehouse =
                 await _dbContext
                     .Warehouses()
                     .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
                 ?? throw new NotFoundException("Warehouse is not found.");
-
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
-                cancellationToken
-            );
 
             if (warehouse.IsArchive)
             {

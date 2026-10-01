@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Diagnostics;
 using SoraSora.Modules.Orders.Exceptions;
 using SoraSora.Shared.Interface;
 
+namespace SoraSora.Modules.Orders.Domain;
+
 public sealed class Order : IAuditable
 {
     public const int MaxCustomerNameLength = 100;
@@ -13,6 +15,7 @@ public sealed class Order : IAuditable
 
     private readonly List<OrderItem> _orderItem = [];
     public string Id { get; private set; } = NUlid.Ulid.NewUlid().ToString();
+    public Guid Version { get; private set; } = Guid.NewGuid();
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItem;
     public int TotalPrice => _orderItem.Sum(x => x.SellingPrice * x.Quantity);
     public string CustomerName { get; private set; } = null!;
@@ -57,6 +60,11 @@ public sealed class Order : IAuditable
             StoreNote = storeNote,
             Status = OrderStatus.Pending,
         };
+    }
+
+    public void AdvanceVersion()
+    {
+        Version = Guid.NewGuid();
     }
 
     public void AddOrderItem(OrderItem item)

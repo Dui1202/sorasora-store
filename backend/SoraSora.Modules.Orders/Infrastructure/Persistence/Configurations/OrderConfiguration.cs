@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SoraSora.Modules.Orders.Domain;
 
 namespace SoraSora.Modules.Orders.Infrastructure.Persistence.Configurations;
 
@@ -10,9 +11,13 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.ToTable("Orders");
 
         builder.HasKey(x => x.Id);
-        
+
         builder.Property(x => x.Id).ValueGeneratedNever();
-        builder.Property(x => x.CustomerName).HasMaxLength(Order.MaxCustomerNameLength).IsRequired();
+        builder.Property(x => x.Version).ValueGeneratedNever().IsRequired().IsConcurrencyToken();
+        builder
+            .Property(x => x.CustomerName)
+            .HasMaxLength(Order.MaxCustomerNameLength)
+            .IsRequired();
         builder
             .Property(x => x.CustomerEmail)
             .HasMaxLength(Order.MaxCustomerEmailLength)

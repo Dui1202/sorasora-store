@@ -1,4 +1,8 @@
+using SoraSora.Modules.Inventory.Contracts;
 using SoraSora.Modules.Products.Contracts.Commands.Create;
+using SoraSora.Modules.Products.Contracts.Commands.Update;
+
+namespace SoraSora.Api.Contracts.Commands.ProductWorkflow;
 
 public sealed record RetainedProductVariantWorkflowCommand
 {
