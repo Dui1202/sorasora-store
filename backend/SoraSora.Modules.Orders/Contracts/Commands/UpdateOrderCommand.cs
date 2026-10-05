@@ -10,5 +10,4 @@ public sealed record UpdateOrderCommand
     public required string ShippingAddress { get; init; }
     public string? CustomerNote { get; init; }
     public string? StoreNote { get; init; }
-    public IReadOnlyCollection<UpdateOrderItemCommand> OrderItems { get; init; } = [];
 }

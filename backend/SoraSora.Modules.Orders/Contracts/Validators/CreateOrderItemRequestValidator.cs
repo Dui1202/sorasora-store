@@ -9,6 +9,6 @@ public class CreateOrderItemRequestValidator : AbstractValidator<CreateOrderItem
     public CreateOrderItemRequestValidator()
     {
         RuleFor(x => x.ProductVariantId).NotEmpty();
-        RuleFor(x => x.Quantity).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Quantity).GreaterThan(0);
     }
 }

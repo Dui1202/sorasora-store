@@ -20,7 +20,7 @@ namespace SoraSora.Modules.Orders.Application.Services
             Guid version,
             CancellationToken cancellationToken
         );
-        Task<OrderResponse> UpdateOrderAsync(
+        Task<OrderResponse> UpdateOrderMetadataAsync(
             UpdateOrderCommand command,
             CancellationToken cancellationToken
         );

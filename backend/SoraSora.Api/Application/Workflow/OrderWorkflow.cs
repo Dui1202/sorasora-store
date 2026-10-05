@@ -31,12 +31,45 @@ namespace SoraSora.Api.Application.Workflow
                 cancellationToken
             );
 
-            var createOrderCommand = await InstantiateCreateOrderCommand(
+            var createOrderCommand = await MapPlaceOrderWorkflowCommandToCreateOrderCommandAsync(
                 command,
                 cancellationToken
             );
 
-            var order = await _orderService.CreateOrderAsync(createOrderCommand, cancellationToken);
+            var order = await CreateOrderAndReserveStockAsync(createOrderCommand, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            return order;
+        }
+
+        public async Task<OrderResponse> CreateOrderAsync(
+            CreateOrderWorkflowCommand command,
+            CancellationToken cancellationToken = default
+        )
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+                cancellationToken
+            );
+
+            var createOrderCommand = await MapCreateOrderWorkflowCommandToCreateOrderCommandAsync(
+                command,
+                cancellationToken
+            );
+
+            var order = await CreateOrderAndReserveStockAsync(createOrderCommand, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            return order;
+        }
+
+        private async Task<OrderResponse> CreateOrderAndReserveStockAsync(
+            CreateOrderCommand command,
+            CancellationToken cancellationToken
+        )
+        {
+            var order = await _orderService.CreateOrderAsync(command, cancellationToken);
 
             foreach (var orderItem in order.OrderItems)
             {
@@ -48,8 +81,6 @@ namespace SoraSora.Api.Application.Workflow
                     cancellationToken
                 );
             }
-
-            await transaction.CommitAsync(cancellationToken);
 
             return order;
         }
@@ -116,14 +147,58 @@ namespace SoraSora.Api.Application.Workflow
             return order;
         }
 
-        private async Task<CreateOrderCommand> InstantiateCreateOrderCommand(
+        private async Task<CreateOrderCommand> MapCreateOrderWorkflowCommandToCreateOrderCommandAsync(
+            CreateOrderWorkflowCommand command,
+            CancellationToken cancellationToken
+        )
+        {
+            var orderItems = await MapOrderItemsToCreateOrderItemCommandsAsync(
+                command.OrderItems,
+                cancellationToken
+            );
+            return new CreateOrderCommand
+            {
+                WarehouseId = command.WarehouseId,
+                CustomerName = command.CustomerName,
+                CustomerPhoneNumber = command.CustomerPhoneNumber,
+                CustomerEmail = command.CustomerEmail,
+                CustomerNote = command.CustomerNote,
+                ShippingAddress = command.ShippingAddress,
+                StoreNote = command.StoreNote,
+                OrderItems = orderItems,
+            };
+        }
+
+        private async Task<CreateOrderCommand> MapPlaceOrderWorkflowCommandToCreateOrderCommandAsync(
             PlaceOrderWorkflowCommand command,
+            CancellationToken cancellationToken
+        )
+        {
+            var createOrderItemCommandList = await MapOrderItemsToCreateOrderItemCommandsAsync(
+                command.OrderItems,
+                cancellationToken
+            );
+
+            return new CreateOrderCommand
+            {
+                WarehouseId = command.WarehouseId,
+                CustomerName = command.CustomerName,
+                CustomerPhoneNumber = command.CustomerPhoneNumber,
+                CustomerEmail = command.CustomerEmail,
+                CustomerNote = command.CustomerNote,
+                ShippingAddress = command.ShippingAddress,
+                OrderItems = createOrderItemCommandList,
+            };
+        }
+
+        private async Task<IReadOnlyCollection<CreateOrderItemCommand>> MapOrderItemsToCreateOrderItemCommandsAsync(
+            IReadOnlyCollection<PlaceOrderItemCommand> orderItems,
             CancellationToken cancellationToken
         )
         {
             var createOrderItemCommandList = new List<CreateOrderItemCommand>();
 
-            foreach (var placeOrderItem in command.OrderItems)
+            foreach (var placeOrderItem in orderItems)
             {
                 var productVariant = await _productService.GetProductVariantByIdAsync(
                     placeOrderItem.ProductVariantId,
@@ -142,17 +217,7 @@ namespace SoraSora.Api.Application.Workflow
                 createOrderItemCommandList.Add(createOrderItemCommand);
             }
 
-            return new CreateOrderCommand
-            {
-                WarehouseId = command.WarehouseId,
-                CustomerName = command.CustomerName,
-                CustomerPhoneNumber = command.CustomerPhoneNumber,
-                CustomerEmail = command.CustomerEmail,
-                CustomerNote = command.CustomerNote,
-                ShippingAddress = command.ShippingAddress,
-                StoreNote = command.StoreNote,
-                OrderItems = createOrderItemCommandList,
-            };
+            return createOrderItemCommandList;
         }
     }
 }

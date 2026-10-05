@@ -29,6 +29,7 @@ public static class AppPermissions
     public static class Orders
     {
         public const string Read = "Orders.Read";
+        public const string PlaceOrder = "Orders.PlaceOrder";
         public const string Create = "Orders.Create";
         public const string Update = "Orders.Update";
         public const string Delete = "Orders.Delete";
@@ -64,6 +65,7 @@ public static class AppPermissions
         Roles.Create,
         Roles.Delete,
         Roles.Read,
+        Orders.PlaceOrder,
         Orders.Create,
         Orders.Read,
         Orders.Update,

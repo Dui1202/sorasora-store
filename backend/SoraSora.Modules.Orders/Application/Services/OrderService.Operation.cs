@@ -24,19 +24,19 @@ public sealed partial class OrderService : IOrderService
 
         VersionValidation(order, version);
 
-        if (order.Status == OrderStatus.Completed)
+        try
         {
-            throw new InvalidOperationException("Cannot cancel a completed order.");
-        }
+            order.Cancel();
 
-        if (order.Status == OrderStatus.Cancelled)
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception)
         {
-            throw new InvalidOperationException("Cannot cancel an already cancelled order.");
+            if (exception is DbUpdateConcurrencyException)
+            {
+                throw new OrderConcurrencyException(order.Id, exception);
+            }
         }
-
-        order.SetStatus(OrderStatus.Cancelled);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return OrderDtoMapper.ToOrderResponse(order);
     }
@@ -55,14 +55,18 @@ public sealed partial class OrderService : IOrderService
             ?? throw new NotFoundException("Order is not found.");
 
         VersionValidation(order, version);
-
-        if (order.Status != OrderStatus.Pending)
+        try
         {
-            throw new InvalidOperationException("Cannot confirm a order that is not in pending.");
+            order.Confirm();
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        order.SetStatus(OrderStatus.Confirmed);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        catch (Exception exception)
+        {
+            if (exception is DbUpdateConcurrencyException)
+            {
+                throw new OrderConcurrencyException(order.Id, exception);
+            }
+        }
 
         return OrderDtoMapper.ToOrderResponse(order);
     }
@@ -82,13 +86,19 @@ public sealed partial class OrderService : IOrderService
 
         VersionValidation(order, version);
 
-        if (order.Status != OrderStatus.Confirmed)
+        try
         {
-            throw new InvalidOperationException("Cannot complete an order that is not in progress");
-        }
-        order.SetStatus(OrderStatus.Completed);
+            order.Complete();
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            if (exception is DbUpdateConcurrencyException)
+            {
+                throw new OrderConcurrencyException(order.Id, exception);
+            }
+        }
 
         return OrderDtoMapper.ToOrderResponse(order);
     }
@@ -97,9 +107,7 @@ public sealed partial class OrderService : IOrderService
     {
         if (order.Version != vesion)
         {
-            throw new ConflictException(
-                "Order was changed by other operation. Reload and try again!"
-            );
+            throw new OrderConcurrencyException(order.Id);
         }
 
         order.AdvanceVersion();

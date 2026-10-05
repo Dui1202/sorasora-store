@@ -11,12 +11,14 @@ public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
         IValidator<CreateOrderItemRequest> createOrderItemRequestValidator
     )
     {
-        RuleFor(x => x.CustomerName).MaximumLength(Order.MaxCustomerNameLength);
+        RuleFor(x => x.WarehouseId).NotEmpty();
+        RuleFor(x => x.CustomerName).NotEmpty().MaximumLength(Order.MaxCustomerNameLength);
         RuleFor(x => x.CustomerEmail).MaximumLength(Order.MaxCustomerEmailLength);
-        RuleFor(x => x.CustomerPhoneNumber).MaximumLength(Order.MaxCustomerPhoneNumberLength);
+        RuleFor(x => x.CustomerPhoneNumber).NotEmpty().MaximumLength(Order.MaxCustomerPhoneNumberLength);
         RuleFor(x => x.CustomerNote).MaximumLength(Order.MaxCustomerNoteLength);
         RuleFor(x => x.StoreNote).MaximumLength(Order.MaxStoreNoteLength);
-        RuleFor(x => x.ShippingAddress).MaximumLength(Order.MaxShippingAddressLength);
-        RuleForEach(x => x.OrderItems).SetValidator(createOrderItemRequestValidator);
+        RuleFor(x => x.ShippingAddress).NotEmpty().MaximumLength(Order.MaxShippingAddressLength);
+        RuleForEach(x => x.OrderItems).NotNull().SetValidator(createOrderItemRequestValidator);
+        RuleFor(x => x.OrderItems).NotEmpty();
     }
 }

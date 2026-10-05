@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SoraSora.Modules.Orders.Exceptions;
+using SoraSora.Shared.Exceptions;
 using SoraSora.Shared.Interface;
 
 namespace SoraSora.Modules.Orders.Domain;
@@ -24,7 +26,7 @@ public sealed class Order : IAuditable
     public string ShippingAddress { get; private set; } = null!;
     public string? CustomerNote { get; private set; }
     public string? StoreNote { get; private set; }
-    public OrderStatus Status { get; private set; }
+    public OrderStatus Status { get; private set; } = OrderStatus.Pending;
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -77,9 +79,37 @@ public sealed class Order : IAuditable
         _orderItem.Remove(item);
     }
 
-    public void SetStatus(OrderStatus status)
+    public void Confirm()
     {
-        Status = status;
+        if (Status != OrderStatus.Pending)
+        {
+            throw new InvalidOperationException("Cannot confirm a order that is not pending");
+        }
+        Status = OrderStatus.Confirmed;
+    }
+
+    public void Cancel()
+    {
+        if (Status == OrderStatus.Completed)
+        {
+            throw new InvalidOperationException("Cannot cancel a completed order.");
+        }
+
+        if (Status == OrderStatus.Cancelled)
+        {
+            throw new InvalidOperationException("Cannot cancel an already cancelled order.");
+        }
+        Status = OrderStatus.Cancelled;
+    }
+
+    public void Complete()
+    {
+        if (Status != OrderStatus.Confirmed)
+        {
+            throw new InvalidOperationException("Cannot complete a order that is not confirmed.");
+        }
+
+        Status = OrderStatus.Completed;
     }
 
     public void UpdateDetails(

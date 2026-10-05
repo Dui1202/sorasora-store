@@ -1,7 +1,5 @@
-using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Contracts.Responds;
 using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Modules.Inventory.Exceptions;
@@ -161,6 +159,11 @@ public sealed partial class InventoryService : IInventoryService
             );
         }
 
+        var ownTransaction = _dbContext.Database.CurrentTransaction is null;
+        await using var transaction = ownTransaction
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
         try
         {
             var stock =
@@ -181,7 +184,7 @@ public sealed partial class InventoryService : IInventoryService
                     .SingleOrDefaultAsync(cancellationToken)
                 ?? throw new NotFoundException("Stock in the specified warehouse is not found.");
 
-            // Use the transaction's snapshot even if this context already tracked the stock.
+            // The transaction might have already tracked the entity (which might be stale), this line guarantees a fresh entiry.
             await _dbContext.Entry(stock).ReloadAsync(cancellationToken);
             if (_dbContext.Entry(stock).State == EntityState.Detached)
             {
@@ -192,6 +195,11 @@ public sealed partial class InventoryService : IInventoryService
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
             var response = InventoryItemDtoMapper.ToStockResponse(stock);
 
             return response;
@@ -201,6 +209,11 @@ public sealed partial class InventoryService : IInventoryService
                     is PostgresException { SqlState: PostgresErrorCodes.DeadlockDetected }
             )
         {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+            }
+
             throw new ConflictException(
                 "Stock update could not be completed because of a concurrent operation.",
                 InventoryErrorCodes.StockUpdateConflict,
