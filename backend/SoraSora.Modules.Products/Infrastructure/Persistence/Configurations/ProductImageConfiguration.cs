@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Products.Domain;
@@ -10,7 +11,7 @@ public sealed class ProductImageConfiguration : IEntityTypeConfiguration<Product
     {
         builder.ToTable(
             "ProductImage",
-            table => table.HasCheckConstraint("CK_ProductImage_Position", "\"Position\" >= 0")
+            table => table.HasCheckConstraint(DatabaseConstraintNames.ProductImages.Position, "\"Position\" >= 0")
         );
 
         builder.HasKey(x => x.Id);

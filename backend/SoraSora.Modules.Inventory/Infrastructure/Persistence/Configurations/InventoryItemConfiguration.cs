@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Inventory.Domain;
@@ -19,7 +20,7 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
         builder
             .HasIndex(x => x.ProductVariantId)
             .IsUnique()
-            .HasDatabaseName("UX_InventoryItems_ProductVariantId");
+            .HasDatabaseName(DatabaseConstraintNames.InventoryItems.ProductVariantId);
         ;
     }
 }

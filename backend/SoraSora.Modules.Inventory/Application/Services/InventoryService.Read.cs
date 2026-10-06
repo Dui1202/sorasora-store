@@ -35,7 +35,7 @@ public sealed partial class InventoryService : IInventoryService
         return inventoryItem;
     }
 
-    public async Task<InventoryItem> GetInventoryItemByProductVariantIdAsync(
+    public async Task<InventoryItem> GetInventoryItemByProductVariantIdForUpdateAsync(
         string productVariantId,
         CancellationToken cancellationToken = default
     )
@@ -44,7 +44,7 @@ public sealed partial class InventoryService : IInventoryService
             await _dbContext
                 .InventoryItems()
                 .Include(x => x.Stocks)
-                .AsNoTracking()
+                .AsTracking()
                 .FirstOrDefaultAsync(x => x.ProductVariantId == productVariantId, cancellationToken)
             ?? throw new NotFoundException("The inventory item is not found");
 

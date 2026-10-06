@@ -12,6 +12,8 @@ namespace SoraSora.Modules.Inventory.Domain
         public bool IsArchive { get; private set; } = false;
         public IReadOnlyCollection<Stock> Stocks => _stocks;
 
+        private Warehouse() { }
+
         public void Archive()
         {
             if (IsDefault)

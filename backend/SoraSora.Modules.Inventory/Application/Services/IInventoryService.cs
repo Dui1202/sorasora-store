@@ -11,7 +11,7 @@ public interface IInventoryService
     );
     Task<InventoryItem> GetInventoryItemByIdAsync(string id, CancellationToken cancellationToken);
 
-    Task<InventoryItem> GetInventoryItemByProductVariantIdAsync(
+    Task<InventoryItem> GetInventoryItemByProductVariantIdForUpdateAsync(
         string productVariantId,
         CancellationToken cancellationToken = default
     );

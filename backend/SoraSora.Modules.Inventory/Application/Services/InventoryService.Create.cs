@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SoraSora.Modules.Inventory.Application.Services;
@@ -46,7 +47,7 @@ public sealed partial class InventoryService : IInventoryService
                     is PostgresException
                     {
                         SqlState: PostgresErrorCodes.UniqueViolation,
-                        ConstraintName: "UX_InventoryItems_ProductVariantId"
+                        ConstraintName: DatabaseConstraintNames.InventoryItems.ProductVariantId
                     }
             )
         {

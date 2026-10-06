@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Api.Mappers;
@@ -6,9 +5,7 @@ using SoraSora.Modules.Products.Contracts.Commands.Update;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Exceptions;
-using SoraSora.Modules.Products.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Products.Mappers;
-using SoraSora.Shared.Exceptions;
 
 namespace SoraSora.Api.Application.Workflow.Products;
 

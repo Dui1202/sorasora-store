@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Inventory.Contracts.Requests;
 using SoraSora.Modules.Inventory.Mappers;
@@ -14,6 +15,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
 {
     private readonly IWarehouseService _warehouseService = warehouseService;
 
+    [HasPermission(AppPermissions.Warehouses.Create)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateWarehouseRequest request,
@@ -33,6 +35,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return Created($"{ApiRoute.WarehouseApiRoute}/{warehouse.Id}", warehouse);
     }
 
+    [HasPermission(AppPermissions.Warehouses.Read)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -41,6 +44,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return Ok(warehouses);
     }
 
+    [HasPermission(AppPermissions.Warehouses.Read)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
@@ -49,6 +53,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return Ok(warehouse);
     }
 
+    [HasPermission(AppPermissions.Warehouses.Update)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(
         string id,
@@ -71,6 +76,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return Ok(warehouse);
     }
 
+    [HasPermission(AppPermissions.Warehouses.Delete)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {

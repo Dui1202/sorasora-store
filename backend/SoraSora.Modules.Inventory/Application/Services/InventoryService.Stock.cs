@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SoraSora.Modules.Inventory.Contracts.Responds;
 using SoraSora.Modules.Inventory.Domain;
 using SoraSora.Modules.Inventory.Exceptions;
+using SoraSora.Modules.Inventory.Infrastructure.Persistence.Extension;
 using SoraSora.Modules.Inventory.Mappers;
 using SoraSora.Shared.Exceptions;
 
@@ -183,6 +185,15 @@ public sealed partial class InventoryService : IInventoryService
                     .AsTracking()
                     .SingleOrDefaultAsync(cancellationToken)
                 ?? throw new NotFoundException("Stock in the specified warehouse is not found.");
+
+            var warehouse =
+                await _dbContext
+                    .Warehouses()
+                    .Where(x => !x.IsArchive)
+                    .FirstOrDefaultAsync(x => x.Id == warehouseId, cancellationToken)
+                ?? throw new NotFoundException(
+                    $"Cannot find the warehouse with this Id #{warehouseId}"
+                );
 
             // The transaction might have already tracked the entity (which might be stale), this line guarantees a fresh entiry.
             await _dbContext.Entry(stock).ReloadAsync(cancellationToken);

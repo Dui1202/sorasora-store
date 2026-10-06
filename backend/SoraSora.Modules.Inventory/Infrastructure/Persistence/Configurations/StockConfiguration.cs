@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Inventory.Domain;
 
 namespace SoraSora.Modules.Inventory.Infrastructure.Persistence.Configurations;
@@ -8,7 +9,14 @@ public class StockConfiguration : IEntityTypeConfiguration<Stock>
 {
     public void Configure(EntityTypeBuilder<Stock> builder)
     {
-        builder.ToTable("Stocks");
+        builder.ToTable(
+            "Stocks",
+            table =>
+            {
+                table.HasCheckConstraint(DatabaseConstraintNames.Stocks.OnHandedQuantity, "\"OnHandedQuantity\" >= 0");
+                table.HasCheckConstraint(DatabaseConstraintNames.Stocks.ReservedQuantity, "\"ReservedQuantity\" >= 0");
+            }
+        );
 
         builder.HasKey(x => x.Id);
 

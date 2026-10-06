@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Inventory.Contracts.Commands;
 using SoraSora.Modules.Inventory.Contracts.Responds;
@@ -42,8 +43,9 @@ namespace SoraSora.Modules.Inventory.Application.Services
                     await _dbContext
                         .Warehouses()
                         .SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
-                    ?? throw new InvalidOperationException(
-                        "There must be exactly one default warehouse."
+                    ?? throw new ConflictException(
+                        "There must be exactly one default warehouse.",
+                        "WAREHOUSE_DEFAULT_REQUIRED"
                     );
 
                 currentDefaultWarehouse.SetDefault(false);
@@ -54,8 +56,29 @@ namespace SoraSora.Modules.Inventory.Application.Services
             }
 
             _dbContext.Warehouses().Add(warehouse);
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception exception)
+                when (exception.GetBaseException()
+                        is PostgresException
+                        {
+                            SqlState: PostgresErrorCodes.UniqueViolation
+                        } postgresException
+                )
+            {
+                throw postgresException.ConstraintName switch
+                {
+                    DatabaseConstraintNames.Warehouses.Name => throw new ConflictException(
+                        "Another warehouse has concurrently taken the name."
+                    ),
+                    DatabaseConstraintNames.Warehouses.SingleDefault => throw new ConflictException(
+                        "Another warehouse has concurrently became the default."
+                    ),
+                    _ => throw exception,
+                };
+            }
             await transaction.CommitAsync(cancellationToken);
 
             return WarehouseDtoMapper.ToWarehouseResponse(warehouse);
@@ -213,8 +236,9 @@ namespace SoraSora.Modules.Inventory.Application.Services
                         .Warehouses()
                         .Where(x => x.Id != command.Id)
                         .SingleOrDefaultAsync(x => x.IsDefault, cancellationToken)
-                    ?? throw new InvalidOperationException(
-                        "There must be exactly one default warehouse."
+                    ?? throw new ConflictException(
+                        "There must be exactly one default warehouse.",
+                        "WAREHOUSE_DEFAULT_REQUIRED"
                     );
 
                 currentDefaultWarehouse.SetDefault(false);

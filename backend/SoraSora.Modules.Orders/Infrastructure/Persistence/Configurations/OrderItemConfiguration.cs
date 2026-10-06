@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Orders.Domain;
@@ -12,8 +13,8 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             "OrderItems",
             table =>
             {
-                table.HasCheckConstraint("CK_OrderItems_SellingPrice", "\"SellingPrice\" >= 0");
-                table.HasCheckConstraint("CK_OrderItems_Quantity", "\"Quantity\" > 0");
+                table.HasCheckConstraint(DatabaseConstraintNames.OrderItems.SellingPrice, "\"SellingPrice\" >= 0");
+                table.HasCheckConstraint(DatabaseConstraintNames.OrderItems.Quantity, "\"Quantity\" > 0");
             }
         );
 

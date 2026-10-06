@@ -38,6 +38,13 @@ public sealed partial class InventoryService : IInventoryService
             .Where(x => !x.IsArchived && productVariantIds.Contains(x.ProductVariantId))
             .ToListAsync(cancellationToken);
 
+        var existingItemVariantIds = inventoryItems.Select(x => x.ProductVariantId).ToHashSet();
+
+        if (!existingItemVariantIds.SetEquals(productVariantIds))
+        {
+            throw new ConflictException("Missing inventory items!");
+        }
+
         foreach (var item in inventoryItems)
         {
             item.Archive();

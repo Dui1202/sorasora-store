@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoraSora.Modules.Products.Domain;
@@ -12,10 +13,10 @@ public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Produ
             "ProductVariant",
             table =>
             {
-                table.HasCheckConstraint("CK_ProductVariant_CostPrice", "\"CostPrice\" >= 0");
-                table.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0");
+                table.HasCheckConstraint(DatabaseConstraintNames.ProductVariants.CostPrice, "\"CostPrice\" >= 0");
+                table.HasCheckConstraint(DatabaseConstraintNames.ProductVariants.SellingPrice, "\"SellingPrice\" >= 0");
                 table.HasCheckConstraint(
-                    "CK_ProductVariant_Position",
+                    DatabaseConstraintNames.ProductVariants.Position,
                     "(\"IsArchived\" AND \"Position\" IS NULL) OR "
                         + "(NOT \"IsArchived\" AND \"Position\" IS NOT NULL AND \"Position\" >= 0)"
                 );

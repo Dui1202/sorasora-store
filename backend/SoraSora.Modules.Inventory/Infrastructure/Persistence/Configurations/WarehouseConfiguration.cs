@@ -1,3 +1,4 @@
+using SoraSora.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SoraSora.Modules.Inventory.Domain;
@@ -17,11 +18,14 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(x => x.IsDefault).HasDefaultValue(false).IsRequired();
         builder.Property(x => x.IsArchive).HasDefaultValue(false).IsRequired();
 
-        builder.HasIndex(x => x.Name).IsUnique();
+        builder
+            .HasIndex(x => x.Name)
+            .HasDatabaseName(DatabaseConstraintNames.Warehouses.Name)
+            .IsUnique();
 
         builder
             .HasIndex(x => x.IsDefault)
-            .HasDatabaseName("UX_Warehouses_SingleDefault")
+            .HasDatabaseName(DatabaseConstraintNames.Warehouses.SingleDefault)
             .IsUnique()
             .HasFilter("\"IsDefault\" = TRUE");
     }

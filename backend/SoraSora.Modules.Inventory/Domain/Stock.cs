@@ -1,4 +1,5 @@
 using NUlid;
+using SoraSora.Modules.Inventory.Exceptions;
 
 namespace SoraSora.Modules.Inventory.Domain
 {
@@ -106,10 +107,11 @@ namespace SoraSora.Modules.Inventory.Domain
 
         public void AdjustOnHanded(int quantity, string? description = null)
         {
-            if (quantity < -0)
+            if (quantity < 0)
             {
                 ValidateOnHandedQuantity(Math.Abs(quantity));
             }
+            
 
             OnHandedQuantity += quantity;
             _stockMovements.Add(
@@ -148,7 +150,7 @@ namespace SoraSora.Modules.Inventory.Domain
         {
             if (quantity < 0)
             {
-                throw new ArgumentOutOfRangeException(
+                throw new StockDomainException(
                     "Stock quantity cannot be negative",
                     nameof(quantity)
                 );
@@ -159,8 +161,9 @@ namespace SoraSora.Modules.Inventory.Domain
         {
             if (ReservedQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(
-                    "The quantity to be subtracted cannot be greater than reserved quantity."
+                throw new StockDomainException(
+                    "The quantity to be subtracted cannot be greater than reserved quantity.",
+                    nameof(quantity)
                 );
             }
         }
@@ -169,8 +172,9 @@ namespace SoraSora.Modules.Inventory.Domain
         {
             if (OnHandedQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(
-                    "The quantity to be subtracted cannot be greater than on-handed quantity."
+                throw new StockDomainException(
+                    "The quantity to be subtracted cannot be greater than on-handed quantity.",
+                    nameof(quantity)
                 );
             }
         }
@@ -179,8 +183,9 @@ namespace SoraSora.Modules.Inventory.Domain
         {
             if (quantity > AvailableQuantity)
             {
-                throw new ArgumentOutOfRangeException(
-                    "The quantity to be reserved cannot be greater than available quantity."
+                throw new StockDomainException(
+                    "The quantity to be reserved cannot be greater than available quantity.",
+                    nameof(quantity)
                 );
             }
         }
