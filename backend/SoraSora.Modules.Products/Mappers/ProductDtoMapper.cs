@@ -52,6 +52,39 @@ public static class ProductDtoMapper
             ProductVariants = product
                 .ProductVariants.OrderBy(variant => variant.Position)
                 .ThenBy(variant => variant.Id)
+                .Where(x => !x.IsArchived)
+                .Select(ToProductVariantResponse)
+                .ToList(),
+            Variations = product
+                .Variations.OrderBy(variation => variation.Position)
+                .ThenBy(variation => variation.Id)
+                .Select(ToVariationResponse)
+                .ToList(),
+        };
+    }
+
+    public static ProductResponse ToArchivedProductResponse(Product product)
+    {
+        return new ProductResponse
+        {
+            Id = product.Id,
+            Version = product.Version,
+            Name = product.Name,
+            Description = product.Description,
+            IsPublished = product.IsPublished,
+            IsArchived = product.IsArchived,
+            SupplierCountry = product.SupplierCountry,
+            SellMode = product.SellMode,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
+            ProductImages = product
+                .ProductImages.OrderBy(image => image.Position)
+                .ThenBy(image => image.Id)
+                .Select(ToProductImageDto)
+                .ToList(),
+            ProductVariants = product
+                .ProductVariants.OrderBy(variant => variant.Position)
+                .ThenBy(variant => variant.Id)
                 .Select(ToProductVariantResponse)
                 .ToList(),
             Variations = product

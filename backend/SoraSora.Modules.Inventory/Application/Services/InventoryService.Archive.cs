@@ -40,11 +40,6 @@ public sealed partial class InventoryService : IInventoryService
 
         var existingItemVariantIds = inventoryItems.Select(x => x.ProductVariantId).ToHashSet();
 
-        if (!existingItemVariantIds.SetEquals(productVariantIds))
-        {
-            throw new ConflictException("Missing inventory items!");
-        }
-
         foreach (var item in inventoryItems)
         {
             item.Archive();

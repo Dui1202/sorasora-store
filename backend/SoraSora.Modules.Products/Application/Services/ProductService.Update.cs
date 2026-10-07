@@ -92,6 +92,8 @@ public sealed partial class ProductService
             {
                 throw new ProductConcurrencyException(product.Id, exception);
             }
+
+            throw;
         }
 
         _logger.ProductUpdated(product.Name, product.Id);
@@ -297,6 +299,17 @@ public sealed partial class ProductService
             product.RemoveVariation(variation);
         }
 
+        var occupiedVariationPositions = product
+            .Variations.Select(x => x.Position)
+            .OfType<int>()
+            .ToList();
+        var finalVariationPositions = command.Variations.Select(x => x.Position).ToList();
+        var tempVariationPositions = AllocateTemporaryPositions(
+            occupiedVariationPositions,
+            finalVariationPositions,
+            command.Variations.Count
+        );
+        var tempVariationIndex = 0;
         //Updating existing variations
         foreach (var variationCommand in command.Variations.Where(x => x.Id is not null))
         {
@@ -316,10 +329,31 @@ public sealed partial class ProductService
                 variation.RemoveOption(option);
             }
 
-            variation.UpdateDetails(CreateTemporaryUniqueValue("variation"), variation.Position);
+            variation.UpdateDetails(
+                CreateTemporaryUniqueValue("variation"),
+                tempVariationPositions[tempVariationIndex++]
+            );
+
+            var occupiedOptionPositions = variation
+                .VariationOptions.Select(x => x.Position)
+                .OfType<int>()
+                .ToList();
+            var finalOptionPositions = variationCommand
+                .VariationOptions.Select(x => x.Position)
+                .ToList();
+            var tempOptionPositions = AllocateTemporaryPositions(
+                occupiedOptionPositions,
+                finalOptionPositions,
+                variationCommand.VariationOptions.Count
+            );
+            var tempOptionIndex = 0;
+
             foreach (var option in variation.VariationOptions)
             {
-                option.UpdateDetails(CreateTemporaryUniqueValue("option"), option.Position);
+                option.UpdateDetails(
+                    CreateTemporaryUniqueValue("option"),
+                    tempOptionPositions[tempOptionIndex++]
+                );
             }
         }
 

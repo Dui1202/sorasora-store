@@ -1,6 +1,5 @@
 using SoraSora.Api.Contracts.Commands.ProductWorkflow;
 using SoraSora.Api.Mappers;
-using SoraSora.Modules.Products.Contracts.Commands.Create;
 using SoraSora.Modules.Products.Contracts.Responses;
 using SoraSora.Modules.Products.Domain;
 using SoraSora.Modules.Products.Exceptions;
@@ -21,7 +20,9 @@ public sealed partial class ProductWorkflow
         var uploadedMediaAssetIds = new HashSet<string>(StringComparer.Ordinal);
 
         var commitAttempted = false;
-        var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            cancellationToken
+        );
 
         try
         {
@@ -55,17 +56,6 @@ public sealed partial class ProductWorkflow
         {
             await TryRollbackAndCleanUpAsync(product, uploadedMediaAssetIds, commitAttempted);
             throw;
-        }
-        finally
-        {
-            try
-            {
-                await transaction.DisposeAsync();
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Failed to dispose the create-product transaction");
-            }
         }
     }
 

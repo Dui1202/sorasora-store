@@ -22,9 +22,17 @@ public interface IProductService
         CancellationToken cancellationToken = default
     );
     Task<List<ProductResponse>?> GetAllProductsAsync(CancellationToken cancellationToken = default);
-    Task<Product> GetProductByIdForUpdateAsync(string id, CancellationToken cancellationToken = default);
+    Task<Product> GetProductByIdForUpdateAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    );
     Task<ProductVariantResponse> GetProductVariantByIdAsync(
         string id,
         CancellationToken cancellationToken
+    );
+
+    Task<ProductResponse> GetArchivedProductByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
     );
 }

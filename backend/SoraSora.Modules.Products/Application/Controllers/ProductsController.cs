@@ -28,17 +28,4 @@ public sealed class ProductsController(IProductService productService) : Control
 
         return Ok(product);
     }
-
-    [HasPermission(AppPermissions.Products.Delete)]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(
-        string id,
-        Guid version,
-        CancellationToken cancellationToken
-    )
-    {
-        await _productService.ArchiveProductAsync(id, version, cancellationToken);
-
-        return NoContent();
-    }
 }

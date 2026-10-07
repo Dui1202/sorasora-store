@@ -3,9 +3,9 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SoraSora.Api.Application.Workflow.Products;
+using SoraSora.Api.Contracts.Requests;
 using SoraSora.Api.Contracts.Requests.Products.Create;
 using SoraSora.Api.Contracts.Requests.Products.Update;
-using SoraSora.Api.Contracts.Requests;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
 using SoraSora.Modules.Products.Contracts;
@@ -121,6 +121,28 @@ public sealed class ProductWorkflowController(
         var product = await workflow.UpdateProductAsync(command, cancellationToken);
 
         return Ok(product);
+    }
+
+    [HasPermission(AppPermissions.Products.Delete)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Archive(
+        string id,
+        ArchiveProductRequest request,
+        IValidator<ArchiveProductRequest> validator,
+        CancellationToken cancellationToken
+    )
+    {
+        request = request with { ProductId = id };
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            return this.ValidationProblem(validationResult, ProductErrorCodes.ValidationFailed);
+        }
+
+        await workflow.ArchiveProductAsync(request.ProductId, request.Version, cancellationToken);
+
+        return NoContent();
     }
 
     private static void MetadataValidationForCreate(

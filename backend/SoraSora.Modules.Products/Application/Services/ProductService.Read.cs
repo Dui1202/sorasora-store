@@ -67,6 +67,23 @@ public sealed partial class ProductService
             ?? throw new ProductNotFoundException(id);
     }
 
+    public async Task<ProductResponse> GetArchivedProductByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var archivedProduct =
+            await _dbContext
+                .Products()
+                .Where(x => x.IsArchived)
+                .Include(x => x.ProductVariants)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new ProductNotFoundException(id);
+
+        return ProductDtoMapper.ToArchivedProductResponse(archivedProduct);
+    }
+
     private IQueryable<Product> ProductQuery()
     {
         return _dbContext

@@ -21,7 +21,9 @@ public sealed partial class ProductWorkflow
         Product? updatedProduct = null;
 
         var commitAttempted = false;
-        var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            cancellationToken
+        );
         try
         {
             var product = await _productService.GetProductByIdForUpdateAsync(
@@ -90,17 +92,6 @@ public sealed partial class ProductWorkflow
             );
 
             throw;
-        }
-        finally
-        {
-            try
-            {
-                await transaction.DisposeAsync();
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Failed to dispose the update-product transaction");
-            }
         }
     }
 
