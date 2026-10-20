@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using SoraSora.Api.Contracts.Commands.OrderWorkflow;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Inventory.Application.Services;
 using SoraSora.Modules.Orders.Application.Services;
 using SoraSora.Modules.Orders.Contracts.Commands;
 using SoraSora.Modules.Orders.Contracts.Responses;
+using SoraSora.Modules.Orders.Domain;
 using SoraSora.Modules.Products.Application.Services;
+using SoraSora.Modules.Products.Domain;
 
 namespace SoraSora.Api.Application.Workflow
 {
@@ -36,7 +39,10 @@ namespace SoraSora.Api.Application.Workflow
                 cancellationToken
             );
 
-            var order = await CreateOrderAndReserveStockAsync(createOrderCommand, cancellationToken);
+            var order = await CreateOrderAndReserveStockAsync(
+                createOrderCommand,
+                cancellationToken
+            );
 
             await transaction.CommitAsync(cancellationToken);
 
@@ -57,7 +63,10 @@ namespace SoraSora.Api.Application.Workflow
                 cancellationToken
             );
 
-            var order = await CreateOrderAndReserveStockAsync(createOrderCommand, cancellationToken);
+            var order = await CreateOrderAndReserveStockAsync(
+                createOrderCommand,
+                cancellationToken
+            );
 
             await transaction.CommitAsync(cancellationToken);
 
@@ -73,13 +82,16 @@ namespace SoraSora.Api.Application.Workflow
 
             foreach (var orderItem in order.OrderItems)
             {
-                await _inventoryService.ReserveStockAsync(
-                    productVariantId: orderItem.ProductVariantId,
-                    warehouseId: command.WarehouseId,
-                    quantity: orderItem.Quantity,
-                    description: $"Reserve stock for order #{order.Id}.",
-                    cancellationToken
-                );
+                if (orderItem.SaleType == OrderSaleType.IN_STOCK)
+                {
+                    await _inventoryService.ReserveStockAsync(
+                        productVariantId: orderItem.ProductVariantId,
+                        warehouseId: orderItem.WarehouseId,
+                        quantity: orderItem.Quantity,
+                        description: $"Reserve stock for order #{order.Id} and order item #{orderItem.Id}.",
+                        cancellationToken
+                    );
+                }
             }
 
             return order;
@@ -96,10 +108,6 @@ namespace SoraSora.Api.Application.Workflow
                 cancellationToken
             );
             var order = await _orderService.CancelOrderAsync(orderId, version, cancellationToken);
-
-            // var defaultWarehouse = await _warehouseService.GetDefaultWarehouseAsync(
-            //     cancellationToken
-            // );
 
             foreach (var orderItem in order.OrderItems)
             {
@@ -158,7 +166,6 @@ namespace SoraSora.Api.Application.Workflow
             );
             return new CreateOrderCommand
             {
-                WarehouseId = command.WarehouseId,
                 CustomerName = command.CustomerName,
                 CustomerPhoneNumber = command.CustomerPhoneNumber,
                 CustomerEmail = command.CustomerEmail,
@@ -181,7 +188,6 @@ namespace SoraSora.Api.Application.Workflow
 
             return new CreateOrderCommand
             {
-                WarehouseId = command.WarehouseId,
                 CustomerName = command.CustomerName,
                 CustomerPhoneNumber = command.CustomerPhoneNumber,
                 CustomerEmail = command.CustomerEmail,
@@ -191,27 +197,53 @@ namespace SoraSora.Api.Application.Workflow
             };
         }
 
-        private async Task<IReadOnlyCollection<CreateOrderItemCommand>> MapOrderItemsToCreateOrderItemCommandsAsync(
+        private async Task<
+            IReadOnlyCollection<CreateOrderItemCommand>
+        > MapOrderItemsToCreateOrderItemCommandsAsync(
             IReadOnlyCollection<PlaceOrderItemCommand> orderItems,
             CancellationToken cancellationToken
         )
         {
             var createOrderItemCommandList = new List<CreateOrderItemCommand>();
 
-            foreach (var placeOrderItem in orderItems)
+            var variantIds = orderItems
+                .Select(x => x.ProductVariantId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            var orderableVariants = await _productService.GetOrderableProductVariantsAsync(
+                variantIds,
+                cancellationToken
+            );
+
+            var defaultWarehouse = await _warehouseService.GetDefaultWarehouseAsync(
+                cancellationToken
+            );
+
+            var orderItemsByVariantId = orderItems.ToDictionary(x => x.ProductVariantId);
+
+            foreach (var variant in orderableVariants)
             {
-                var productVariant = await _productService.GetProductVariantByIdAsync(
-                    placeOrderItem.ProductVariantId,
-                    cancellationToken
-                );
+                if (!orderItemsByVariantId.TryGetValue(variant.ProductVariantId, out var orderItem))
+                {
+                    throw new InvalidOperationException();
+                }
 
                 var createOrderItemCommand = new CreateOrderItemCommand
                 {
-                    ProductName = productVariant.Name,
-                    ProductVariantId = productVariant.Id,
-                    Quantity = placeOrderItem.Quantity,
-                    SellingPrice = productVariant.SellingPrice,
-                    Sku = productVariant.Sku,
+                    ProductName = variant.ProductName,
+                    ProductVariantName = variant.ProductVariantName,
+                    ProductVariantId = variant.ProductVariantId,
+                    Quantity = orderItem.Quantity,
+                    SaleType = variant.SellMode switch
+                    {
+                        SellMode.IN_STOCK => OrderSaleType.IN_STOCK,
+                        SellMode.PREORDER => OrderSaleType.In_FULFILLMENT,
+                        _ => throw new InvalidOperationException(),
+                    },
+                    SellingPrice = variant.SellingPrice,
+                    Sku = variant.Sku,
+                    WarehouseId =
+                        variant.SellMode == SellMode.IN_STOCK ? defaultWarehouse.Id : null,
                 };
 
                 createOrderItemCommandList.Add(createOrderItemCommand);

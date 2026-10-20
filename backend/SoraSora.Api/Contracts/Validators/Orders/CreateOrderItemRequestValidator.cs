@@ -1,8 +1,7 @@
-using System.Security.Cryptography.X509Certificates;
 using FluentValidation;
-using SoraSora.Modules.Orders.Contracts.Requests;
+using SoraSora.Api.Contracts.Requests;
 
-namespace SoraSora.Modules.Orders.Contracts.Validators;
+namespace SoraSora.Api.Contracts.Validators.Orders;
 
 public class CreateOrderItemRequestValidator : AbstractValidator<CreateOrderItemRequest>
 {
@@ -10,5 +9,6 @@ public class CreateOrderItemRequestValidator : AbstractValidator<CreateOrderItem
     {
         RuleFor(x => x.ProductVariantId).NotEmpty();
         RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.SaleType).IsInEnum();
     }
 }

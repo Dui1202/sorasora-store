@@ -1,3 +1,5 @@
+using SoraSora.Modules.Orders.Domain;
+
 namespace SoraSora.Modules.Orders.Contracts.Responses;
 
 public sealed record OrderItemResponse(
@@ -5,5 +7,7 @@ public sealed record OrderItemResponse(
     int SellingPrice,
     string OrderId,
     string ProductVariantId,
-    int Quantity
+    int Quantity,
+    OrderSaleType SaleType,
+    string WarehouseId
 );

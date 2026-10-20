@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+
 namespace SoraSora.Infrastructure.Persistence;
 
 // Keep these values aligned with the database; changing a value requires a migration.
@@ -36,5 +38,6 @@ public static class DatabaseConstraintNames
     {
         public const string SellingPrice = "CK_OrderItems_SellingPrice";
         public const string Quantity = "CK_OrderItems_Quantity";
+        public const string SaleType = "CK_OrderItems_WarehouseId_SaleType";
     }
 }

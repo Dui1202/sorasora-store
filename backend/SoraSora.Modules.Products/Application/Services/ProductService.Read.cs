@@ -84,6 +84,30 @@ public sealed partial class ProductService
         return ProductDtoMapper.ToArchivedProductResponse(archivedProduct);
     }
 
+    public async Task<
+        IReadOnlyCollection<OrderableProductVariantDto>
+    > GetOrderableProductVariantsAsync(
+        ISet<string> productVariantIds,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var productVariants = await _dbContext
+            .ProductVariants()
+            .Where(x => !x.IsArchived && !x.Product.IsArchived && productVariantIds.Contains(x.Id))
+            .Select(x => new OrderableProductVariantDto
+            {
+                SellMode = x.Product.SellMode,
+                ProductName = x.Product.Name,
+                ProductVariantName = x.Name,
+                ProductVariantId = x.Id,
+                SellingPrice = x.SellingPrice,
+                Sku = x.Sku,
+            })
+            .ToListAsync(cancellationToken);
+
+        return productVariants;
+    }
+
     private IQueryable<Product> ProductQuery()
     {
         return _dbContext

@@ -1,4 +1,4 @@
-namespace SoraSora.Modules.Orders.Contracts.Requests;
+namespace SoraSora.Api.Contracts.Requests;
 
 public sealed record CreateOrderRequest
 {

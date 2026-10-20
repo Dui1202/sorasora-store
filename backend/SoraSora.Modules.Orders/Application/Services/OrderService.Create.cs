@@ -29,7 +29,9 @@ public sealed partial class OrderService : IOrderService
                 productVariantId: itemCommand.ProductVariantId,
                 sellingPrice: itemCommand.SellingPrice,
                 quantity: itemCommand.Quantity,
-                sku: itemCommand.Sku
+                saleType: itemCommand.SaleType,
+                sku: itemCommand.Sku,
+                warehouseId: itemCommand.WarehouseId
             );
 
             order.AddOrderItem(orderItem);

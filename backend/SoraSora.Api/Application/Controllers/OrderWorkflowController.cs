@@ -5,7 +5,6 @@ using SoraSora.Api.Application.Workflow;
 using SoraSora.Api.Contracts.Requests;
 using SoraSora.Api.Mappers;
 using SoraSora.Modules.Auth.Authorization;
-using SoraSora.Modules.Orders.Contracts.Requests;
 using SoraSora.Shared.Extension;
 using SoraSora.Shared.Route;
 
@@ -54,4 +53,5 @@ public sealed class OrderController(OrderWorkflow orderWorkflow) : ControllerBas
 
         return Created($"{ApiRoute.OrderApiRoute}/{order.Id}", order);
     }
+    
 }

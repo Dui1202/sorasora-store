@@ -36,6 +36,8 @@ public sealed partial class OrderService : IOrderService
             {
                 throw new OrderConcurrencyException(order.Id, exception);
             }
+
+            throw;
         }
 
         return OrderDtoMapper.ToOrderResponse(order);
@@ -66,6 +68,8 @@ public sealed partial class OrderService : IOrderService
             {
                 throw new OrderConcurrencyException(order.Id, exception);
             }
+
+            throw;
         }
 
         return OrderDtoMapper.ToOrderResponse(order);
@@ -98,6 +102,7 @@ public sealed partial class OrderService : IOrderService
             {
                 throw new OrderConcurrencyException(order.Id, exception);
             }
+            throw;
         }
 
         return OrderDtoMapper.ToOrderResponse(order);

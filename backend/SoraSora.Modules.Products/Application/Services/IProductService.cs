@@ -35,4 +35,9 @@ public interface IProductService
         string id,
         CancellationToken cancellationToken = default
     );
+
+    Task<IReadOnlyCollection<OrderableProductVariantDto>> GetOrderableProductVariantsAsync(
+        ISet<string> productVariantIds,
+        CancellationToken cancellationToken = default
+    );
 }

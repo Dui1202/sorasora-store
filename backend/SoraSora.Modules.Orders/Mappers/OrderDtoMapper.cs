@@ -31,7 +31,9 @@ internal static class OrderDtoMapper
             SellingPrice: orderItem.SellingPrice,
             OrderId: orderItem.OrderId,
             ProductVariantId: orderItem.ProductVariantId,
-            Quantity: orderItem.Quantity
+            Quantity: orderItem.Quantity,
+            SaleType: orderItem.SaleType,
+            WarehouseId: orderItem.WarehouseId
         );
     }
 }

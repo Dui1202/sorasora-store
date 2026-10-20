@@ -22,10 +22,7 @@ public sealed partial class OrderService : IOrderService
                 .SingleOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
             ?? throw new NotFoundException("Order is not found.");
 
-        if (order.Version != command.Version)
-        {
-            throw new OrderConcurrencyException(order.Id);
-        }
+        VersionValidation(order, command.Version);
 
         try
         {

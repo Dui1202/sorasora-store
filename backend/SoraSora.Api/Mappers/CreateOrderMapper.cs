@@ -1,16 +1,16 @@
 using SoraSora.Api.Contracts.Commands.OrderWorkflow;
 using SoraSora.Api.Contracts.Requests;
-using SoraSora.Modules.Orders.Contracts.Requests;
 
 namespace SoraSora.Api.Mappers;
 
 public static class CreateOrderMapper
 {
-    public static PlaceOrderWorkflowCommand ToPlaceOrderWorkflowCommand(PlaceOrderWorkflowRequest request)
+    public static PlaceOrderWorkflowCommand ToPlaceOrderWorkflowCommand(
+        PlaceOrderWorkflowRequest request
+    )
     {
         return new PlaceOrderWorkflowCommand
         {
-            WarehouseId = request.WarehouseId,
             CustomerName = request.CustomerName,
             CustomerEmail = request.CustomerEmail,
             CustomerPhoneNumber = request.CustomerPhoneNumber,
@@ -20,7 +20,9 @@ public static class CreateOrderMapper
         };
     }
 
-    public static CreateOrderWorkflowCommand ToCreateOrderWorkflowCommand(CreateOrderRequest request)
+    public static CreateOrderWorkflowCommand ToCreateOrderWorkflowCommand(
+        CreateOrderRequest request
+    )
     {
         return new CreateOrderWorkflowCommand
         {

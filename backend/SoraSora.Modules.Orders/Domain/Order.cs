@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SoraSora.Modules.Orders.Exceptions;
-using SoraSora.Shared.Exceptions;
 using SoraSora.Shared.Interface;
 
 namespace SoraSora.Modules.Orders.Domain;
@@ -14,7 +11,6 @@ public sealed class Order : IAuditable
     public const int MaxShippingAddressLength = 500;
     public const int MaxCustomerNoteLength = 2000;
     public const int MaxStoreNoteLength = 2000;
-
     private readonly List<OrderItem> _orderItem = [];
     public string Id { get; private set; } = NUlid.Ulid.NewUlid().ToString();
     public Guid Version { get; private set; } = Guid.NewGuid();
