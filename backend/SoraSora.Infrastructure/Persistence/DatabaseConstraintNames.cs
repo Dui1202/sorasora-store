@@ -39,5 +39,6 @@ public static class DatabaseConstraintNames
         public const string SellingPrice = "CK_OrderItems_SellingPrice";
         public const string Quantity = "CK_OrderItems_Quantity";
         public const string SaleType = "CK_OrderItems_WarehouseId_SaleType";
+        public const string QuantityFulfilled = "CK_OrderItems_QuantityFulfilled";
     }
 }

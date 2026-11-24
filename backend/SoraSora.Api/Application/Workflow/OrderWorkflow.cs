@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using SoraSora.Api.Contracts.Commands.OrderWorkflow;
 using SoraSora.Infrastructure.Persistence;
 using SoraSora.Modules.Inventory.Application.Services;
@@ -137,8 +136,6 @@ namespace SoraSora.Api.Application.Workflow
             );
             var order = await _orderService.CompleteOrderAsync(orderId, version, cancellationToken);
 
-            // var warehouse = await _warehouseService.GetDefaultWarehouseAsync(cancellationToken);
-
             foreach (var orderItem in order.OrderItems)
             {
                 await _inventoryService.SaleStockAsync(
@@ -237,7 +234,7 @@ namespace SoraSora.Api.Application.Workflow
                     SaleType = variant.SellMode switch
                     {
                         SellMode.IN_STOCK => OrderSaleType.IN_STOCK,
-                        SellMode.PREORDER => OrderSaleType.In_FULFILLMENT,
+                        SellMode.PREORDER => OrderSaleType.PREORDER,
                         _ => throw new InvalidOperationException(),
                     },
                     SellingPrice = variant.SellingPrice,
@@ -251,5 +248,6 @@ namespace SoraSora.Api.Application.Workflow
 
             return createOrderItemCommandList;
         }
+        
     }
 }

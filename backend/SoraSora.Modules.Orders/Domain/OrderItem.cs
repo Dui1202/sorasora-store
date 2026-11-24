@@ -15,7 +15,8 @@ public class OrderItem
     public int SellingPrice { get; private set; }
     public int Quantity { get; private set; }
     public OrderSaleType SaleType { get; private set; }
-    public string WarehouseId { get; private set; } = null!;
+    public int QuantityFulfilled { get; private set; }
+    public string? WarehouseId { get; private set; }
 
     private OrderItem() { }
 

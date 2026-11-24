@@ -21,6 +21,10 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
                     DatabaseConstraintNames.OrderItems.Quantity,
                     "\"Quantity\" > 0"
                 );
+                table.HasCheckConstraint(
+                    DatabaseConstraintNames.OrderItems.QuantityFulfilled,
+                    "\"QuantityFulfilled\" >= 0"
+                );
             }
         );
 
@@ -31,6 +35,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.ProductVariantId).IsRequired();
         builder.Property(x => x.SellingPrice).IsRequired();
         builder.Property(x => x.Quantity).IsRequired();
+        builder.Property(x => x.QuantityFulfilled).IsRequired();
         builder.Property(x => x.SaleType).HasConversion<string>().IsRequired();
 
         builder.HasIndex(x => x.OrderId);
